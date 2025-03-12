@@ -1,0 +1,52 @@
+auction-frontend/
+├── public/                     # File tĩnh (không thay đổi)
+│   ├── index.html             # File HTML chính
+│   ├── favicon.ico            # Icon trang web
+│   └── manifest.json          # Cấu hình PWA (nếu có)
+├── src/                       # Nguồn code chính
+│   ├── assets/                # Tài nguyên tĩnh (ảnh, font, v.v.)
+│   │   ├── images/            # Các hình ảnh (logo, icon, v.v.)
+│   │   │   └── logo.png
+│   │   ├── fonts/             # Font chữ (ví dụ: IBM Plex Mono)
+│   │   │   └── ibm-plex-mono.ttf
+│   │   └── styles/            # File CSS/tailwind config
+│   │       └── global.css     # CSS toàn cục
+│   ├── components/            # Các thành phần tái sử dụng
+│   │   ├── common/            # Thành phần chung
+│   │   │   ├── Button.js      # Nút bấm cơ bản
+│   │   │   ├── Input.js       # Ô nhập liệu
+│   │   │   └── Modal.js       # Popup modal
+│   │   ├── auth/              # Thành phần liên quan đến xác thực
+│   │   │   ├── LoginForm.js   # Form đăng nhập
+│   │   │   └── RegisterForm.js # Form đăng ký
+│   │   ├── auction/           # Thành phần liên quan đến đấu giá
+│   │   │   ├── AuctionCard.js # Thẻ hiển thị bài đấu giá
+│   │   │   └── BidPanel.js    # Panel đặt giá
+│   │   └── layout/            # Layout toàn cục
+│   │       ├── Header.js      # Thanh header
+│   │       └── Footer.js      # Thanh footer
+│   ├── pages/                 # Các trang chính của ứng dụng
+│   │   ├── Home.js            # Trang chủ
+│   │   ├── Login.js           # Trang đăng nhập
+│   │   ├── Register.js        # Trang đăng ký
+│   │   ├── AuctionList.js     # Danh sách đấu giá
+│   │   ├── AuctionDetail.js   # Chi tiết bài đấu giá
+│   │   └── Profile.js         # Trang hồ sơ người dùng
+│   ├── services/              # Logic gọi API
+│   │   ├── api.js             # Cấu hình Axios và base URL
+│   │   ├── authService.js     # API liên quan đến xác thực
+│   │   ├── auctionService.js  # API liên quan đến đấu giá
+│   │   └── realTimeService.js # API WebSocket/STOMP cho real-time
+│   ├── hooks/                 # Custom hooks
+│   │   ├── useAuth.js         # Hook quản lý trạng thái xác thực
+│   │   └── useRealTime.js     # Hook quản lý real-time bidding
+│   ├── utils/                 # Hàm tiện ích
+│   │   ├── formatPrice.js     # Định dạng giá tiền
+│   │   ├── validateForm.js    # Xác thực form
+│   │   └── constants.js       # Hằng số (ví dụ: API endpoints)
+│   ├── App.js                 # File chính khởi tạo ứng dụng
+│   ├── index.js               # Điểm vào ứng dụng
+│   └── index.css              # CSS toàn cục (nếu không dùng global.css)
+├── package.json               # Cấu hình dependencies và scripts
+├── Dockerfile                 # File để containerize với Docker
+└── README.md                  # Hướng dẫn cài đặt và chạy
