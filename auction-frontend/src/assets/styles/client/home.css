@@ -1,0 +1,82 @@
+/* Banner */
+.client-home-banner {
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+        url('/assets/images/banner.jpg');
+    /* Thay bằng ảnh banner thực tế */
+    background-size: cover;
+    background-position: center;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+}
+
+.client-banner-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.client-banner-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.client-banner-btn {
+    font-size: 1.1rem;
+    padding: 10px 30px;
+}
+
+/* Section đấu giá */
+.client-home-auctions {
+    background-color: #f8f9fa;
+}
+
+.client-section-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.client-auction-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.client-auction-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.client-auction-img {
+    height: 200px;
+    object-fit: cover;
+}
+
+.client-auction-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.client-auction-bid span {
+    font-weight: 600;
+    color: #007bff;
+}
+
+.client-auction-time {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.client-auction-btn {
+    width: 100%;
+    font-weight: 500;
+}
+
+.client-view-all {
+    font-size: 1.1rem;
+    color: #007bff;
+}
+
+.client-view-all:hover {
+    text-decoration: underline;
+}

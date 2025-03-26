@@ -1,0 +1,87 @@
+/* src/assets/styles/client/header.css */
+.client-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: #fff;
+}
+
+.client-header-logo {
+    padding: 0;
+}
+
+.client-logo-img {
+    height: 45px;
+    transition: transform 0.3s ease;
+}
+
+.client-logo-img:hover {
+    transform: scale(1.05);
+}
+
+.client-header-nav {
+    gap: 20px;
+}
+
+.client-nav-link {
+    color: #333;
+    font-weight: 500;
+    font-size: 1.1rem;
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.client-nav-link:hover {
+    color: #007bff !important;
+}
+
+.client-nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -4px;
+    left: 0;
+    background-color: #007bff;
+    transition: width 0.3s ease;
+}
+
+.client-nav-link:hover::after {
+    width: 100%;
+}
+
+.client-header-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.client-btn-login,
+.client-btn-register {
+    min-width: 110px;
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 8px 20px;
+    transition: all 0.3s ease;
+}
+
+.client-btn-login {
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.client-btn-login:hover {
+    background-color: #007bff;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.client-btn-register {
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    border: none;
+    color: #fff;
+}
+
+.client-btn-register:hover {
+    background: linear-gradient(90deg, #0056b3, #003d82);
+    transform: translateY(-2px);
+}
