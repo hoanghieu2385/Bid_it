@@ -1,13 +1,12 @@
 auction-frontend/
-├── public/                     # File tĩnh (không thay đổi)
-│   ├── index.html             # File HTML chính
+├── public/                     # File tĩnh
+│   ├── index.html             # File HTML chính (cập nhật cho Vite)
 │   ├── favicon.ico            # Icon trang web
 │   └── manifest.json          # Cấu hình PWA (nếu có)
 ├── src/                       # Nguồn code chính
 │   ├── assets/                # Tài nguyên tĩnh (ảnh, font, v.v.)
-│   │   ├── images/            # Các hình ảnh (logo, icon, v.v.)
-│   │   │   └── logo.png
-│   │   ├── fonts/             # Font chữ (ví dụ: IBM Plex Mono)
+│   │   ├── images/            # Các hình ảnh
+│   │   ├── fonts/             # Font chữ
 │   │   │   └── ibm-plex-mono.ttf
 │   │   └── styles/            # File CSS/tailwind config
 │   │       └── global.css     # CSS toàn cục
@@ -45,8 +44,9 @@ auction-frontend/
 │   │   ├── validateForm.js    # Xác thực form
 │   │   └── constants.js       # Hằng số (ví dụ: API endpoints)
 │   ├── App.js                 # File chính khởi tạo ứng dụng
-│   ├── index.js               # Điểm vào ứng dụng
+│   ├── main.js                # Điểm vào ứng dụng (thay index.js)
 │   └── index.css              # CSS toàn cục (nếu không dùng global.css)
+├── vite.config.js             # Cấu hình Vite
 ├── package.json               # Cấu hình dependencies và scripts
 ├── Dockerfile                 # File để containerize với Docker
 └── README.md                  # Hướng dẫn cài đặt và chạy
