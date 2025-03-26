@@ -1,52 +1,70 @@
 auction-frontend/
 ├── public/                     # File tĩnh
-│   ├── index.html             # File HTML chính (cập nhật cho Vite)
+│   ├── index.html             # File HTML chính cho Vite
 │   ├── favicon.ico            # Icon trang web
 │   └── manifest.json          # Cấu hình PWA (nếu có)
 ├── src/                       # Nguồn code chính
-│   ├── assets/                # Tài nguyên tĩnh (ảnh, font, v.v.)
-│   │   ├── images/            # Các hình ảnh
+│   ├── assets/                # Tài nguyên tĩnh (ảnh, font, CSS)
+│   │   ├── images/            # Hình ảnh
+│   │   │   └── logo.png       # Logo (thêm nếu cần)
 │   │   ├── fonts/             # Font chữ
-│   │   │   └── ibm-plex-mono.ttf
-│   │   └── styles/            # File CSS/tailwind config
-│   │       └── global.css     # CSS toàn cục
+│   │   │   └── ibm-plex-mono.ttf # Font tùy chọn
+│   │   └── styles/            # CSS tùy chỉnh
+│   │       ├── global.css     # CSS toàn cục
+│   │       ├── client/        # CSS cho client
+│   │       │   └── login.css  # CSS cho trang Login của client
+│   │       └── admin/         # CSS cho admin
+│   │           └── dashboard.css # CSS cho trang Dashboard của admin
 │   ├── components/            # Các thành phần tái sử dụng
-│   │   ├── common/            # Thành phần chung
-│   │   │   ├── Button.js      # Nút bấm cơ bản
-│   │   │   ├── Input.js       # Ô nhập liệu
-│   │   │   └── Modal.js       # Popup modal
-│   │   ├── auth/              # Thành phần liên quan đến xác thực
-│   │   │   ├── LoginForm.js   # Form đăng nhập
-│   │   │   └── RegisterForm.js # Form đăng ký
-│   │   ├── auction/           # Thành phần liên quan đến đấu giá
-│   │   │   ├── AuctionCard.js # Thẻ hiển thị bài đấu giá
-│   │   │   └── BidPanel.js    # Panel đặt giá
-│   │   └── layout/            # Layout toàn cục
-│   │       ├── Header.js      # Thanh header
-│   │       └── Footer.js      # Thanh footer
+│   │   ├── common/            # Thành phần dùng chung cho client và admin
+│   │   │   ├── Button.jsx     # Nút bấm cơ bản
+│   │   │   ├── Input.jsx      # Ô nhập liệu
+│   │   │   └── Modal.jsx      # Popup modal
+│   │   ├── client/            # Thành phần chỉ dùng cho client
+│   │   │   ├── AuctionCard.jsx # Thẻ hiển thị bài đấu giá
+│   │   │   └── BidPanel.jsx   # Panel đặt giá
+│   │   └── admin/             # Thành phần chỉ dùng cho admin
+│   │       ├── UserTable.jsx  # Bảng danh sách người dùng
+│   │       └── AuctionManager.jsx # Quản lý bài đấu giá
+│   ├── layouts/               # Layout riêng cho client và admin
+│   │   ├── client/            # Layout cho client
+│   │   │   ├── Header.jsx     # Thanh header của client
+│   │   │   └── Footer.jsx     # Thanh footer của client
+│   │   └── admin/             # Layout cho admin
+│   │       ├── Header.jsx     # Thanh header của admin
+│   │       └── Sidebar.jsx    # Thanh sidebar của admin
 │   ├── pages/                 # Các trang chính của ứng dụng
-│   │   ├── Home.js            # Trang chủ
-│   │   ├── Login.js           # Trang đăng nhập
-│   │   ├── Register.js        # Trang đăng ký
-│   │   ├── AuctionList.js     # Danh sách đấu giá
-│   │   ├── AuctionDetail.js   # Chi tiết bài đấu giá
-│   │   └── Profile.js         # Trang hồ sơ người dùng
+│   │   ├── client/            # Trang cho client
+│   │   │   ├── Home.jsx       # Trang chủ
+│   │   │   ├── Login.jsx      # Trang đăng nhập
+│   │   │   ├── Register.jsx   # Trang đăng ký
+│   │   │   ├── AuctionList.jsx # Danh sách đấu giá
+│   │   │   ├── AuctionDetail.jsx # Chi tiết bài đấu giá
+│   │   │   └── Profile.jsx    # Trang hồ sơ người dùng
+│   │   └── admin/             # Trang cho admin
+│   │       ├── Dashboard.jsx  # Trang tổng quan
+│   │       ├── AuctionList.jsx # Danh sách đấu giá
+│   │       ├── AuctionManagement.jsx # Quản lý đấu giá
+│   │       └── UserManagement.jsx # Quản lý người dùng
 │   ├── services/              # Logic gọi API
-│   │   ├── api.js             # Cấu hình Axios và base URL
-│   │   ├── authService.js     # API liên quan đến xác thực
+│   │   ├── api.js             # Cấu hình base API
+│   │   ├── user-api.js        # API xác thực (login/register)
 │   │   ├── auctionService.js  # API liên quan đến đấu giá
-│   │   └── realTimeService.js # API WebSocket/STOMP cho real-time
+│   │   └── realTimeService.js # API WebSocket/STOMP cho realtime
 │   ├── hooks/                 # Custom hooks
-│   │   ├── useAuth.js         # Hook quản lý trạng thái xác thực
-│   │   └── useRealTime.js     # Hook quản lý real-time bidding
+│   │   ├── useAuth.js         # Hook quản lý xác thực
+│   │   └── useRealTime.js     # Hook quản lý realtime bidding
 │   ├── utils/                 # Hàm tiện ích
 │   │   ├── formatPrice.js     # Định dạng giá tiền
 │   │   ├── validateForm.js    # Xác thực form
-│   │   └── constants.js       # Hằng số (ví dụ: API endpoints)
-│   ├── App.js                 # File chính khởi tạo ứng dụng
-│   ├── main.js                # Điểm vào ứng dụng (thay index.js)
-│   └── index.css              # CSS toàn cục (nếu không dùng global.css)
+│   │   └── constants.js       # Hằng số (API endpoints, etc.)
+│   ├── routes/                # Cấu hình route riêng cho client và admin
+│   │   ├── ClientRoutes.jsx   # Route cho client
+│   │   └── AdminRoutes.jsx    # Route cho admin
+│   ├── App.jsx                # File chính khởi tạo ứng dụng
+│   ├── main.js                # Điểm vào ứng dụng
+│   └── index.css              # CSS toàn cục (import Bootstrap)
 ├── vite.config.js             # Cấu hình Vite
 ├── package.json               # Cấu hình dependencies và scripts
-├── Dockerfile                 # File để containerize với Docker
+├── Dockerfile                 # File để containerize (tùy chọn)
 └── README.md                  # Hướng dẫn cài đặt và chạy
