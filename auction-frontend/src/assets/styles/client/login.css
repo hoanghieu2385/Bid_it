@@ -1,0 +1,88 @@
+/* Basic reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    /* Keep font if installed */
+}
+
+/* Main container */
+.client-login-container {
+    background: linear-gradient(135deg, #74ebd5, #acb6e5);
+}
+
+/* Form wrapper */
+.client-form-wrapper {
+    max-width: 400px;
+    width: 100%;
+    transition: transform 0.3s ease;
+}
+
+.client-form-wrapper:hover {
+    transform: translateY(-5px);
+}
+
+/* Form title */
+.client-form-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Form label */
+.client-form-label {
+    font-size: 0.9rem;
+    color: #555;
+    font-weight: 500;
+}
+
+/* Form input */
+.client-form-input {
+    padding: 10px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.client-form-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+.client-form-input::placeholder {
+    color: #aaa;
+}
+
+/* Submit button */
+.client-submit-btn {
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 10px;
+    transition: transform 0.1s ease;
+}
+
+.client-submit-btn:hover {
+    transform: translateY(-2px);
+}
+
+.client-submit-btn:active {
+    transform: translateY(0);
+}
+
+/* Toggle button */
+.client-toggle-btn {
+    font-size: 0.9rem;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.client-toggle-btn:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Message */
+.client-message {
+    font-size: 0.9rem;
+    font-weight: 500;
+}

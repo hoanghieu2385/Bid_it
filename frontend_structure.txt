@@ -27,12 +27,8 @@ auction-frontend/
 │   │       ├── UserTable.jsx  # Bảng danh sách người dùng
 │   │       └── AuctionManager.jsx # Quản lý bài đấu giá
 │   ├── layouts/               # Layout riêng cho client và admin
-│   │   ├── client/            # Layout cho client
-│   │   │   ├── Header.jsx     # Thanh header của client
-│   │   │   └── Footer.jsx     # Thanh footer của client
-│   │   └── admin/             # Layout cho admin
-│   │       ├── Header.jsx     # Thanh header của admin
-│   │       └── Sidebar.jsx    # Thanh sidebar của admin
+│   │   ├── clientLayout.jsx
+│   │   └── adminLayout.jsx
 │   ├── pages/                 # Các trang chính của ứng dụng
 │   │   ├── client/            # Trang cho client
 │   │   │   ├── Home.jsx       # Trang chủ
