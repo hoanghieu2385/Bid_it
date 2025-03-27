@@ -12,10 +12,6 @@
     transition: transform 0.3s ease;
 }
 
-.client-header-logo:hover .logo-image {
-    transform: scale(1.05);
-}
-
 .client-header-logo {
     padding: 0;
 }
