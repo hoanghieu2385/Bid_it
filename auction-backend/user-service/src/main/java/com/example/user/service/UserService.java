@@ -1,35 +1,30 @@
 package com.example.user.service;
 
 import com.example.user.model.User;
-import com.example.user.repository.IUserRepository;
+import com.example.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.Optional;
 
 @Service
-public class UserService implements IUserService {
+@RequiredArgsConstructor
+public class UserService {
+    private final UserRepository userRepository;
 
-    private final IUserRepository userRepository;
-
-    public UserService(IUserRepository userRepository) {
-        this.userRepository = userRepository;
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
-    @Override
-    public boolean validateUser(String username, String password) {
-        User user = userRepository.findByUsernameAndPassword(username, password);
-        return user != null;
+    public Optional<User> getUserById(Long id) {
+        return userRepository.findById(id);
     }
 
-    @Override
-    public boolean registerUser(String username, String password) {
-        User existingUser = userRepository.findByUsername(username);
-        if (existingUser != null) {
-            return false;
-        }
+    public User createUser(User user) {
+        return userRepository.save(user);
+    }
 
-        User newUser = new User();
-        newUser.setUsername(username);
-        newUser.setPassword(password);
-        userRepository.save(newUser);
-        return true;
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
     }
 }
