@@ -1,0 +1,213 @@
+/* src/assets/styles/client/header.css */
+.client-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logo-image {
+    height: 30px; /* Điều chỉnh kích thước hình ảnh */
+    transition: transform 0.3s ease;
+}
+
+.client-header-logo {
+    padding: 0;
+}
+
+.client-logo-img {
+    height: 45px;
+    transition: transform 0.3s ease;
+}
+
+.client-logo-img:hover {
+    transform: scale(1.05);
+}
+
+.client-header-nav {
+    gap: 20px;
+}
+
+.client-nav-link {
+    color: #333;
+    font-weight: 500;
+    font-size: 1rem;
+    position: relative;
+    transition: color 0.3s ease;
+    padding: 8px 12px;
+}
+
+.client-nav-link:hover {
+    color: #007bff !important;
+}
+
+.client-nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 4px;
+    left: 12px;
+    background-color: #007bff;
+    transition: width 0.3s ease;
+}
+
+.client-nav-link:hover::after {
+    width: calc(100% - 24px);
+}
+
+.client-header-actions {
+    gap: 15px;
+}
+
+.client-btn-login,
+.client-btn-register {
+    min-width: 90px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 6px 16px;
+    transition: all 0.3s ease;
+}
+
+.client-btn-login {
+    border: 1px solid #007bff;
+    color: #007bff;
+    background-color: transparent;
+}
+
+.client-btn-login:hover {
+    background-color: #007bff;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.client-btn-register {
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    border: none;
+    color: #fff;
+}
+
+.client-btn-register:hover {
+    background: linear-gradient(90deg, #0056b3, #003d82);
+    transform: translateY(-2px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 991px) {
+    .client-header-nav {
+        gap: 10px;
+        text-align: center;
+    }
+
+    .client-nav-link {
+        font-size: 1rem;
+        padding: 10px 0;
+    }
+
+    .client-header-actions {
+        width: 100%;
+        padding: 15px;
+        justify-content: center;
+        flex-direction: column;
+    }
+
+    .client-btn-login,
+    .client-btn-register {
+        width: 100%;
+        margin: 5px 0;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 991px) {
+    .client-header-actions {
+        flex-direction: row !important;
+        gap: 15px;
+    }
+
+    .client-btn-login,
+    .client-btn-register {
+        width: auto;
+        min-width: 100px;
+    }
+}
+
+@media (min-width: 992px) {
+    .client-header-nav {
+        gap: 25px; /* Giảm khoảng cách để tiết kiệm không gian */
+    }
+
+    .client-header-actions {
+        gap: 15px;
+        flex-wrap: nowrap; /* Đảm bảo không xuống dòng */
+    }
+
+    .input-group {
+        max-width: 150px; /* Giảm chiều rộng search bar */
+    }
+
+    .client-btn-login,
+    .client-btn-register {
+        padding: 5px 14px; /* Giảm padding để tiết kiệm không gian */
+        min-width: 80px; /* Giảm chiều rộng tối thiểu */
+    }
+
+    .container {
+        max-width: 960px;
+    }
+
+    .navbar {
+        padding: 8px 0;
+    }
+}
+
+@media (min-width: 1200px) {
+    .client-header-nav {
+        gap: 30px;
+    }
+
+    .client-header-actions {
+        gap: 20px;
+    }
+
+    .input-group {
+        max-width: 180px;
+    }
+
+    .client-btn-login,
+    .client-btn-register {
+        padding: 6px 16px;
+        min-width: 90px;
+    }
+
+    .container {
+        max-width: 1140px;
+    }
+}
+
+@media (max-width: 575px) {
+    .client-header-logo {
+        font-size: 1.2rem;
+    }
+
+    .navbar-toggler {
+        padding: 5px;
+    }
+}
+
+/* Dropdown menu styles */
+.dropdown-menu {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    color: #333;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #007bff;
+}

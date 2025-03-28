@@ -1,0 +1,240 @@
+/* src/assets/styles/client/home.css */
+
+/* General Styles */
+.client-home {
+    font-family: 'IBM Plex Mono', monospace; /* Apply the font from index.html */
+}
+
+/* Categories Section */
+.categories-section {
+    background-color: #fff;
+}
+
+.categories-scroll-container {
+    overflow-x: auto; /* Enable horizontal scrolling */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on touch devices */
+    scrollbar-width: thin; /* Firefox: Thin scrollbar */
+    scrollbar-color: #007bff #f8f9fa; /* Firefox: Scrollbar color */
+}
+
+/* Custom scrollbar for Webkit browsers (Chrome, Safari) */
+.categories-scroll-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.categories-scroll-container::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.categories-scroll-container::-webkit-scrollbar-thumb {
+    background: #007bff;
+    border-radius: 4px;
+}
+
+.categories-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #0056b3;
+}
+
+.categories-scroll {
+    display: flex;
+    flex-wrap: nowrap; /* Prevent wrapping to ensure single row */
+    gap: 1.5rem; /* Space between category items */
+    padding: 0 1rem; /* Padding for better spacing */
+    justify-content: center;
+}
+
+.category-wrapper {
+    flex: 0 0 auto; /* Prevent shrinking or growing */
+    width: 100px; /* Fixed width for each category item */
+    text-align: center;
+}
+
+.category-item {
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.category-item:hover {
+    transform: translateY(-5px); /* Lift effect on hover */
+}
+
+.category-item:hover .category-icon {
+    color: #007bff; /* Change icon color on hover */
+}
+
+.category-item:hover .category-name {
+    color: #007bff; /* Change name color on hover */
+}
+
+.category-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%; /* Circular icon */
+    background-color: #f8f9fa; /* Light background for icon */
+    transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.category-name {
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+
+/* Featured Auctions Section */
+.client-home-auctions {
+    background-color: #f8f9fa;
+}
+
+.client-section-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.client-auction-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.client-auction-card:hover {
+    transform: translateY(-5px); /* Lift effect on hover */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.client-auction-img {
+    height: 200px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.client-auction-card:hover .client-auction-img {
+    transform: scale(1.05); /* Zoom effect on image hover */
+}
+
+.client-auction-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.client-auction-bid {
+    font-size: 1rem;
+    color: #666;
+}
+
+.client-auction-bid span {
+    font-weight: 600;
+    color: #007bff;
+}
+
+.client-auction-time {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.client-auction-btn {
+    width: 100%;
+    font-weight: 500;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.client-auction-btn:hover {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.client-view-all {
+    font-size: 1.1rem;
+    color: #007bff;
+    transition: color 0.3s ease;
+}
+
+.client-view-all:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 575px) {
+    .category-wrapper {
+        width: 80px; /* Smaller width on mobile */
+    }
+
+    .category-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .category-name {
+        font-size: 0.8rem;
+    }
+
+    .client-section-title {
+        font-size: 1.5rem;
+    }
+
+    .client-auction-img {
+        height: 150px;
+    }
+
+    .client-auction-title {
+        font-size: 1.1rem;
+    }
+
+    .client-auction-bid,
+    .client-auction-time {
+        font-size: 0.85rem;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    .category-wrapper {
+        width: 90px;
+    }
+
+    .client-auction-img {
+        height: 180px;
+    }
+
+    .client-auction-title {
+        font-size: 1.2rem;
+    }
+}
+
+@media (min-width: 1920px) {
+    .category-wrapper {
+        width: 120px; /* Larger width on 4K screens */
+    }
+
+    .category-icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .category-name {
+        font-size: 1rem;
+    }
+
+    .client-section-title {
+        font-size: 2.5rem;
+    }
+
+    .client-auction-img {
+        height: 250px;
+    }
+
+    .client-auction-title {
+        font-size: 1.5rem;
+    }
+
+    .client-auction-bid,
+    .client-auction-time {
+        font-size: 1.1rem;
+    }
+
+    .client-auction-btn {
+        font-size: 1.1rem;
+        padding: 8px 16px;
+    }
+}
