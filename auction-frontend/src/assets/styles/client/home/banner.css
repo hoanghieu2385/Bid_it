@@ -1,0 +1,95 @@
+/* src/assets/styles/client/banner.css */
+.banner-section {
+    height: 500px;
+    overflow: hidden;
+}
+
+.banner-bg {
+    transition: transform 0.5s ease;
+}
+
+.banner-content {
+    animation: fadeIn 1s ease-in-out;
+}
+
+.banner-title {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); 
+}
+
+.banner-text {
+    line-height: 1.6;
+}
+
+.banner-btn {
+    transition: all 0.3s ease;
+}
+
+.banner-btn:hover {
+    background: linear-gradient(90deg, #0056b3, #003d82);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 767px) {
+    .banner-section {
+        height: 400px; 
+    }
+
+    .banner-title {
+        font-size: 2rem;
+    }
+
+    .banner-text {
+        font-size: 1rem;
+    }
+
+    .banner-btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    .banner-section {
+        height: 450px;
+    }
+
+    .banner-title {
+        font-size: 2.5rem;
+    }
+
+    .banner-text {
+        font-size: 1.1rem;
+    }
+}
+
+@media (min-width: 1920px) {
+    .banner-section {
+        height: 600px;
+    }
+
+    .banner-title {
+        font-size: 4rem;
+    }
+
+    .banner-text {
+        font-size: 1.5rem; 
+    }
+
+    .banner-btn {
+        padding: 12px 24px;
+        font-size: 1.2rem;
+    }
+}
