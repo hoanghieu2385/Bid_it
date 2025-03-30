@@ -21,21 +21,21 @@ public class Auction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Basic auction details
+    // Basic details
     @Column(nullable = false)
     private String title;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // Instead of @ManyToOne, store IDs for user and category (from other services)
+    // Store only IDs for seller and category
     @Column(name = "seller_id", nullable = false)
-    private Long sellerId;  // references user in user-service
+    private Long sellerId;
 
     @Column(name = "category_id", nullable = false)
-    private Long categoryId; // references category in category-service
+    private Long categoryId;
 
-    // Timing
+    // Auction timing
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
 
@@ -52,7 +52,7 @@ public class Auction {
     @Column(name = "current_bid")
     private BigDecimal currentBid;
 
-    // Deposit info
+    // Deposit
     @Column(name = "requires_deposit")
     private Boolean requiresDeposit = false;
 
@@ -67,11 +67,11 @@ public class Auction {
     @Column(name = "bid_count")
     private Integer bidCount = 0;
 
-    // Winner info (just store the user ID if the user is from user-service)
+    // Winner info
     @Column(name = "winner_id")
     private Long winnerId;
 
-    // Deadlines for payment/dispute
+    // Deadlines
     @Column(name = "winner_payment_deadline")
     private LocalDateTime winnerPaymentDeadline;
 
@@ -87,7 +87,7 @@ public class Auction {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Optional: soft delete timestamp
+    // Optional soft-delete
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 }
