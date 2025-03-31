@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { login, register } from '../../services/user-api';
-import 'bootstrap/dist/css/bootstrap.min.css'; // Ensure Bootstrap is imported
-import '../../assets/styles/client/login.css'; // Import custom CSS
+import '../../assets/styles/client/login.css';
 
 function Login() {
   const [username, setUsername] = useState('');
