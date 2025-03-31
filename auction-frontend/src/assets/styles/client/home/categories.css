@@ -1,0 +1,139 @@
+/* src/assets/styles/client/home/categories.css */
+
+/* Categories Section */
+/* .categories-section {
+    background-color: #fff;
+} */
+
+.categories-scroll-wrapper {
+    overflow-x: auto; /* Enable horizontal scrolling */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on touch devices */
+    scrollbar-width: thin; /* Firefox: Thin scrollbar */
+    scrollbar-color: #007bff #f8f9fa; /* Firefox: Scrollbar color */
+    min-width: 0; /* Prevent overflow issues in some browsers */
+    cursor: grab; /* Show grab cursor to indicate draggable area */
+    user-select: none; /* Disable text selection while dragging */
+    -webkit-user-select: none; /* For Safari */
+    -moz-user-select: none; /* For Firefox */
+    -ms-user-select: none; /* For Edge */
+}
+
+/* Custom scrollbar for Webkit browsers (Chrome, Safari) */
+.categories-scroll-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+
+.categories-scroll-wrapper::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.categories-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: #007bff;
+    border-radius: 4px;
+}
+
+.categories-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #0056b3;
+}
+
+.categories-scroll-content {
+    display: inline-flex; 
+    flex-wrap: nowrap; /* Prevent wrapping to ensure single row */
+    gap: 1.5rem; /* Space between category items */
+    padding: 0 1rem;
+    justify-content: center;
+    width: 100%; 
+}
+
+.categories-item-wrapper {
+    flex: 0 0 auto; /* Prevent shrinking or growing */
+    width: 100px; /* Fixed width for each category item */
+    text-align: center;
+}
+
+.categories-item {
+    transition: transform 0.3s ease, color 0.3s ease;
+    padding-top: 3px;
+}
+
+.categories-item:hover {
+    transform: translateY(-3px);
+}
+
+.categories-item:hover .categories-item-icon {
+    color: #007bff; 
+}
+
+.categories-item:hover .categories-item-name {
+    color: #007bff; 
+}
+
+.categories-item-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%; /* Circular icon */
+    background-color: #f8f9fa; /* Light background for icon */
+    transition: color 0.3s ease, background-color 0.3s ease;
+    font-size: 1.5rem; /* Ensure icon size is large enough */
+    line-height: 48px; /* Center the icon vertically */
+}
+
+.categories-item-name {
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+
+.categories-section-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Responsive Adjustments for Categories */
+@media (max-width: 575px) {
+    .categories-item-wrapper {
+        width: 80px; /* Smaller width on mobile */
+    }
+
+    .categories-item-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.25rem;
+        line-height: 40px;
+    }
+
+    .categories-item-name {
+        font-size: 0.8rem;
+    }
+
+    .categories-section-title {
+        font-size: 1.5rem;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    .categories-item-wrapper {
+        width: 90px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .categories-item-wrapper {
+        width: 120px; /* Larger width on 4K screens */
+    }
+
+    .categories-item-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 1.75rem;
+        line-height: 56px;
+    }
+
+    .categories-item-name {
+        font-size: 1rem;
+    }
+
+    .categories-section-title {
+        font-size: 2.5rem;
+    }
+}
