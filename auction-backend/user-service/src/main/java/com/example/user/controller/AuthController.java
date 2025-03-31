@@ -1,8 +1,6 @@
 package com.example.user.controller;
 
-import com.example.user.Dtos.AuthResponse;
-import com.example.user.Dtos.LoginRequest;
-import com.example.user.Dtos.RegisterRequest;
+import com.example.user.Dtos.*;
 import com.example.user.config.JwtUtil;
 import com.example.user.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -17,13 +15,28 @@ public class AuthController {
     private final JwtUtil jwtUtil;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<VerificationResponse> verifyEmail(@RequestBody VerificationRequest request) {
+        return ResponseEntity.ok(authService.verifyEmail(request));
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.authenticate(request));
+    }
+
+    @PostMapping("/request-otp")
+    public ResponseEntity<OtpResponse> requestOtp(@RequestParam String email) {
+        return ResponseEntity.ok(authService.requestLoginOtp(email));
+    }
+
+    @PostMapping("/login-with-otp")
+    public ResponseEntity<AuthResponse> loginWithOtp(@RequestBody OtpLoginRequest request) {
+        return ResponseEntity.ok(authService.authenticateWithOtp(request));
     }
 
     @GetMapping("/generate-token")
