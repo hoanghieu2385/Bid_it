@@ -1,14 +1,14 @@
-// src/routes/ClientRoutes.jsx
+// src/routes/AdminRoutes.jsx
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Dashboard from '../pages/admin/Dashboard.jsx';
 
-function ClientRoutes() {
+function AdminRoutes() {
 	return (
 		<Routes>
-			<Route path="/admin/dashboard" element={<Dashboard />} />
+			<Route path="/admin/Dashboard" element={<Dashboard />} />
 		</Routes>
 	);
 }
 
-export default ClientRoutes;
+export default AdminRoutes;

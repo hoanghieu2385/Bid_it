@@ -1,0 +1,212 @@
+/* Dashboard.css - Cập nhật topbar */
+
+/* Tổng thể */
+#wrapper {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f8f9fc;
+  }
+  
+  /* Topbar */
+  nav.bg-white {
+    display: flex;
+    justify-content: space-between; /* Thay đổi thành space-between để có thể đặt search bên trái */
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid #e3e6f0;
+    width: 100%;
+    height: 70px;
+    background-color: #fff;
+  }
+  
+  /* Thanh search trong topbar */
+  .search-form {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-right: auto; /* Đẩy phần tìm kiếm sang trái */
+  }
+  
+  .search-form input {
+    border: 1px solid #e3e6f0;
+    border-radius: 2rem; /* Bo tròn hơn để giống hình */
+    padding: 0.4rem 1rem 0.4rem 2.5rem;
+    font-size: 0.85rem;
+    color: #6e707e;
+    width: 250px;
+  }
+  
+  .search-form button {
+    position: absolute;
+    left: 0.8rem;
+    background: none;
+    border: none;
+    color: #6e707e;
+    cursor: pointer;
+  }
+  
+  nav ul {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+  }
+  
+  nav ul li {
+    position: relative;
+    margin-left: 1rem;
+  }
+  
+  /* Nút tìm kiếm, thông báo và tin nhắn */
+  nav ul li button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #4e73df;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+  }
+  
+  nav ul li button:hover {
+    background-color: #f8f9fc;
+  }
+  
+  /* Badge thông báo - Sửa lại cách hiển thị số */
+  nav ul li button span.absolute {
+    width: 18px; /* Đặt chiều rộng cố định */
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #e74a3b;
+    color: white;
+    font-size: 0.65rem;
+    height: 18px !important; /* Đặt chiều cao cố định */
+    border-radius: 9999px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 4px; /* Đệm ngang để có không gian cho số */
+  }
+  
+  /* Dropdown cho thông báo và tin nhắn */
+  nav ul li .absolute {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    width: 20rem;
+    background-color: white;
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    z-index: 100;
+  }
+  
+  nav ul li .absolute h6 {
+    font-weight: bold;
+    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
+    margin: 0;
+    border-bottom: 1px solid #e3e6f0;
+    color: #5a5c69;
+  }
+  
+  nav ul li .absolute .p-2 {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e3e6f0;
+    font-size: 0.85rem;
+    color: #3a3b45;
+  }
+  
+  nav ul li .absolute .text-center {
+    text-align: center;
+    color: #4e73df;
+    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  
+  /* Profile dropdown */
+  nav ul li:last-child button {
+    padding: 0;
+    display: flex;
+    align-items: center;
+  }
+  
+  nav ul li:last-child button span {
+    color: #5a5c69;
+    font-size: 0.85rem;
+    margin-right: 0.5rem;
+  }
+  
+  nav ul li:last-child button img {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 1px solid #eaecf4;
+  }
+  
+  nav ul li:last-child .absolute {
+    width: 12rem;
+  }
+  
+  nav ul li:last-child .absolute a {
+    display: block;
+    padding: 0.5rem 1.5rem;
+    text-decoration: none;
+    color: #3a3b45;
+    font-size: 0.85rem;
+  }
+  
+  nav ul li:last-child .absolute a:hover {
+    background-color: #f8f9fc;
+    color: #4e73df;
+  }
+  
+  nav ul li:last-child .absolute .border-t {
+    border-top: 1px solid #e3e6f0;
+    margin: 0.3rem 0;
+  }
+  
+  /* Icons */
+  svg {
+    color: #d1d3e2;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    nav ul li .absolute {
+      width: 18rem;
+    }
+    
+    nav ul li:last-child span {
+      display: none;
+    }
+    
+    .search-form input {
+      width: 180px;
+    }
+  }
+  
+  /* Thêm style cho thanh tìm kiếm giống trong ảnh */
+  .search-form input {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    transition: all 0.3s;
+  }
+  
+  .search-form input:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.2rem rgba(70, 70, 70, 0.25);
+    outline: none;
+  }
+  
+  /* Màu nền cho badge */
+  nav ul li button span.absolute {
+    background-color: #ff6b6b;
+  }
