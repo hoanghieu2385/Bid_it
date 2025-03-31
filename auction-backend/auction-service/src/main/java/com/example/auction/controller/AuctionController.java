@@ -2,6 +2,7 @@ package com.example.auction.controller;
 
 import com.example.auction.dto.AuctionRequestDTO;
 import com.example.auction.dto.AuctionResponseDTO;
+import com.example.auction.dto.AuctionStatusUpdateDTO;
 import com.example.auction.exception.ResourceNotFoundException;
 import com.example.auction.model.Auction;
 import com.example.auction.model.AuctionStatus;
@@ -64,6 +65,28 @@ public class AuctionController {
         Auction auction = auctionService.getAuctionById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
         return ResponseEntity.ok(mapToResponseDTO(auction));
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<AuctionResponseDTO> updateAuctionStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody AuctionStatusUpdateDTO statusUpdateDTO) {
+
+        // Retrieve auction or throw exception if not found
+        Auction auction = auctionService.getAuctionById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
+
+        // Validate and convert status; handle invalid status string gracefully
+        try {
+            AuctionStatus newStatus = AuctionStatus.valueOf(statusUpdateDTO.getStatus().toUpperCase());
+            auction.setStatus(newStatus);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Update auction (this will call repository.save)
+        Auction updatedAuction = auctionService.updateAuction(auction);
+        return ResponseEntity.ok(mapToResponseDTO(updatedAuction));
     }
 
     // Helper method to map Auction entity to AuctionResponseDTO

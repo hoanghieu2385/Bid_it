@@ -29,4 +29,8 @@ public class AuctionService {
     public Optional<Auction> getAuctionById(Long id) {
         return auctionRepository.findById(id);
     }
+
+    public Auction updateAuction(Auction auction) {
+        return auctionRepository.save(auction);
+    }
 }
