@@ -6,7 +6,7 @@ import Dashboard from '../pages/admin/Dashboard.jsx';
 function AdminRoutes() {
 	return (
 		<Routes>
-			<Route path="/admin/Dashboard" element={<Dashboard />} />
+			<Route path="/Dashboard" element={<Dashboard />} />
 		</Routes>
 	);
 }
