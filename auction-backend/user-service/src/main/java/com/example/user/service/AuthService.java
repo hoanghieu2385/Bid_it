@@ -21,6 +21,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final BankRepository bankRepository;
     private final OtpService otpService;
+    private final VerificationTokenService verificationTokenService;
 
     public RegisterResponse register(RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -47,12 +48,36 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // Gửi OTP xác thực qua email
-        otpService.sendVerificationOtp(user.getEmail());
+        // Gửi link xác thực qua email thay vì OTP
+        verificationTokenService.sendVerificationToken(user.getEmail());
 
-        return new RegisterResponse("Registration successful. Please check your email for verification code.");
+        return new RegisterResponse("Registration successful. Please check your email for verification link.");
     }
 
+    // Phương thức mới để xác thực email bằng token
+    public VerificationResponse verifyAccountByToken(String email, String token) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getVerified()) {
+            return new VerificationResponse("Email already verified");
+        }
+
+        boolean isValid = verificationTokenService.verifyToken(email, token);
+
+        if (!isValid) {
+            return new VerificationResponse("Invalid or expired verification link");
+        }
+
+        user.setVerified(true);
+        user.setEnable(true);
+        user.setVerifiedResponse("Email verified successfully");
+        userRepository.save(user);
+
+        return new VerificationResponse("Email verified successfully");
+    }
+
+    // Giữ lại phương thức cũ cho khả năng tương thích ngược
     public VerificationResponse verifyEmail(VerificationRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));

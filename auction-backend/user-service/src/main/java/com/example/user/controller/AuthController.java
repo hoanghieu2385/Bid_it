@@ -19,6 +19,15 @@ public class AuthController {
         return ResponseEntity.ok(authService.register(request));
     }
 
+    // Endpoint mới để xử lý xác thực qua link
+    @GetMapping("/verify-account")
+    public ResponseEntity<VerificationResponse> verifyAccount(
+            @RequestParam String token,
+            @RequestParam String email) {
+        return ResponseEntity.ok(authService.verifyAccountByToken(email, token));
+    }
+
+    // Giữ lại endpoint cũ cho khả năng tương thích ngược
     @PostMapping("/verify-email")
     public ResponseEntity<VerificationResponse> verifyEmail(@RequestBody VerificationRequest request) {
         return ResponseEntity.ok(authService.verifyEmail(request));
