@@ -17,19 +17,26 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Tắt CSRF để test API
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login", "/auth/generate-token").permitAll()
-                        .anyRequest().authenticated() // Các request khác phải có JWT token
+                        .requestMatchers(
+                                "/auth/register",
+                                "/auth/login",
+                                "/auth/generate-token",
+                                "/auth/verify-account",
+                                "/auth/verify-email",
+                                "/auth/request-otp",
+                                "/auth/login-with-otp"
+                        ).permitAll()
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(
                         org.springframework.security.config.http.SessionCreationPolicy.STATELESS
                 ))
-                .httpBasic(httpBasic -> httpBasic.disable()); // Vô hiệu hóa Basic Auth
+                .httpBasic(httpBasic -> httpBasic.disable());
 
         return http.build();
     }
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
