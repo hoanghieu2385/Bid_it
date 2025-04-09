@@ -6,6 +6,8 @@ import Login from '../pages/client/Login.jsx';
 import About from '../pages/client/About.jsx';
 import Contact from '../pages/client/Contact.jsx';
 import HowItWork from '../pages/client/HowItWork.jsx';
+import Auction from '../pages/client/Auction.jsx';
+import ViewDetail from '../pages/client/ViewDetail.jsx';
 
 function ClientRoutes() {
 	return (
@@ -16,6 +18,8 @@ function ClientRoutes() {
 				<Route path="/about" element={<About />} />
 				<Route path="/contact" element={<Contact />} />
 				<Route path="/how-it-works" element={<HowItWork />} />
+				<Route path="/auctions" element={<Auction />} />
+				<Route path="/auctions/viewdetail" element={<ViewDetail />} />
 			</Route>
 		</Routes>
 	);
