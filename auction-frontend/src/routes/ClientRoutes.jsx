@@ -8,6 +8,7 @@ import Contact from '../pages/client/Contact.jsx';
 import HowItWork from '../pages/client/HowItWork.jsx';
 import Auction from '../pages/client/Auction.jsx';
 import ViewDetail from '../pages/client/ViewDetail.jsx';
+import Blog from '../pages/client/Blog.jsx';
 
 function ClientRoutes() {
 	return (
@@ -20,6 +21,7 @@ function ClientRoutes() {
 				<Route path="/how-it-works" element={<HowItWork />} />
 				<Route path="/auctions" element={<Auction />} />
 				<Route path="/auctions/viewdetail" element={<ViewDetail />} />
+				<Route path="/blog" element={<Blog />} />
 			</Route>
 		</Routes>
 	);
