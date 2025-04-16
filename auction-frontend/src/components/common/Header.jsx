@@ -150,18 +150,18 @@ const Header = () => {
 
                             {/* Sign In/Up */}
                             <Link 
-                                to="/signin" 
+                                to="/login" 
                                 className="client-btn-login btn d-none d-sm-inline-block"
                                 onClick={() => setExpanded(false)}
                             >
-                                Sign In
+                                Login
                             </Link>
                             <Link 
-                                to="/signup" 
+                                to="/register" 
                                 className="client-btn-register btn"
                                 onClick={() => setExpanded(false)}
                             >
-                                Sign Up
+                                Register
                             </Link>
                         </div>
                     </div>
