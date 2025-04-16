@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import '../../assets/styles/client/Blog.css';
 
 const MOCK_POSTS = [
@@ -88,36 +89,36 @@ const MOCK_ARCHIVES = [
 ];
 
 const Blog = () => {
-  // Số bài viết trên mỗi trang
+  // Posts per page
   const postsPerPage = 4;
   
-  // State cho tìm kiếm và phân trang
+  // State for search and pagination
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPosts, setFilteredPosts] = useState(MOCK_POSTS);
   const [currentPage, setCurrentPage] = useState(1);
   const [displayedPosts, setDisplayedPosts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Tính toán số trang và danh sách bài viết cho trang hiện tại
+  // Calculate number of pages and posts for current page
   useEffect(() => {
-    // Tính tổng số trang dựa trên số bài viết và số bài viết trên mỗi trang
+    // Calculate total pages based on number of posts and posts per page
     const calculatedTotalPages = Math.ceil(filteredPosts.length / postsPerPage);
     setTotalPages(calculatedTotalPages);
     
-    // Nếu currentPage vượt quá totalPages (có thể xảy ra khi lọc), reset về trang 1
+    // If currentPage exceeds totalPages (can happen when filtering), reset to page 1
     if (currentPage > calculatedTotalPages && calculatedTotalPages > 0) {
       setCurrentPage(1);
     }
     
-    // Tính index bắt đầu và kết thúc cho trang hiện tại
+    // Calculate start and end index for current page
     const startIndex = (currentPage - 1) * postsPerPage;
     const endIndex = startIndex + postsPerPage;
     
-    // Lấy danh sách bài viết cho trang hiện tại
+    // Get posts for current page
     setDisplayedPosts(filteredPosts.slice(startIndex, endIndex));
   }, [filteredPosts, currentPage]);
 
-  // Xử lý tìm kiếm
+  // Handle search
   const handleSearch = (e) => {
     if (e.key === 'Enter') {
       const query = e.target.value.toLowerCase();
@@ -137,56 +138,49 @@ const Blog = () => {
     }
   };
 
-  // Lọc theo danh mục
+  // Filter by category
   const filterByCategory = (categoryName) => {
     const results = MOCK_POSTS.filter(post => 
       post.category.name === categoryName
     );
     setFilteredPosts(results);
-    setSearchQuery(`category:${categoryName}`);
+    setSearchQuery(`Category : ${categoryName}`);
     setCurrentPage(1);
   };
 
-  // Lọc theo tag
+  // Filter by tag
   const filterByTag = (tagName) => {
-    // Trong dữ liệu mẫu, giả lập lọc bằng cách trả về posts có title chứa tagName
+    // In mock data, simulate filtering by returning posts with titles containing tagName
     const results = MOCK_POSTS.filter(post => 
       post.title.toLowerCase().includes(tagName.toLowerCase())
     );
     setFilteredPosts(results);
-    setSearchQuery(`tag:${tagName}`);
+    setSearchQuery(`Tag : ${tagName}`);
     setCurrentPage(1);
   };
 
-  // Lọc theo ngày
+  // Filter by date
   const filterByDate = (year, month) => {
     const dateString = `${year}-${month.toString().padStart(2, '0')}`;
     const results = MOCK_POSTS.filter(post => 
       post.createdAt.startsWith(dateString)
     );
     setFilteredPosts(results);
-    setSearchQuery(`date:${year}-${month}`);
+    setSearchQuery(`Date : ${year} - ${month}`);
     setCurrentPage(1);
   };
 
-  // Reset bộ lọc
-  const resetFilters = () => {
-    setFilteredPosts(MOCK_POSTS);
-    setSearchQuery('');
-    setCurrentPage(1);
-  };
-
-  // Format ngày
+  // Format date
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
-  // Tạo các liên kết phân trang
+  // Create pagination links
   const renderPaginationLinks = () => {
     const links = [];
     
-    // Nút Previous
+    // Previous button
     links.push(
       <a 
         href="#" 
@@ -201,7 +195,7 @@ const Blog = () => {
       </a>
     );
     
-    // Links số trang
+    // Page number links
     for (let i = 1; i <= totalPages; i++) {
       links.push(
         <a 
@@ -218,7 +212,7 @@ const Blog = () => {
       );
     }
     
-    // Nút Next
+    // Next button
     links.push(
       <a 
         href="#" 
@@ -239,17 +233,16 @@ const Blog = () => {
   return (
     <div className="blog-container">
       <div className="blog-content">
-        {/* Hiển thị kết quả tìm kiếm nếu có */}
+        {/* Display search results if any */}
         {searchQuery && (
           <div className="search-results">
-            <h3>Kết quả tìm kiếm: {searchQuery}</h3>
-            <button className="reset-filter" onClick={resetFilters}>Xóa bộ lọc</button>
+            <h3>{searchQuery}</h3>
           </div>
         )}
 
-        {/* Danh sách bài viết */}
+        {/* Blog posts list */}
         {displayedPosts.length === 0 ? (
-          <div className="no-posts">Không tìm thấy bài viết nào.</div>
+          <div className="no-posts">No posts found.</div>
         ) : (
           displayedPosts.map((post) => (
             <div className="blog-post" key={post.id}>
@@ -274,13 +267,14 @@ const Blog = () => {
                   </span>
                 </div>
                 <p>{post.excerpt}</p>
-                <button className="read-more">READ MORE</button>
+                {/* Updated to use Link from react-router-dom */}
+                <Link to={`/blog/${post.id}`} className="read-more">READ MORE</Link>
               </div>
             </div>
           ))
         )}
 
-        {/* Phân trang */}
+        {/* Pagination */}
         {filteredPosts.length > 0 && (
           <div className="pagination">
             {renderPaginationLinks()}
@@ -290,7 +284,7 @@ const Blog = () => {
 
       {/* Sidebar */}
       <div className="blog-sidebar">
-        {/* Tìm kiếm */}
+        {/* Search */}
         <div className="search-box">
           <input 
             type="text" 
@@ -300,19 +294,19 @@ const Blog = () => {
           />
         </div>
 
-        {/* Bài viết gần đây */}
+        {/* Recent Posts */}
         <div className="sidebar-section">
           <h3>Recent Posts</h3>
           <ul>
             {MOCK_RECENT_POSTS.map(post => (
               <li key={post.id}>
-                <a href="#">{post.title}</a>
+                <Link to={`/blog/${post.id}`}>{post.title}</Link>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Danh mục */}
+        {/* Categories */}
         <div className="sidebar-section">
           <h3>Categories:</h3>
           <ul>
