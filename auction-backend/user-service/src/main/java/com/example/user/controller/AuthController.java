@@ -33,11 +33,15 @@ public class AuthController {
         return "verification-result";
     }
 
-    // For your REST endpoints, use @ResponseBody to indicate they return data, not views
     @PostMapping("/register")
     @ResponseBody
     public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+        try {
+            return ResponseEntity.ok(authService.register(request));
+        } catch (Exception e) {
+            e.printStackTrace(); // log lỗi ra console
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @PostMapping("/verify-email")
