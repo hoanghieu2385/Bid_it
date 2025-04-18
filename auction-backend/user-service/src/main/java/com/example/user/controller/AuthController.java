@@ -16,7 +16,6 @@ public class AuthController {
     private final AuthService authService;
     private final JwtUtil jwtUtil;
 
-    // This method will now return a view template
     @GetMapping("/verify-account")
     public String verifyAccount(
             @RequestParam String token,
@@ -73,5 +72,27 @@ public class AuthController {
     public ResponseEntity<String> generateToken(@RequestParam String email) {
         String token = jwtUtil.generateToken(email);
         return ResponseEntity.ok(token);
+    }
+
+    // RESET PASSWORD
+    @PostMapping("/forgot-password")
+    @ResponseBody
+    public ResponseEntity<ForgotPasswordResponse> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        return ResponseEntity.ok(authService.forgotPassword(request.getEmail()));
+    }
+
+    @GetMapping("/reset-password")
+    public String showResetPasswordForm(@RequestParam String token,
+                                        @RequestParam String email,
+                                        Model model) {
+        model.addAttribute("token", token);
+        model.addAttribute("email", email);
+        return "reset-password";
+    }
+
+    @PostMapping("/reset-password")
+    @ResponseBody
+    public ResponseEntity<ResetPasswordResponse> resetPassword(@RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.resetPassword(request));
     }
 }
