@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: auction
+      MYSQL_ROOT_PASSWORD: Root@123
+    ports:
+      - "3307:3306"
+    networks:
+      - backend
+
+  # Uncomment this if you have a Eureka discovery service Docker image or jar ready
+  # discovery-service:
+  #   image: your-eureka-image-or-jar
+  #   build:
+  #     context: ./discovery-service
+  #   ports:
+  #     - "8761:8761"
+  #   networks:
+  #     - backend
+
+  auction-service:
+    build:
+      context: .
+    container_name: auction-service
+    depends_on:
+      - mysql
+      # - discovery-service
+    ports:
+      - "8080:8080"
+    networks:
+      - backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/auction
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Root@123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+
+networks:
+  backend:
