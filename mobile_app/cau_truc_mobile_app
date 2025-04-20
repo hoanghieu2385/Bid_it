@@ -1,0 +1,39 @@
+lib/
+├── core/                     # Các thành phần chung, tái sử dụng
+│   ├── models/               # Data models (Auction, Bid, User,...)
+│   ├── services/             # API, authentication, push notification, storage
+│   ├── utils/                # Constants, formatters, helpers (date, currency,...)
+│   └── providers/            # State management (Riverpod, Provider,...)
+├── features/                 # Các module tính năng của ứng dụng
+│   ├── auth/                 # Đăng nhập, đăng ký
+│   │   ├── screens/          # LoginScreen, RegisterScreen
+│   │   ├── widgets/          # Các widget tái sử dụng (TextField, Button,...)
+│   │   └── controllers/      # Logic (AuthController, AuthBloc,...)
+│   ├── home/                 # Màn hình chính, danh sách đấu giá
+│   │   ├── screens/          # HomeScreen, AuctionListScreen
+│   │   ├── widgets/          # AuctionCard, FilterButton,...
+│   │   └── controllers/      # HomeController
+│   ├── auction/              # Chi tiết đấu giá, đặt giá
+│   │   ├── screens/          # AuctionDetailScreen, BidScreen
+│   │   ├── widgets/          # BidButton, TimerWidget,...
+│   │   └── controllers/      # AuctionController
+│   ├── profile/              # Hồ sơ người dùng, lịch sử đấu giá
+│   │   ├── screens/          # ProfileScreen, BidHistoryScreen
+│   │   ├── widgets/          # ProfileAvatar, HistoryList,...
+│   │   └── controllers/      # ProfileController
+│   └── payment/              # Thanh toán
+│       ├── screens/          # PaymentScreen
+│       ├── widgets/          # PaymentMethodCard,...
+│       └── controllers/      # PaymentController
+├── navigation/               # Quản lý điều hướng (routes, navigator)
+├── app.dart                  # Widget gốc, cấu hình ứng dụng
+└── main.dart                 # Điểm nhập ứng dụng
+
+
+lib/core/services/
+├── api_service.dart          # Lớp cơ sở để gọi HTTP
+├── auth_service.dart         # API cho đăng nhập/đăng ký
+├── auction_service.dart      # API cho đấu giá
+├── user_service.dart         # API cho thông tin người dùng
+├── payment_service.dart      # API cho thanh toán
+└── websocket_service.dart    # WebSocket cho thời gian thực
