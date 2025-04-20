@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 public class EmailService {
     private final JavaMailSender mailSender;
 
+    @Value("${app.base-url}")
+    private String baseUrl;
+
     public void sendEmail(String to, String subject, String content) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -27,9 +30,6 @@ public class EmailService {
             throw new RuntimeException("Failed to send email", e);
         }
     }
-
-    @Value("${app.base-url}")
-    private String baseUrl;
 
     public void sendAccountVerificationEmail(String email, String verificationToken) {
         String verificationUrl = baseUrl + "/auth/verify-account?token=" + verificationToken + "&email=" + email;
@@ -73,6 +73,32 @@ public class EmailService {
                     <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
                 </div>
                 """, otp);
+
+        sendEmail(email, subject, content);
+    }
+
+    public void sendPasswordResetEmail(String email, String resetToken) {
+        String resetUrl = baseUrl + "/auth/reset-password?token=" + resetToken + "&email=" + email;
+
+        String subject = "Yêu cầu đặt lại mật khẩu";
+        String content = String.format(
+                """
+                <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 5px;">
+                    <h2 style="color: #333;">Đặt lại mật khẩu</h2>
+                    <p>Xin chào,</p>
+                    <p>Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng click vào nút bên dưới để tiến hành đặt lại mật khẩu:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="%s" style="background-color: #4285F4; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+                            Đặt lại mật khẩu
+                        </a>
+                    </div>
+                    <p>Hoặc bạn có thể copy đường link sau vào trình duyệt:</p>
+                    <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px;">%s</p>
+                    <p>Đường link này sẽ hết hạn sau 24 giờ.</p>
+                    <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này hoặc liên hệ với chúng tôi nếu bạn có bất kỳ thắc mắc nào.</p>
+                    <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
+                </div>
+                """, resetUrl, resetUrl);
 
         sendEmail(email, subject, content);
     }

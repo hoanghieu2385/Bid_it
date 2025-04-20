@@ -32,6 +32,7 @@ public class AuthService {
 
     @Value("${app.base-url}")
     private String appBaseUrl;
+
     public RegisterResponse register(RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
@@ -166,7 +167,6 @@ public class AuthService {
         String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponse(token);
     }
-   // FORGOT PASSWORD
 
     public ForgotPasswordResponse forgotPassword(String email) {
         // Check if user exists
@@ -176,17 +176,17 @@ public class AuthService {
         // Generate a reset token
         String resetToken = generateRandomToken();
 
-        // Save the token with expiration time
-        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        // Check if the user already has a token and update it instead of creating a new one
+        PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByUser(user)
+                .orElse(new PasswordResetToken());
+
         passwordResetToken.setToken(resetToken);
         passwordResetToken.setUser(user);
-        passwordResetToken.setExpiryDate(LocalDateTime.now().plusHours(24)); // Token valid for 24 hours
+        passwordResetToken.setExpiryDate(LocalDateTime.now().plusHours(1)); // Chinh thoi gian token valid o day
         passwordResetTokenRepository.save(passwordResetToken);
 
-        // Send reset password email
-        String resetLink = appBaseUrl + "/auth/reset-password?token=" + resetToken + "&email=" + email;
-        String emailContent = "Please click on the link below to reset your password:\n" + resetLink;
-        emailService.sendEmail(email, "Password Reset Request", emailContent);
+        // Send reset password email using the dedicated method
+        emailService.sendPasswordResetEmail(email, resetToken);
 
         return new ForgotPasswordResponse(true, "Password reset link has been sent to your email");
     }

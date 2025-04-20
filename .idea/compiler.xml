@@ -2,7 +2,6 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <annotationProcessing>
-      <profile default="true" name="Default" enabled="true" />
       <profile name="Maven default annotation processors profile" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -10,6 +9,8 @@
         <module name="bid-service" />
         <module name="user-service" />
         <module name="auction-service" />
+        <module name="category-service" />
+
       </profile>
     </annotationProcessing>
   </component>
@@ -17,6 +18,7 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="auction-service" options="-parameters" />
       <module name="bid-service" options="-parameters" />
+      <module name="category-service" options="-parameters" />
       <module name="user-service" options="-parameters" />
     </option>
   </component>
