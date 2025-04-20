@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@ValidAuctionTime(minGapMinutes = 0, message = "End time must be after start time")
+@ValidAuctionTime(minGapMinutes = 60, message = "End time must be after start time")
 public class AuctionRequestDTO {
 
     @NotBlank(message = "Title is required")

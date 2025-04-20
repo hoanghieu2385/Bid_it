@@ -14,5 +14,5 @@ public @interface ValidAuctionTime {
     Class<? extends Payload>[] payload() default {};
 
     // Optional: minimum gap in minutes between startTime and endTime
-    long minGapMinutes() default 1;
+    long minGapMinutes() default 60;
 }
