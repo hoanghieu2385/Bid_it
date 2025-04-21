@@ -5,6 +5,8 @@ import com.example.user.config.JwtUtil;
 import com.example.user.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +32,15 @@ public class AuthController {
             model.addAttribute("success", false);
         }
         return "verification-result";
+    }
+
+    @GetMapping("/auth/ping-authenticated")
+    @ResponseBody
+    public ResponseEntity<String> pingAuthenticated() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok("Authenticated as: " + auth.getName() +
+                ", Principal: " + auth.getPrincipal() +
+                ", Authorities: " + auth.getAuthorities());
     }
 
     @PostMapping("/register")

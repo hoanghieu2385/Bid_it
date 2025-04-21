@@ -58,13 +58,12 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // Gửi link xác thực qua email thay vì OTP
         verificationTokenService.sendVerificationToken(user.getEmail());
 
         return new RegisterResponse("Registration successful. Please check your email for verification link.");
     }
 
-    // Phương thức mới để xác thực email bằng token
+    // Xac nhan email = token
     public VerificationResponse verifyAccountByToken(String email, String token) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -87,7 +86,6 @@ public class AuthService {
         return new VerificationResponse("Email verified successfully");
     }
 
-    // Giữ lại phương thức cũ cho khả năng tương thích ngược
     public VerificationResponse verifyEmail(VerificationRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -169,14 +167,13 @@ public class AuthService {
     }
 
     public ForgotPasswordResponse forgotPassword(String email) {
-        // Check if user exists
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
-        // Generate a reset token
+        // Tao reset password token
         String resetToken = generateRandomToken();
 
-        // Check if the user already has a token and update it instead of creating a new one
+        // Kiem tra neu user da tao request reset roi
         PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByUser(user)
                 .orElse(new PasswordResetToken());
 
@@ -185,38 +182,38 @@ public class AuthService {
         passwordResetToken.setExpiryDate(LocalDateTime.now().plusHours(1)); // Chinh thoi gian token valid o day
         passwordResetTokenRepository.save(passwordResetToken);
 
-        // Send reset password email using the dedicated method
+        // Gui email reset password
         emailService.sendPasswordResetEmail(email, resetToken);
 
         return new ForgotPasswordResponse(true, "Password reset link has been sent to your email");
     }
 
     public ResetPasswordResponse resetPassword(ResetPasswordRequest request) {
-        // Validate passwords match
+        // Check password xem co match khong
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new RuntimeException("Passwords do not match");
         }
 
-        // Find user by email
+        // Tim email cua user xem co ton tai khong
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + request.getEmail()));
 
-        // Validate token
+        // Check token
         PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenAndUser(request.getToken(), user)
                 .orElseThrow(() -> new RuntimeException("Invalid or expired token"));
 
-        // Check if token is expired
+        // Check xem token da het han chua
         if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             passwordResetTokenRepository.delete(resetToken);
             throw new RuntimeException("Token has expired. Please request a new password reset");
         }
 
-        // Update password
+        // Cap nhat password
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
-        // Delete used token
+        // Xoa token neu cap nhat password thanh cong
         passwordResetTokenRepository.delete(resetToken);
 
         return new ResetPasswordResponse(true, "Password has been reset successfully");
