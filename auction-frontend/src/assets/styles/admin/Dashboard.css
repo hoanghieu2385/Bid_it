@@ -1,212 +1,418 @@
-/* Dashboard.css - Cập nhật topbar */
+/* Dashboard.css - CSS cho trang Dashboard admin */
+.dashboard-content {
+  font-size: 0.8rem; /* Giảm kích thước chữ mặc định */
+}
 
-/* Tổng thể */
+/* Reset và thiết lập cơ bản */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background-color: #f8f9fc;
+  color: #5a5c69;
+  margin: 0;
+  padding: 0;
+}
+
+/* Layout chính */
 #wrapper {
-    display: flex;
-    min-height: 100vh;
-    background-color: #f8f9fc;
+  display: flex;
+  height: 100vh;
+}
+
+#content-wrapper {
+  flex: 1;
+  overflow-x: hidden;
+  background-color: #f8f9fc;
+  zoom: 90%;
+}
+
+.dashboard-content {
+  padding: 1.5rem;
+}
+
+/* Page Heading */
+.page-heading h2 {
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: #363642;
+  margin-bottom: 1rem;
+}
+
+/* Card styles */
+.card {
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* Welcome Card */
+.welcome-card {
+  background-color: #4e73df;
+  color: white;
+  border-radius: 12px;
+  height: 100%;
+}
+
+.welcome-card h3 {
+  font-size: 1.75rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.welcome-card p {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.9;
+}
+
+/* Stats Cards */
+.stats-card {
+  background-color: white;
+  border-radius: 8px;
+  height: 100%;
+  transition: transform 0.2s;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+}
+
+.stats-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.user-icon {
+  background-color: rgba(255, 107, 138, 0.2);
+  color: #ff6b8a;
+}
+
+.auction-icon {
+  background-color: rgba(54, 185, 204, 0.2);
+  color: #36b9cc;
+}
+
+.sold-icon {
+  background-color: rgba(28, 200, 138, 0.2);
+  color: #1cc88a;
+}
+
+.dispute-icon {
+  background-color: rgba(246, 194, 62, 0.2);
+  color: #f6c23e;
+}
+
+.stats-card h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #363642;
+}
+
+.stats-card p {
+  font-size: 0.85rem;
+  color: #858796;
+  margin-bottom: 0;
+}
+
+/* Revenue Card */
+.revenue-card {
+  height: 100%;
+}
+
+.revenue-card h5 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #363642;
+}
+
+.revenue-card small {
+  font-size: 0.85rem;
+}
+
+.revenue-amount {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #363642;
+  margin-bottom: 0.5rem;
+}
+
+.revenue-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.time-selector .btn {
+  font-size: 0.8rem;
+}
+
+.time-selector .btn-primary {
+  background-color: #2391ff;
+  border-color: #2391ff;
+}
+
+.time-selector .btn-outline-secondary {
+  color: #6c757d;
+  border-color: #d1d3e2;
+}
+
+/* Revenue Chart */
+.revenue-chart {
+  margin-top: 1.5rem;
+}
+
+/* Category Card */
+.category-card {
+  height: 100%;
+}
+
+.category-card h5 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #363642;
+}
+
+.category-filter .btn {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.category-filter .btn-danger {
+  background-color: #e74a3b;
+  border-color: #e74a3b;
+}
+
+.category-item {
+  margin-bottom: 1.25rem;
+}
+
+.category-name {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #363642;
+}
+
+.category-revenue {
+  font-size: 0.9rem;
+  color: #858796;
+  font-weight: 500;
+}
+
+.progress {
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Auction Table */
+.table-card {
+  height: 100%;
+}
+
+.auction-table-container {
+  margin-top: 1rem;
+}
+
+.auction-table {
+  margin-bottom: 0;
+}
+
+.auction-table thead th {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #858796;
+  border-top: none;
+  border-bottom: 1px solid #e3e6f0;
+  padding: 0.75rem 0.5rem;
+}
+
+.auction-table tbody td {
+  vertical-align: middle;
+  padding: 1rem 0.5rem;
+  border-top: none;
+  border-bottom: 1px solid #f1f3f9;
+}
+
+.auction-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-right: 1rem;
+  background-color: #f8f9fc;
+}
+
+.auction-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auction-name {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #363642;
+  margin-bottom: 0.25rem;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auction-meta {
+  font-size: 0.75rem;
+  color: #858796;
+}
+
+.seller-name {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #363642;
+  margin-bottom: 0.25rem;
+}
+
+.verified-badge {
+  background-color: rgba(28, 200, 138, 0.2);
+  color: #1cc88a;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.seller-email {
+  font-size: 0.75rem;
+  color: #858796;
+}
+
+.auction-dates {
+  font-size: 0.85rem;
+  color: #5a5c69;
+}
+
+.auction-dates span {
+  color: #858796;
+  font-size: 0.75rem;
+}
+
+.current-price {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #363642;
+}
+
+.start-price {
+  font-size: 0.75rem;
+  color: #858796;
+  text-decoration: line-through;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+.status-opened {
+  background-color: rgba(28, 200, 138, 0.2);
+  color: #1cc88a;
+}
+
+.status-sold {
+  background-color: rgba(54, 185, 204, 0.2);
+  color: #36b9cc;
+}
+
+.status-disputing {
+  background-color: rgba(246, 194, 62, 0.2);
+  color: #f6c23e;
+}
+
+.view-btn {
+  background: none;
+  border: none;
+  color: #858796;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.view-btn:hover {
+  color: #2391ff;
+}
+
+/* Pagination */
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+}
+
+.showing-entries {
+  font-size: 0.85rem;
+  color: #858796;
+  display: flex;
+  align-items: center;
+}
+
+.showing-entries span {
+  margin-right: 0.5rem;
+  font-weight: 500;
+}
+
+.pagination .page-link {
+  border: none;
+  color: #5a5c69;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #2391ff;
+  color: white;
+}
+
+/* Button group */
+.btn-group .btn-primary {
+  background-color: #2391ff;
+  border-color: #2391ff;
+}
+
+.auction-filters .btn-primary {
+  background-color: #2391ff;
+  border-color: #2391ff;
+}
+
+/* Responsive Utilities */
+@media (max-width: 992px) {
+  .auction-name {
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .auction-name {
+    max-width: 100px;
   }
   
-  /* Topbar */
-  nav.bg-white {
-    display: flex;
-    justify-content: space-between; /* Thay đổi thành space-between để có thể đặt search bên trái */
-    align-items: center;
-    padding: 0.75rem 1.5rem;
-    border-bottom: 1px solid #e3e6f0;
-    width: 100%;
-    height: 70px;
-    background-color: #fff;
+  .auction-table thead th,
+  .auction-table tbody td {
+    padding: 0.5rem 0.25rem;
   }
-  
-  /* Thanh search trong topbar */
-  .search-form {
-    position: relative;
-    display: flex;
-    align-items: center;
-    margin-right: auto; /* Đẩy phần tìm kiếm sang trái */
-  }
-  
-  .search-form input {
-    border: 1px solid #e3e6f0;
-    border-radius: 2rem; /* Bo tròn hơn để giống hình */
-    padding: 0.4rem 1rem 0.4rem 2.5rem;
-    font-size: 0.85rem;
-    color: #6e707e;
-    width: 250px;
-  }
-  
-  .search-form button {
-    position: absolute;
-    left: 0.8rem;
-    background: none;
-    border: none;
-    color: #6e707e;
-    cursor: pointer;
-  }
-  
-  nav ul {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    align-items: center;
-  }
-  
-  nav ul li {
-    position: relative;
-    margin-left: 1rem;
-  }
-  
-  /* Nút tìm kiếm, thông báo và tin nhắn */
-  nav ul li button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #4e73df;
-    position: relative;
-    display: flex;
-    align-items: center;
-    padding: 0.5rem;
-    border-radius: 50%;
-    transition: background-color 0.2s;
-  }
-  
-  nav ul li button:hover {
-    background-color: #f8f9fc;
-  }
-  
-  /* Badge thông báo - Sửa lại cách hiển thị số */
-  nav ul li button span.absolute {
-    width: 18px; /* Đặt chiều rộng cố định */
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background-color: #e74a3b;
-    color: white;
-    font-size: 0.65rem;
-    height: 18px !important; /* Đặt chiều cao cố định */
-    border-radius: 9999px;
-    font-weight: bold;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0 4px; /* Đệm ngang để có không gian cho số */
-  }
-  
-  /* Dropdown cho thông báo và tin nhắn */
-  nav ul li .absolute {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    width: 20rem;
-    background-color: white;
-    border-radius: 0.35rem;
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-    z-index: 100;
-  }
-  
-  nav ul li .absolute h6 {
-    font-weight: bold;
-    font-size: 0.85rem;
-    padding: 0.75rem 1rem;
-    margin: 0;
-    border-bottom: 1px solid #e3e6f0;
-    color: #5a5c69;
-  }
-  
-  nav ul li .absolute .p-2 {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #e3e6f0;
-    font-size: 0.85rem;
-    color: #3a3b45;
-  }
-  
-  nav ul li .absolute .text-center {
-    text-align: center;
-    color: #4e73df;
-    font-size: 0.85rem;
-    padding: 0.75rem 1rem;
-    font-weight: 500;
-    cursor: pointer;
-  }
-  
-  /* Profile dropdown */
-  nav ul li:last-child button {
-    padding: 0;
-    display: flex;
-    align-items: center;
-  }
-  
-  nav ul li:last-child button span {
-    color: #5a5c69;
-    font-size: 0.85rem;
-    margin-right: 0.5rem;
-  }
-  
-  nav ul li:last-child button img {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    border: 1px solid #eaecf4;
-  }
-  
-  nav ul li:last-child .absolute {
-    width: 12rem;
-  }
-  
-  nav ul li:last-child .absolute a {
-    display: block;
-    padding: 0.5rem 1.5rem;
-    text-decoration: none;
-    color: #3a3b45;
-    font-size: 0.85rem;
-  }
-  
-  nav ul li:last-child .absolute a:hover {
-    background-color: #f8f9fc;
-    color: #4e73df;
-  }
-  
-  nav ul li:last-child .absolute .border-t {
-    border-top: 1px solid #e3e6f0;
-    margin: 0.3rem 0;
-  }
-  
-  /* Icons */
-  svg {
-    color: #d1d3e2;
-  }
-  
-  /* Responsive */
-  @media (max-width: 768px) {
-    nav ul li .absolute {
-      width: 18rem;
-    }
-    
-    nav ul li:last-child span {
-      display: none;
-    }
-    
-    .search-form input {
-      width: 180px;
-    }
-  }
-  
-  /* Thêm style cho thanh tìm kiếm giống trong ảnh */
-  .search-form input {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    transition: all 0.3s;
-  }
-  
-  .search-form input:focus {
-    border-color: #4e73df;
-    box-shadow: 0 0 0 0.2rem rgba(70, 70, 70, 0.25);
-    outline: none;
-  }
-  
-  /* Màu nền cho badge */
-  nav ul li button span.absolute {
-    background-color: #ff6b6b;
-  }
+}
