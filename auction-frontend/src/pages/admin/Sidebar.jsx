@@ -9,29 +9,13 @@ const Sidebar = () => {
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     
     // Refs để quản lý chiều cao của các dropdown
-    const dashboardRef = useRef(null);
-    const auctionRef = useRef(null);
     const paymentRef = useRef(null);
     
     // State để quản lý hiệu ứng animation của các dropdown
-    const [dashboardHeight, setDashboardHeight] = useState("0px");
-    const [auctionHeight, setAuctionHeight] = useState("0px");
     const [paymentHeight, setPaymentHeight] = useState("0px");
     
     // Dùng useEffect để tính toán chiều cao thực của các dropdown
     useEffect(() => {
-        if (isDashboardOpen) {
-            setDashboardHeight(`${dashboardRef.current.scrollHeight}px`);
-        } else {
-            setDashboardHeight("0px");
-        }
-        
-        if (isAuctionOpen) {
-            setAuctionHeight(`${auctionRef.current.scrollHeight}px`);
-        } else {
-            setAuctionHeight("0px");
-        }
-        
         if (isPaymentOpen) {
             setPaymentHeight(`${paymentRef.current.scrollHeight}px`);
         } else {
@@ -74,137 +58,21 @@ const Sidebar = () => {
             
             {/* Dashboard Menu */}
             <li className="nav-item">
-                <a 
-                    className={`nav-link ${isDashboardOpen ? '' : 'collapsed'}`}
-                    href="#"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        toggleCollapse('dashboard');
-                    }}
-                    data-toggle="collapse"
-                    data-target="#collapseDashboard"
-                    aria-expanded={isDashboardOpen}
-                    aria-controls="collapseDashboard"
-                >
+                <Link className="nav-link" to="/admin/dashboard">
                     <span>Dashboard</span>
-                </a>
-                <div 
-                    id="collapseDashboard" 
-                    ref={dashboardRef}
-                    className="collapse-container"
-                    style={{ 
-                        maxHeight: dashboardHeight,
-                        overflow: 'hidden',
-                        transition: 'max-height 0.3s ease'
-                    }}
-                >
-                    <div className="bg-white py-2 collapse-inner rounded">
-                        <Link 
-                            className={`collapse-item ${isDashboardOpen ? 'animate-item' : ''}`} 
-                            to="/dashboard/overview"
-                            style={{ 
-                                transitionDelay: '0.1s',
-                                opacity: isDashboardOpen ? 1 : 0,
-                                transform: isDashboardOpen ? 'translateY(0)' : 'translateY(-10px)',
-                                transition: 'opacity 0.3s ease, transform 0.3s ease'
-                            }}
-                        >
-                            Overview
-                        </Link>
-                        <Link 
-                            className={`collapse-item ${isDashboardOpen ? 'animate-item' : ''}`} 
-                            to="/dashboard/analytics"
-                            style={{ 
-                                transitionDelay: '0.2s',
-                                opacity: isDashboardOpen ? 1 : 0,
-                                transform: isDashboardOpen ? 'translateY(0)' : 'translateY(-10px)',
-                                transition: 'opacity 0.3s ease, transform 0.3s ease'
-                            }}
-                        >
-                            Analytics 
-                        </Link>
-                        <Link 
-                            className={`collapse-item ${isDashboardOpen ? 'animate-item' : ''}`} 
-                            to="/dashboard/reports"
-                            style={{ 
-                                transitionDelay: '0.3s',
-                                opacity: isDashboardOpen ? 1 : 0,
-                                transform: isDashboardOpen ? 'translateY(0)' : 'translateY(-10px)',
-                                transition: 'opacity 0.3s ease, transform 0.3s ease'
-                            }}
-                        >
-                            Reports
-                        </Link>
-                    </div>
-                </div>
+                </Link>
             </li>
+
+            <hr className="sidebar-divider d-none d-md-block" />
             
             {/* Auctions Menu */}
             <li className="nav-item">
-                <a 
-                    className={`nav-link ${isAuctionOpen ? '' : 'collapsed'}`}
-                    href="#"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        toggleCollapse('auction');
-                    }}
-                    data-toggle="collapse"
-                    data-target="#collapseAuction"
-                    aria-expanded={isAuctionOpen}
-                    aria-controls="collapseAuction"
-                >
+                <Link className="nav-link" to="/admin/auctions">
                     <span>Auctions</span>
-                </a>
-                <div 
-                    id="collapseAuction" 
-                    ref={auctionRef}
-                    className="collapse-container"
-                    style={{ 
-                        maxHeight: auctionHeight,
-                        overflow: 'hidden',
-                        transition: 'max-height 0.3s ease'
-                    }}
-                >
-                    <div className="bg-white py-2 collapse-inner rounded">
-                        <Link 
-                            className={`collapse-item ${isAuctionOpen ? 'animate-item' : ''}`} 
-                            to="/auctions/active"
-                            style={{ 
-                                transitionDelay: '0.1s',
-                                opacity: isAuctionOpen ? 1 : 0,
-                                transform: isAuctionOpen ? 'translateY(0)' : 'translateY(-10px)',
-                                transition: 'opacity 0.3s ease, transform 0.3s ease'
-                            }}
-                        >
-                            Active Auctions
-                        </Link>
-                        <Link 
-                            className={`collapse-item ${isAuctionOpen ? 'animate-item' : ''}`} 
-                            to="/auctions/reports"
-                            style={{ 
-                                transitionDelay: '0.2s',
-                                opacity: isAuctionOpen ? 1 : 0,
-                                transform: isAuctionOpen ? 'translateY(0)' : 'translateY(-10px)',
-                                transition: 'opacity 0.3s ease, transform 0.3s ease'
-                            }}
-                        >
-                            Auction Reports
-                        </Link>
-                        <Link 
-                            className={`collapse-item ${isAuctionOpen ? 'animate-item' : ''}`} 
-                            to="/auctions/disputes"
-                            style={{ 
-                                transitionDelay: '0.3s',
-                                opacity: isAuctionOpen ? 1 : 0,
-                                transform: isAuctionOpen ? 'translateY(0)' : 'translateY(-10px)',
-                                transition: 'opacity 0.3s ease, transform 0.3s ease'
-                            }}
-                        >
-                            Disputes
-                        </Link>
-                    </div>
-                </div>
+                </Link>
             </li>
+
+            <hr className="sidebar-divider d-none d-md-block" />
             
             {/* Payments Menu */}
             <li className="nav-item">
@@ -273,11 +141,15 @@ const Sidebar = () => {
                 </div>
             </li>
 
+            <hr className="sidebar-divider d-none d-md-block" />
+
             <li className="nav-item">
                 <Link className="nav-link" to="/users">
                     <span>Users</span>
                 </Link>
             </li>
+
+            <hr className="sidebar-divider d-none d-md-block" />
 
             <li className="nav-item">
                 <Link className="nav-link" to="/categories">
