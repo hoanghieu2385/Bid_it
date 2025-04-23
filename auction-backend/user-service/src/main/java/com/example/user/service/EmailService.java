@@ -3,6 +3,7 @@ package com.example.user.service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class EmailService {
     private final JavaMailSender mailSender;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     public void sendEmail(String to, String subject, String content) {
         try {
@@ -27,29 +31,35 @@ public class EmailService {
         }
     }
 
-    public void sendVerificationEmail(String email, String otp) {
+    public void sendAccountVerificationEmail(String email, String verificationToken) {
+        String verificationUrl = baseUrl + "/auth/verify-account?token=" + verificationToken + "&email=" + email;
+
         String subject = "Xác thực tài khoản của bạn";
         String content = String.format(
                 """
                 <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 5px;">
                     <h2 style="color: #333;">Xác thực tài khoản</h2>
                     <p>Xin chào,</p>
-                    <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng sử dụng mã OTP sau để xác thực tài khoản của bạn:</p>
-                    <div style="background-color: #f5f5f5; padding: 10px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; margin: 20px 0;">
-                        %s
+                    <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng click vào nút bên dưới để xác thực tài khoản:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="%s" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+                            Xác thực tài khoản
+                        </a>
                     </div>
-                    <p>Mã này sẽ hết hạn sau 5 phút.</p>
-                    <p>Xin vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+                    <p>Hoặc bạn có thể copy đường link sau vào trình duyệt:</p>
+                    <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px;">%s</p>
+                    <p>Đường link này sẽ hết hạn sau 24 giờ.</p>
+                    <p>Xin vui lòng không chia sẻ đường link này với bất kỳ ai.</p>
                     <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
                 </div>
-                """, otp);
+                """, verificationUrl, verificationUrl);
 
         sendEmail(email, subject, content);
     }
 
     public void sendLoginOtp(String email, String otp) {
         String subject = "Mã OTP đăng nhập của bạn";
-        String content = String.format(
+        String content =     String.format(
                 """
                 <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 5px;">
                     <h2 style="color: #333;">Mã OTP đăng nhập</h2>
@@ -63,6 +73,32 @@ public class EmailService {
                     <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
                 </div>
                 """, otp);
+
+        sendEmail(email, subject, content);
+    }
+
+    public void sendPasswordResetEmail(String email, String resetToken) {
+        String resetUrl = baseUrl + "/auth/reset-password?token=" + resetToken + "&email=" + email;
+
+        String subject = "Yêu cầu đặt lại mật khẩu";
+        String content = String.format(
+                """
+                <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 5px;">
+                    <h2 style="color: #333;">Đặt lại mật khẩu</h2>
+                    <p>Xin chào,</p>
+                    <p>Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng click vào nút bên dưới để tiến hành đặt lại mật khẩu:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="%s" style="background-color: #4285F4; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+                            Đặt lại mật khẩu
+                        </a>
+                    </div>
+                    <p>Hoặc bạn có thể copy đường link sau vào trình duyệt:</p>
+                    <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px;">%s</p>
+                    <p>Đường link này sẽ hết hạn sau 24 giờ.</p>
+                    <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này hoặc liên hệ với chúng tôi nếu bạn có bất kỳ thắc mắc nào.</p>
+                    <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
+                </div>
+                """, resetUrl, resetUrl);
 
         sendEmail(email, subject, content);
     }
