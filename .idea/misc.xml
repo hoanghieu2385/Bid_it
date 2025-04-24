@@ -7,6 +7,11 @@
         <option value="$PROJECT_DIR$/auction-backend/bid-service/pom.xml" />
         <option value="$PROJECT_DIR$/auction-backend/user-service/pom.xml" />
         <option value="$PROJECT_DIR$/auction-backend/auction-service/pom.xml" />
+        <option value="$PROJECT_DIR$/auction-backend/category-service/pom.xml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_23" default="true" project-jdk-name="23" project-jdk-type="JavaSDK">
       </list>
     </option>
   </component>

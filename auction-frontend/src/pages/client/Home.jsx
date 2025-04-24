@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import '../../assets/styles/client/home.css';
 import Banner from '../../components/client/home/Banner.jsx';
-
+import Categories from '../../components/client/home/Category.jsx';
 
 const Home = () => {
     // Sample data for featured auctions
@@ -30,98 +30,40 @@ const Home = () => {
         },
     ];
 
-    // Sample data for categories
-    const categories = [
-        { id: 1, name: 'Electronics', icon: 'bi bi-laptop' },
-        { id: 2, name: 'Fashion', icon: 'bi bi-handbag' },
-        { id: 3, name: 'Home & Garden', icon: 'bi bi-house-door' },
-        { id: 4, name: 'Collectibles', icon: 'bi bi-star' },
-        { id: 5, name: 'Sports', icon: 'bi bi-bicycle' },
-        { id: 6, name: 'Jewelry', icon: 'bi bi-gem' },
-        { id: 7, name: 'Art', icon: 'bi bi-brush' },
-        { id: 8, name: 'Books', icon: 'bi bi-book' }
-    ];
-
-    // Reference for the categories container to handle auto-scroll
-    const categoriesRef = useRef(null);
-
-    // Auto-scroll effect (optional)
-    useEffect(() => {
-        const container = categoriesRef.current;
-        if (!container) return;
-
-        let scrollAmount = 0;
-        const scrollSpeed = 1; // Adjust speed of auto-scroll
-        const scrollInterval = setInterval(() => {
-            scrollAmount += scrollSpeed;
-            container.scrollLeft = scrollAmount;
-
-            // Reset scroll when reaching the end
-            if (scrollAmount >= container.scrollWidth - container.clientWidth) {
-                scrollAmount = 0;
-            }
-        }, 30); // Adjust interval for smoother scrolling
-
-        return () => clearInterval(scrollInterval); // Cleanup on unmount
-    }, []);
-
     return (
-        <div className="client-home">
+        <div className="home-container">
             {/* Banner Section */}
             <Banner />
 
-            {/* Categories Section with Horizontal Scroll */}
-            <section className="categories-section py-5 bg-white">
-                <div className="container">
-                    <h2 className="client-section-title text-center mb-4">Explore Categories</h2>
-                    <div className="categories-scroll-container" ref={categoriesRef}>
-                        <div className="categories-scroll d-flex">
-                            {categories.map((category) => (
-                                <div key={category.id} className="category-wrapper">
-                                    <Link
-                                        to={`/category/${category.id}`}
-                                        className="category-item d-flex flex-column align-items-center text-decoration-none"
-                                    >
-                                        <div className="category-icon mb-2 text-secondary d-flex align-items-center justify-content-center">
-                                            <i className={`${category.icon} fs-4`}></i>
-                                        </div>
-                                        <span className="category-name small text-center text-secondary">
-                                            {category.name}
-                                        </span>
-                                    </Link>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
+            {/* Categories Section */}
+            <Categories />
 
             {/* Featured Auctions Section */}
-            <section className="client-home-auctions py-5">
+            <section className="home-auctions py-5">
                 <div className="container">
-                    <h2 className="client-section-title text-center mb-5">Featured Auctions</h2>
+                    <h2 className="home-section-title text-center mb-5">Featured Auctions</h2>
                     <div className="row">
                         {featuredAuctions.map((auction) => (
                             <div key={auction.id} className="col-12 col-md-6 col-lg-4 mb-4">
-                                <div className="card client-auction-card h-100">
+                                <div className="card home-auction-card h-100">
                                     <img
                                         src={auction.image}
-                                        className="card-img-top client-auction-img"
+                                        className="card-img-top home-auction-img"
                                         alt={auction.title}
                                     />
                                     <div className="card-body">
-                                        <h5 className="card-title client-auction-title">{auction.title}</h5>
-                                        <p className="card-text client-auction-bid">
+                                        <h5 className="card-title home-auction-title">{auction.title}</h5>
+                                        <p className="card-text home-auction-bid">
                                             Current Bid: <span>{auction.currentBid.toLocaleString('vi-VN')} VNĐ</span>
                                         </p>
-                                        <p className="card-text client-auction-time">
+                                        <p className="card-text home-auction-time">
                                             Ends: {new Date(auction.endTime).toLocaleString('vi-VN')}
                                         </p>
                                     </div>
                                     <div className="card-footer text-center border-0">
                                         <Link
                                             to={`/auctions/${auction.id}`}
-                                            className="btn btn-outline-primary client-auction-btn"
+                                            className="btn btn-outline-primary home-auction-btn"
                                         >
                                             Bid Now
                                         </Link>
@@ -131,7 +73,7 @@ const Home = () => {
                         ))}
                     </div>
                     <div className="text-center mt-4">
-                        <Link to="/auctions" className="btn btn-link client-view-all">
+                        <Link to="/auctions" className="btn btn-link home-view-all">
                             View All Auctions
                         </Link>
                     </div>
