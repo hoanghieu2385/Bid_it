@@ -38,7 +38,7 @@ public class OtpService {
                 .build();
 
         otpRepository.save(otpEntity);
-        emailService.sendVerificationEmail(email, otp);
+        emailService.sendAccountVerificationEmail(email, otp);
     }
 
     public void sendLoginOtp(String email) {

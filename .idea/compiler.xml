@@ -10,7 +10,6 @@
         <module name="user-service" />
         <module name="auction-service" />
         <module name="category-service" />
-
       </profile>
     </annotationProcessing>
   </component>
