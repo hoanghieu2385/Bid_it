@@ -26,7 +26,8 @@ public class VerificationTokenService {
         String token = generateVerificationToken();
         LocalDateTime expiryDate = LocalDateTime.now().plusHours(tokenExpirationHours);
 
-        VerificationToken verificationToken = VerificationToken.builder()
+        // Sử dụng builder thủ công
+        VerificationToken verificationToken = new VerificationToken.Builder()
                 .email(email)
                 .token(token)
                 .expiryDate(expiryDate)

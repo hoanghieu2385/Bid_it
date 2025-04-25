@@ -3,17 +3,22 @@ package com.example.user.controller;
 import com.example.user.Dtos.UserUpdateRequest;
 import com.example.user.model.User;
 import com.example.user.service.UserService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
-@RequiredArgsConstructor
 public class UserController {
+
     private final UserService userService;
+
+    // Constructor thay thế cho @RequiredArgsConstructor
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
