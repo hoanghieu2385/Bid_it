@@ -8,6 +8,11 @@ services:
     networks:
       - auction-network
     restart: unless-stopped
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8761"]
+    #   interval: 20s
+    #   timeout: 10s
+    #   retries: 10
 
   api-gateway:
     build:
@@ -17,7 +22,7 @@ services:
       - "8080:8080"
     depends_on:
       discovery-service:
-        condition: service_started
+        condition: service_healthy
     networks:
       - auction-network
     restart: unless-stopped
@@ -31,7 +36,7 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: --default-authentication-plugin=mysql_native_password --bind-address=0.0.0.0
+    command: --default-authentication-plugin=mysql_native_password --bind-address=0.0.0.0 # Use mysql_native_password for compatibility
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p123456"]
       interval: 20s
@@ -60,58 +65,23 @@ services:
     build:
       context: ./category-service
       dockerfile: Dockerfile
+    ports:
+      - "8084:8084"
     environment:
       - SPRING_APPLICATION_NAME=category-service
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/category_service?createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=123456
+      - SERVER_PORT=8084
     depends_on:
       discovery-service:
-        condition: service_started
+        condition: service_healthy
       mysql:
         condition: service_healthy
     networks:
       - auction-network
     restart: unless-stopped
-
-  # auction-service:
-  #   build:
-  #     context: ./auction-service
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     - SPRING_APPLICATION_NAME=auction-service
-  #     - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
-  #     - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/auction_service?createDatabaseIfNotExist=true
-  #     - SPRING_DATASOURCE_USERNAME=root
-  #     - SPRING_DATASOURCE_PASSWORD=123456
-  #   depends_on:
-  #     discovery-service:
-  #       condition: service_started
-  #     mysql:
-  #       condition: service_healthy
-  #   networks:
-  #     - auction-network
-  #   restart: unless-stopped
-
-  # user-service:
-  #   build:
-  #     context: ./user-service
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     - SPRING_APPLICATION_NAME=user-service
-  #     - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
-  #     - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/user_service?createDatabaseIfNotExist=true
-  #     - SPRING_DATASOURCE_USERNAME=root
-  #     - SPRING_DATASOURCE_PASSWORD=123456
-  #   depends_on:
-  #     discovery-service:
-  #       condition: service_started
-  #     mysql:
-  #       condition: service_healthy
-  #   networks:
-  #     - auction-network
-  #   restart: unless-stopped
 
 networks:
   auction-network: {}
