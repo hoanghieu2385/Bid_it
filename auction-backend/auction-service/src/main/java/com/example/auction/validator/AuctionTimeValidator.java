@@ -13,56 +13,28 @@ public class AuctionTimeValidator implements ConstraintValidator<ValidAuctionTim
     @Override
     public void initialize(ValidAuctionTime constraintAnnotation) {
         this.minGapMinutes = constraintAnnotation.minGapMinutes();
-        System.out.println("✅ AuctionTimeValidator initialized with minGapMinutes = " + minGapMinutes);
+        System.out.println("✅ Initialized with minGapMinutes = " + minGapMinutes);
     }
 
     @Override
     public boolean isValid(AuctionRequestDTO auctionRequest, ConstraintValidatorContext context) {
         System.out.println("🔍 AuctionTimeValidator is running!");
 
-        if (auctionRequest == null) {
-            System.out.println("❌ auctionRequest is null");
-            return true;
-        }
+        if (auctionRequest == null) return true;
 
-        System.out.println("➡️  startTime: " + auctionRequest.getStartTime());
-        System.out.println("➡️  endTime: " + auctionRequest.getEndTime());
+        LocalDateTime start = auctionRequest.getStartTime();
+        LocalDateTime end = auctionRequest.getEndTime();
 
-        if (auctionRequest.getStartTime() == null || auctionRequest.getEndTime() == null) {
-            return true;
-        }
+        if (start == null || end == null) return true;
 
-        return auctionRequest.getEndTime().isAfter(auctionRequest.getStartTime().plusMinutes(minGapMinutes));
+        if (end.isAfter(start.plusMinutes(minGapMinutes))) return true;
+
+        context.disableDefaultConstraintViolation();
+        context.buildConstraintViolationWithTemplate(
+                "Auction end time must be at least " + minGapMinutes + " minutes after start time"
+        ).addPropertyNode("auctionTimeError").addConstraintViolation();
+
+        return false;
     }
-
-    // Temporary commented out to test what data is being received by the DTO
-//    @Override
-//    public boolean isValid(AuctionRequestDTO auctionRequest, ConstraintValidatorContext context) {
-//        System.out.println("🔍 AuctionTimeValidator is running!");
-//
-//        if (auctionRequest == null) {
-//            return true; // Let @NotNull handle it
-//        }
-//
-//        LocalDateTime start = auctionRequest.getStartTime();
-//        LocalDateTime end = auctionRequest.getEndTime();
-//
-//        if (start == null || end == null) {
-//            return true; // Let field-level @NotNull handle this
-//        }
-//
-//        // Check the time gap
-//        LocalDateTime minEndTime = start.plusMinutes(minGapMinutes);
-//        if (end.isAfter(minEndTime)) {
-//            return true;
-//        }
-//
-//        // Build custom error message
-//        context.disableDefaultConstraintViolation();
-//        context.buildConstraintViolationWithTemplate(
-//                "endTime must be at least " + minGapMinutes + " minutes after startTime"
-//        ).addConstraintViolation();
-//
-//        return false;
-//    }
 }
+

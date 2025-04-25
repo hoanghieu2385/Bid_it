@@ -30,7 +30,7 @@ public class AuctionController {
     }
 
     @PostMapping
-    public ResponseEntity<AuctionResponseDTO> createAuction(@Valid @RequestBody AuctionRequestDTO auctionRequest) {
+    public ResponseEntity<AuctionResponseDTO> createAuction(@RequestBody @Valid AuctionRequestDTO auctionRequest) {
         Auction auction = new Auction.Builder()
                 .title(auctionRequest.getTitle())
                 .description(auctionRequest.getDescription())
