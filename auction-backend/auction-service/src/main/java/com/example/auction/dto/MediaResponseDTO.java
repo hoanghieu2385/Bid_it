@@ -1,41 +1,15 @@
-package com.example.auction.model;
-
-import jakarta.persistence.*;
+package com.example.auction.dto;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "media")
-public class Media {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class MediaResponseDTO {
     private Long id;
-
-    @Column(name = "auction_id", nullable = false)
-    private Long auctionId;
-
-    @Column(name = "public_id", length = 100)
-    private String publicId;
-
-    @Column(name = "url", length = 255)
     private String url;
-
-    @Column(name = "format", length = 10)
+    private String publicId;
     private String format;
-
-    @Column(name = "resource_type", length = 20)
     private String resourceType;
-
-    @Column(name = "is_thumbnail")
     private Boolean isThumbnail;
-
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
-
-    public Media() {
-        this.createdAt = LocalDateTime.now();
-    }
 
     public Long getId() {
         return id;
@@ -45,12 +19,12 @@ public class Media {
         this.id = id;
     }
 
-    public Long getAuctionId() {
-        return auctionId;
+    public String getUrl() {
+        return url;
     }
 
-    public void setAuctionId(Long auctionId) {
-        this.auctionId = auctionId;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public String getPublicId() {
@@ -59,14 +33,6 @@ public class Media {
 
     public void setPublicId(String publicId) {
         this.publicId = publicId;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
     }
 
     public String getFormat() {
