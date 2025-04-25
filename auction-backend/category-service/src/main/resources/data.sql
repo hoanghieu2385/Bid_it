@@ -1,3 +1,4 @@
+-- data.sql
 INSERT INTO category (name, icon, description, commission_rate, created_at, updated_at) 
 VALUES 
 ('Electronics', 'bi-laptop', 'All electronic items', 5.0, NOW(), NOW()),
