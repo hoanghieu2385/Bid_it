@@ -9,6 +9,7 @@ import HowItWork from '../pages/client/HowItWork.jsx';
 import Auction from '../pages/client/Auction.jsx';
 import ViewDetail from '../pages/client/ViewDetail.jsx';
 import Blog from '../pages/client/Blog.jsx';
+import BlogPostDetail from '../pages/client/BlogPostDetail.jsx';
 
 function ClientRoutes() {
 	return (
@@ -22,6 +23,7 @@ function ClientRoutes() {
 				<Route path="/auctions" element={<Auction />} />
 				<Route path="/auctions/viewdetail" element={<ViewDetail />} />
 				<Route path="/blog" element={<Blog />} />
+				<Route path="/blog/:id" element={<BlogPostDetail />} />
 			</Route>
 		</Routes>
 	);

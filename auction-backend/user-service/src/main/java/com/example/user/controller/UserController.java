@@ -1,4 +1,6 @@
 package com.example.user.controller;
+
+import com.example.user.Dtos.UserUpdateRequest;
 import com.example.user.model.User;
 import com.example.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -33,5 +35,29 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/profile")
+    public ResponseEntity<?> updateUserProfile(
+            @PathVariable Long id,
+            @RequestBody UserUpdateRequest updateRequest) {
+        try {
+            User updatedUser = userService.updateUserProfile(id, updateRequest);
+            return ResponseEntity.ok(updatedUser);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<User> getCurrentUserProfile() {
+        try {
+            User currentUser = userService.getCurrentUserProfile();
+            return ResponseEntity.ok(currentUser);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

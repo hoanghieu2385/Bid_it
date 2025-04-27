@@ -10,11 +10,14 @@ import com.example.auction.service.AuctionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Validated
 @RestController
 @RequestMapping("/api/auctions")
 public class AuctionController {
@@ -27,8 +30,8 @@ public class AuctionController {
     }
 
     @PostMapping
-    public ResponseEntity<AuctionResponseDTO> createAuction(@Valid @RequestBody AuctionRequestDTO auctionRequest) {
-        Auction auction = Auction.builder()
+    public ResponseEntity<AuctionResponseDTO> createAuction(@RequestBody @Valid AuctionRequestDTO auctionRequest) {
+        Auction auction = new Auction.Builder()
                 .title(auctionRequest.getTitle())
                 .description(auctionRequest.getDescription())
                 .sellerId(auctionRequest.getSellerId())
@@ -67,6 +70,38 @@ public class AuctionController {
         return ResponseEntity.ok(mapToResponseDTO(auction));
     }
 
+    @GetMapping("/search/status")
+    public ResponseEntity<List<AuctionResponseDTO>> searchAuctionsByStatus(
+            @RequestParam String status) {
+
+        List<Auction> auctions;
+        try {
+            AuctionStatus auctionStatus = AuctionStatus.valueOf(status.toUpperCase());
+            auctions = auctionService.findAuctionsByStatus(auctionStatus);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<AuctionResponseDTO> response = auctions.stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search/category")
+    public ResponseEntity<List<AuctionResponseDTO>> searchAuctionsByCategory(
+            @RequestParam Long categoryId) {
+
+        List<Auction> auctions = auctionService.findAuctionsByCategory(categoryId);
+
+        List<AuctionResponseDTO> response = auctions.stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
     @PutMapping("/{id}/status")
     public ResponseEntity<AuctionResponseDTO> updateAuctionStatus(
             @PathVariable Long id,
@@ -89,9 +124,61 @@ public class AuctionController {
         return ResponseEntity.ok(mapToResponseDTO(updatedAuction));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<AuctionResponseDTO> updateAuction(
+            @PathVariable Long id,
+            @Valid @RequestBody AuctionRequestDTO auctionRequestDTO) {
+
+        Auction existingAuction = auctionService.getAuctionById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
+
+        // Check if auction has already started
+        if (existingAuction.getStartTime().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(null); // Alternatively, you can return an error message
+        }
+
+        // Update fields based on the DTO
+        existingAuction.setTitle(auctionRequestDTO.getTitle());
+        existingAuction.setDescription(auctionRequestDTO.getDescription());
+        existingAuction.setSellerId(auctionRequestDTO.getSellerId());
+        existingAuction.setCategoryId(auctionRequestDTO.getCategoryId());
+        existingAuction.setStartTime(auctionRequestDTO.getStartTime());
+        existingAuction.setEndTime(auctionRequestDTO.getEndTime());
+        existingAuction.setStartingPrice(auctionRequestDTO.getStartingPrice());
+        existingAuction.setIncrementAmount(auctionRequestDTO.getIncrementAmount());
+        existingAuction.setCurrentBid(auctionRequestDTO.getCurrentBid());
+        existingAuction.setRequiresDeposit(auctionRequestDTO.getRequiresDeposit());
+        existingAuction.setSecurityDeposit(auctionRequestDTO.getSecurityDeposit());
+
+        if (auctionRequestDTO.getStatus() != null) {
+            try {
+                existingAuction.setStatus(AuctionStatus.valueOf(auctionRequestDTO.getStatus().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+
+        if (auctionRequestDTO.getBidCount() != null) {
+            existingAuction.setBidCount(auctionRequestDTO.getBidCount());
+        }
+
+        Auction updatedAuction = auctionService.updateAuction(existingAuction);
+        return ResponseEntity.ok(mapToResponseDTO(updatedAuction));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAuction(@PathVariable Long id) {
+        Auction auction = auctionService.getAuctionById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
+
+        auctionService.deleteAuction(auction.getId());
+        return ResponseEntity.noContent().build();
+    }
+
     // Helper method to map Auction entity to AuctionResponseDTO
     private AuctionResponseDTO mapToResponseDTO(Auction auction) {
-        return AuctionResponseDTO.builder()
+        return new AuctionResponseDTO.Builder()
                 .id(auction.getId())
                 .title(auction.getTitle())
                 .description(auction.getDescription())
