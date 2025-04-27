@@ -1,32 +1,4 @@
 services:
-  discovery-service:
-    build:
-      context: ./discovery-service
-      dockerfile: Dockerfile
-    ports:
-      - "8761:8761"
-    networks:
-      - auction-network
-    restart: unless-stopped
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:8761"]
-    #   interval: 20s
-    #   timeout: 10s
-    #   retries: 10
-
-  api-gateway:
-    build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    depends_on:
-      discovery-service:
-        condition: service_healthy
-    networks:
-      - auction-network
-    restart: unless-stopped
-
   mysql:
     image: mysql:8.0
     ports:
@@ -36,7 +8,7 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: --default-authentication-plugin=mysql_native_password --bind-address=0.0.0.0 # Use mysql_native_password for compatibility
+    command: --default-authentication-plugin=mysql_native_password --bind-address=0.0.0.0
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p123456"]
       interval: 20s
@@ -56,6 +28,35 @@ services:
       - PMA_PASSWORD=123456
     depends_on:
       mysql:
+        condition: service_healthy
+    networks:
+      - auction-network
+    restart: unless-stopped
+
+  discovery-service:
+    build:
+      context: ./discovery-service
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    networks:
+      - auction-network
+    restart: unless-stopped
+    healthcheck: 
+      test: ["CMD", "curl", "-f", "http://localhost:8761"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s 
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      discovery-service:
         condition: service_healthy
     networks:
       - auction-network
