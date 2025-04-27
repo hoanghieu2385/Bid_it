@@ -83,7 +83,7 @@ services:
     networks:
       - auction-network
     restart: unless-stopped
-    user-service:
+  user-service:
     build: user-service
     depends_on:
       mysql:
