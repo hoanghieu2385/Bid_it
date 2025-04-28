@@ -4,6 +4,7 @@ import com.example.category.dto.CategoryCreateRequest;
 import com.example.category.dto.CategoryDTO;
 import com.example.category.dto.CategoryUpdateRequest;
 import com.example.category.service.ICategoryService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,7 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoryDTO> createCategory(@RequestBody CategoryCreateRequest request) {
+    public ResponseEntity<CategoryDTO> createCategory(@RequestBody @Valid CategoryCreateRequest request) {
         return ResponseEntity.ok(categoryService.createCategory(request));
     }
 
@@ -34,7 +35,7 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Integer id, @RequestBody CategoryUpdateRequest request) {
+    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Integer id, @RequestBody @Valid CategoryUpdateRequest request) {
         return ResponseEntity.ok(categoryService.updateCategory(id, request));
     }
 
