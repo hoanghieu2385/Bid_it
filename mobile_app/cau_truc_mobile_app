@@ -3,6 +3,7 @@ lib/
 │   ├── models/               # Data models (Auction, Bid, User,...)
 │   ├── services/             # API, authentication, push notification, storage
 │   ├── utils/                # Constants, formatters, helpers (date, currency,...)
+|   ├── widgets/              # Các widgets tái sử dụng (Button...)
 │   └── providers/            # State management (Riverpod, Provider,...)
 ├── features/                 # Các module tính năng của ứng dụng
 │   ├── auth/                 # Đăng nhập, đăng ký
