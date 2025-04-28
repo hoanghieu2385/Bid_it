@@ -1,12 +1,23 @@
 package com.example.category.dto;
 
-public class CategoryCreateRequest {
-    private String name;
-    private String icon;
-    private String description;
-    private Double commissionRate;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 
-    // Getters and Setters
+import java.math.BigDecimal;
+
+public class CategoryCreateRequest {
+    @NotBlank(message = "Name is required")
+    private String name;
+
+    private String icon;
+
+    private String description;
+
+    @NotNull(message = "Commission rate is required")
+    @PositiveOrZero(message = "Commission rate must be zero or positive")
+    private BigDecimal commissionRate;
+
     public String getName() {
         return name;
     }
@@ -31,11 +42,11 @@ public class CategoryCreateRequest {
         this.description = description;
     }
 
-    public Double getCommissionRate() {
+    public BigDecimal getCommissionRate() {
         return commissionRate;
     }
 
-    public void setCommissionRate(Double commissionRate) {
+    public void setCommissionRate(BigDecimal commissionRate) {
         this.commissionRate = commissionRate;
     }
 }
