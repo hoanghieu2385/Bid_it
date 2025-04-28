@@ -1,5 +1,8 @@
 import 'package:mobile_app/core/constants/app_colors.dart';
+import 'package:mobile_app/core/utils/navigation.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
+import 'package:mobile_app/features/auth/screens/login_screen.dart';
+import 'package:mobile_app/features/auth/screens/register_screen.dart';
 import 'package:mobile_app/features/search/screens/search_screen.dart';
 import 'package:mobile_app/features/auction/screens/watchlist_screen.dart';
 import 'package:mobile_app/features/auction/screens/create_aution.dart';
@@ -33,19 +36,134 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Image.asset('assets/images/logo.png'),
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: AppColors.black),
+          onPressed: () {
+            Scaffold.of(context).openDrawer();
+          },
         ),
-        title: const Text('AuctionHub'),
+        title: Row(
+          children: [
+            const SizedBox(width: 8),
+            const Text(
+              'AuctionHub',
+              style: TextStyle(
+                color: AppColors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
+            icon: const Icon(Icons.notifications_outlined, color: AppColors.black),
             onPressed: () {
               print('Notifications pressed');
             },
           ),
         ],
+        backgroundColor: AppColors.white,
+        elevation: 0,
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: AppColors.grey.withOpacity(0.1),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(width: 10),
+                  const Text(
+                    'AuctionHub',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('Home'),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedIndex = 0;
+                });
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.search),
+              title: const Text('Search'),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedIndex = 1;
+                });
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_circle_outline),
+              title: const Text('Create Auction'),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedIndex = 2;
+                });
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.favorite_border),
+              title: const Text('Watchlist'),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedIndex = 3;
+                });
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: const Text('Profile'),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedIndex = 4;
+                });
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.login),
+              title: const Text('Sign In'),
+              onTap: () {
+                Navigator.pop(context);
+                navigateTo(context, const LoginPage());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_add),
+              title: const Text('Register'),
+              onTap: () {
+                Navigator.pop(context);
+                navigateTo(context, const RegisterPage());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () {
+                Navigator.pop(context);
+                print('Logout pressed');
+              },
+            ),
+          ],
+        ),
       ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -65,6 +183,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
 class HomeContent extends StatelessWidget {
   const HomeContent({super.key});
 
@@ -146,6 +265,7 @@ class HomeContent extends StatelessWidget {
     );
   }
 }
+
 class CategoryItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -173,6 +293,7 @@ class CategoryItem extends StatelessWidget {
     );
   }
 }
+
 class AuctionList extends StatelessWidget {
   const AuctionList({super.key});
 
@@ -180,22 +301,24 @@ class AuctionList extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> auctionItems = [
       {
-        'image': 'https://via.placeholder.com/150',
+        'image': 'assets/images/product-img.jpg',
         'title': 'Toyota AIGID a Class',
         'seller': 'Christopher Anderson',
-        'sellerImage': 'https://via.placeholder.com/50',
+        'sellerImage': 'assets/images/seller1.jpg',
         'startingPrice': '\$90,000.00',
         'currentBid': '\$90,000.00',
-        'bids': 38,
+        'bids': 0,
+        'timeLeft': '04:15:50:38',
       },
       {
-        'image': 'https://via.placeholder.com/150',
+        'image': 'assets/images/product-img.jpg',
         'title': 'Havit HV-091 USB Black',
         'seller': 'Double Game Pad',
-        'sellerImage': 'https://via.placeholder.com/50',
-        'startingPrice': '\$90,000.00',
-        'currentBid': '\$90,000.00',
-        'bids': 38,
+        'sellerImage': 'assets/images/seller2.jpg',
+        'startingPrice': '\$120.00',
+        'currentBid': '\$120.00',
+        'bids': 0,
+        'timeLeft': '01:15:50:38',
       },
     ];
 
@@ -212,6 +335,15 @@ class AuctionList extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  // child: Image.asset(
+                  //   item['image'],
+                  //   width: 120,
+                  //   height: 120,
+                  //   fit: BoxFit.cover,
+                  // ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -229,7 +361,7 @@ class AuctionList extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 12,
-                            backgroundImage: NetworkImage(item['sellerImage']),
+                            backgroundImage: AssetImage(item['sellerImage']),
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -291,6 +423,20 @@ class AuctionList extends StatelessWidget {
                             },
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        item['timeLeft'],
+                        style: const TextStyle(fontSize: 14, color: AppColors.grey),
+                      ),
+                      const SizedBox(height: 8),
+                      CustomButton(
+                        text: 'Join Auction',
+                        onPressed: () {
+                          print('Join Auction pressed for ${item['title']}');
+                        },
+                        backgroundColor: AppColors.black,
+                        textColor: AppColors.white,
                       ),
                     ],
                   ),
