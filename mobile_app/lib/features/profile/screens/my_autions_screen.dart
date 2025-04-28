@@ -1,160 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 
-class MyAuctionsScreen extends StatelessWidget {
-  const MyAuctionsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Auctions'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () => _shareAuction(context),
-            tooltip: 'Share Auction',
-          ),
-          IconButton(
-            icon: const Icon(Icons.favorite_border),
-            onPressed: () => _addToWatchlist(context),
-            tooltip: 'Add to Watchlist',
-          ),
-        ],
-      ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: _buildSearchBar()),
-          SliverToBoxAdapter(child: _buildCategoriesHeader()),
-          SliverToBoxAdapter(child: _buildCategoryList()),
-          SliverToBoxAdapter(child: _buildAuctionsHeader()),
-          const SliverFillRemaining(child: MyAuctionList()),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: 'Search my auctions',
-          prefixIcon: const Icon(Icons.search, color: AppColors.grey),
-          filled: true,
-          fillColor: AppColors.grey.withOpacity(0.1),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        onChanged: (value) {
-          // Implement search logic here
-          debugPrint('Search query: $value');
-        },
-      ),
-    );
-  }
-
-  Widget _buildCategoriesHeader() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Text(
-        'Categories',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _buildCategoryList() {
-    return SizedBox(
-      height: 100,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        children: const [
-          CategoryItem(icon: Icons.directions_car, label: 'Cars/Trucks'),
-          CategoryItem(icon: Icons.motorcycle, label: 'Motorcycles'),
-          CategoryItem(icon: Icons.diamond, label: 'Jewelry'),
-          CategoryItem(icon: Icons.watch, label: 'Watches'),
-          CategoryItem(icon: Icons.electrical_services, label: 'Electronics'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAuctionsHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'My Auctions',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          TextButton(
-            onPressed: () {
-              debugPrint('View All pressed');
-            },
-            child: const Text(
-              'View All',
-              style: TextStyle(color: AppColors.black),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _shareAuction(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Sharing auction...')),
-    );
-  }
-
-  void _addToWatchlist(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Added to watchlist')),
-    );
-  }
-}
-
-class CategoryItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const CategoryItem({super.key, required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 16.0),
-      child: InkWell(
-        onTap: () {
-          debugPrint('Category $label tapped');
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: Colors.orange.withOpacity(0.2),
-              child: Icon(icon, size: 30, color: Colors.orange),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 14),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class MyAuctionList extends StatelessWidget {
   const MyAuctionList({super.key});
 
@@ -182,112 +28,170 @@ class MyAuctionList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      key: const ValueKey('auction_list'),
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 16.0),
       itemCount: _auctions.length,
       itemBuilder: (context, index) {
         final item = _auctions[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
+        return _buildAuctionCard(context, item, index);
+      },
+    );
+  }
+
+  Widget _buildAuctionCard(
+      BuildContext context, Map<String, dynamic> item, int index) {
+    return AnimatedOpacity(
+      opacity: 1.0,
+      duration: Duration(milliseconds: 300 + (index * 100)),
+      child: Container(
+        key: ValueKey(item['title']),
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.0),
+          color: AppColors.white,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.grey.withOpacity(0.2),
+              blurRadius: 8.0,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12.0),
           child: InkWell(
             onTap: () {
               debugPrint('Auction ${item['title']} tapped');
             },
+            borderRadius: BorderRadius.circular(12.0),
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: Image.asset(
-                      item['imageUrl'],
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.image_not_supported, size: 80),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item['title'],
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Category: ${item['category']}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            _buildPriceColumn('Starting', item['startingPrice']),
-                            const SizedBox(width: 16),
-                            _buildPriceColumn('Current', item['currentBid']),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.gavel,
-                                    size: 16, color: AppColors.grey),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${item['bids']} bids',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              'Status: ${item['status']}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildImage(context, item['imageUrl']),
+                  const SizedBox(width: 12.0),
+                  Expanded(child: _buildDetails(context, item)),
                 ],
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildPriceColumn(String label, String price) {
+  Widget _buildImage(BuildContext context, String imageUrl) {
+    return Hero(
+      tag: 'auction_image_${imageUrl.hashCode}',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8.0),
+        child: Image.asset(
+          imageUrl,
+          width: 80,
+          height: 80,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            width: 80,
+            height: 80,
+            color: AppColors.grey.withOpacity(0.1),
+            child: const Icon(
+              Icons.image_not_supported,
+              size: 40,
+              color: AppColors.grey,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetails(BuildContext context, Map<String, dynamic> item) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          item['title'],
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.black,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 4.0),
+        Text(
+          'Category: ${item['category']}',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.grey,
+          ),
+        ),
+        const SizedBox(height: 8.0),
+        Row(
+          children: [
+            _buildPriceColumn(context, 'Starting', item['startingPrice']),
+            const SizedBox(width: 16.0),
+            _buildPriceColumn(context, 'Current', item['currentBid']),
+          ],
+        ),
+        const SizedBox(height: 8.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.gavel, size: 16, color: AppColors.grey),
+                const SizedBox(width: 4.0),
+                Text(
+                  '${item['bids']} bids',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.grey,
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              decoration: BoxDecoration(
+                color: item['status'] == 'Active'
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              child: Text(
+                item['status'],
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: item['status'] == 'Active'
+                      ? Colors.green
+                      : Colors.red,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriceColumn(BuildContext context, String label, String price) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '$label Price',
-          style: const TextStyle(fontSize: 12, color: AppColors.grey),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppColors.grey,
+          ),
         ),
         Text(
           price,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.black,
+          ),
         ),
       ],
     );

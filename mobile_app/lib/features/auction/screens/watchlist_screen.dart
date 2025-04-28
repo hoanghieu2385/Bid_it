@@ -31,11 +31,6 @@ class WatchlistPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Watchlist'),
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.black,
-      ),
       body: watchlistItems.isEmpty
           ? const Center(
         child: Text(
