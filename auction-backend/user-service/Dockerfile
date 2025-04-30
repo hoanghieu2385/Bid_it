@@ -11,11 +11,11 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # Sao chép script chờ DB
-COPY wait-for-it.sh .
-RUN chmod +x wait-for-it.sh
+# COPY wait-for-it.sh .
+# RUN chmod +x wait-for-it.sh
 
 # Expose port
 EXPOSE 8081
 
 # Chạy app sau khi DB sẵn sàng
-ENTRYPOINT ["./wait-for-it.sh", "mysql:3306", "--", "java", "-Dspring.profiles.active=docker", "-jar", "app.jar"]
+ENTRYPOINT [ "java", "-Dspring.profiles.active=docker", "-jar", "app.jar"]
