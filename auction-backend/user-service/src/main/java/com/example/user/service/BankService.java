@@ -14,4 +14,17 @@ public class BankService {
     public List<Bank> getAllBanks() {
         return bankRepository.findAll();
     }
+
+    public Bank createBank(Bank bank) {
+    if (bank.getName() == null || bank.getName().trim().isEmpty()) {
+        throw new IllegalArgumentException("Bank name must not be empty.");
+    }
+
+    boolean exists = bankRepository.existsByNameIgnoreCase(bank.getName().trim());
+    if (exists) {
+        throw new IllegalArgumentException("Bank with this name already exists.");
+    }
+
+    return bankRepository.save(bank);
+    }
 }

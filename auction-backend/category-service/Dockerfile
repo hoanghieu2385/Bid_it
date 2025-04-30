@@ -10,7 +10,7 @@ COPY src ./src
 
 # Cài đặt Maven và build ứng dụng
 RUN apt-get update && apt-get install -y maven
-RUN mvn clean package -DskipTests
+# RUN mvn clean package -DskipTests
 
 # Copy file JAR đã build vào container
 COPY target/category-service-0.0.1-SNAPSHOT.jar app.jar

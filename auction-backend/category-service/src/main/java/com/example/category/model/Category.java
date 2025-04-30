@@ -1,6 +1,8 @@
 package com.example.category.model;
 
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,11 +21,8 @@ public class Category {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-//    @Column(name = "commission_rate", precision = 5, scale = 2)
-//    private BigDecimal commissionRate;
-
-    @Column(name = "commission_rate")
-    private Double commissionRate;
+    @Column(name = "commission_rate", precision = 5, scale = 2)
+    private BigDecimal commissionRate;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -77,11 +76,11 @@ public class Category {
         this.description = description;
     }
 
-    public Double getCommissionRate() {
+    public BigDecimal getCommissionRate() {
         return commissionRate;
     }
 
-    public void setCommissionRate(Double commissionRate) {
+    public void setCommissionRate(BigDecimal commissionRate) {
         this.commissionRate = commissionRate;
     }
 
