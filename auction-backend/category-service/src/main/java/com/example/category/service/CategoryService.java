@@ -7,6 +7,7 @@ import com.example.category.exception.ResourceNotFoundException;
 import com.example.category.model.Category;
 import com.example.category.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
+import com.example.category.exception.DuplicateCategoryNameException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +23,10 @@ public class CategoryService implements ICategoryService{
 
     @Override
     public CategoryDTO createCategory(CategoryCreateRequest request) {
+        if (categoryRepository.existsByNameIgnoreCase(request.getName())) {
+            throw new DuplicateCategoryNameException("Category name already exists: " + request.getName());
+        }
+
         Category category = new Category();
         category.setName(request.getName());
         category.setIcon(request.getIcon());
@@ -53,6 +58,10 @@ public class CategoryService implements ICategoryService{
     public CategoryDTO updateCategory(Integer id, CategoryUpdateRequest request) {
         Category category = categoryRepository.findByIdActive(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
+
+        if (categoryRepository.existsByNameAndNotId(request.getName(), id)) {
+            throw new DuplicateCategoryNameException("Another category with this name already exists: " + request.getName());
+        }
 
         category.setName(request.getName());
         category.setIcon(request.getIcon());
