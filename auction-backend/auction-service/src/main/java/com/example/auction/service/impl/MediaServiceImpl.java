@@ -4,11 +4,13 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.auction.dto.MediaUploadRequestDTO;
 import com.example.auction.dto.MediaResponseDTO;
+import com.example.auction.exception.ResourceNotFoundException;
 import com.example.auction.model.Media;
 import com.example.auction.repository.MediaRepository;
 import com.example.auction.service.MediaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -32,7 +34,7 @@ public class MediaServiceImpl implements MediaService {
 
         String contentType = file.getContentType();
         if (contentType == null ||
-                !(contentType.startsWith("image/jpeg") || contentType.startsWith("image/png") || contentType.startsWith("video/mp4"))) {
+                !(contentType.startsWith("image/jpeg") || contentType.startsWith("image/jpg") || contentType.startsWith("image/png") || contentType.startsWith("video/mp4"))) {
             throw new IllegalArgumentException("Only image and video files are allowed.");
         }
 
@@ -82,6 +84,26 @@ public class MediaServiceImpl implements MediaService {
         } else {
             throw new NoSuchElementException("Media not found with ID: " + id);
         }
+    }
+
+    @Override
+    @Transactional
+    public void setAsThumbnail(Long mediaId) {
+        Media media = mediaRepository.findById(mediaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Media not found with ID: " + mediaId));
+
+        // Clear old thumbnails for this auction
+        List<Media> auctionMediaList = mediaRepository.findByAuctionId(media.getAuctionId());
+        for (Media m : auctionMediaList) {
+            if (Boolean.TRUE.equals(m.getIsThumbnail())) {
+                m.setIsThumbnail(false);
+                mediaRepository.save(m);
+            }
+        }
+
+        // Set the selected media as the new thumbnail
+        media.setIsThumbnail(true);
+        mediaRepository.save(media);
     }
 
     private MediaResponseDTO mapToDTO(Media media) {

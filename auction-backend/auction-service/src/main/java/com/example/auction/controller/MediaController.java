@@ -8,6 +8,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -36,6 +37,25 @@ public class MediaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PostMapping(value = "/multi-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<List<MediaResponseDTO>> uploadMultiple(
+            @RequestParam("auctionId") Long auctionId,
+            @RequestParam("files") MultipartFile[] files) {
+
+        List<MediaResponseDTO> responses = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            MediaUploadRequestDTO request = new MediaUploadRequestDTO();
+            request.setAuctionId(auctionId);
+            request.setFile(file);
+
+            MediaResponseDTO response = mediaService.upload(request);
+            responses.add(response);
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responses);
+    }
+
     @GetMapping("/auction/{auctionId}")
     public ResponseEntity<List<MediaResponseDTO>> getByAuction(@PathVariable Long auctionId) {
         return ResponseEntity.ok(mediaService.getMediaByAuctionId(auctionId));
@@ -46,4 +66,11 @@ public class MediaController {
         mediaService.deleteMedia(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}/set-thumbnail")
+    public ResponseEntity<Void> setThumbnail(@PathVariable Long id) {
+        mediaService.setAsThumbnail(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }

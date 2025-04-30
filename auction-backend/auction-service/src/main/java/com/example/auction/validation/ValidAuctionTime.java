@@ -1,4 +1,4 @@
-package com.example.auction.validator;
+package com.example.auction.validation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;

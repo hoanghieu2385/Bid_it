@@ -10,5 +10,6 @@ public interface MediaService {
     MediaResponseDTO upload(MediaUploadRequestDTO request);
     List<MediaResponseDTO> getMediaByAuctionId(Long auctionId);
     void deleteMedia(Long id);
+    void setAsThumbnail(Long mediaId);
 
 }
