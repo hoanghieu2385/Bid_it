@@ -1,4 +1,4 @@
-package com.example.auction.validator;
+package com.example.auction.validation;
 
 import com.example.auction.dto.AuctionRequestDTO;
 import jakarta.validation.ConstraintValidator;
