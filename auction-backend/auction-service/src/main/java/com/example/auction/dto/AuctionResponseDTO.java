@@ -2,6 +2,7 @@ package com.example.auction.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class AuctionResponseDTO {
 
@@ -25,6 +26,9 @@ public class AuctionResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
+    private List<MediaResponseDTO> media;
+    private String thumbnailUrl;
+
 
     // Private constructor for Builder
     private AuctionResponseDTO(Builder builder) {
@@ -48,6 +52,8 @@ public class AuctionResponseDTO {
         this.createdAt = builder.createdAt;
         this.updatedAt = builder.updatedAt;
         this.deletedAt = builder.deletedAt;
+        this.media = builder.media;
+        this.thumbnailUrl = builder.thumbnailUrl;
     }
 
     // Getters
@@ -131,6 +137,14 @@ public class AuctionResponseDTO {
         return deletedAt;
     }
 
+    public List<MediaResponseDTO> getMedia() {
+        return media;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
     // Builder class
     public static class Builder {
         private Long id;
@@ -153,6 +167,8 @@ public class AuctionResponseDTO {
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
         private LocalDateTime deletedAt;
+        private List<MediaResponseDTO> media;
+        private String thumbnailUrl;
 
         public Builder id(Long id) {
             this.id = id;
@@ -251,6 +267,16 @@ public class AuctionResponseDTO {
 
         public Builder deletedAt(LocalDateTime deletedAt) {
             this.deletedAt = deletedAt;
+            return this;
+        }
+
+        public Builder media(List<MediaResponseDTO> media) {
+            this.media = media;
+            return this;
+        }
+
+        public Builder thumbnailUrl(String thumbnailUrl) {
+            this.thumbnailUrl = thumbnailUrl;
             return this;
         }
 
