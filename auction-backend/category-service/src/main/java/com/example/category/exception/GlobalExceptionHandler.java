@@ -33,4 +33,11 @@ public class GlobalExceptionHandler {
         error.put("error", "Internal Server Error: " + ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
+
+    @ExceptionHandler(DuplicateCategoryNameException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateCategory(DuplicateCategoryNameException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
 }
