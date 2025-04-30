@@ -33,4 +33,27 @@ public class BankController {
         }
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateBank(@PathVariable Long id, @RequestBody Bank updatedBank) {
+        try {
+            Bank bank = bankService.updateBank(id, updatedBank);
+            return ResponseEntity.ok(bank);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteBank(@PathVariable Long id) {
+        try {
+            bankService.deleteBank(id);
+            return ResponseEntity.ok("Bank deleted successfully.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Unexpected error: " + e.getMessage());
+        }
+    }
 }

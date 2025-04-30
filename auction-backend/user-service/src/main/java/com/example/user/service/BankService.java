@@ -32,4 +32,28 @@ public class BankService {
 
     return bankRepository.save(bank);
     }
+
+    public Bank updateBank(Long id, Bank updatedBank) {
+    Bank existing = bankRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Bank not found with id: " + id));
+
+    String newName = updatedBank.getName();
+    if (newName == null || newName.trim().isEmpty()) {
+        throw new IllegalArgumentException("Bank name must not be empty.");
+    }
+
+    if (!existing.getName().equalsIgnoreCase(newName.trim()) && bankRepository.existsByNameIgnoreCase(newName.trim())) {
+        throw new IllegalArgumentException("Another bank with this name already exists.");
+    }
+
+    existing.setName(newName.trim());
+    return bankRepository.save(existing);
+    }
+
+    public void deleteBank(Long id) {
+        if (!bankRepository.existsById(id)) {
+            throw new IllegalArgumentException("Bank not found with id: " + id);
+        }
+        bankRepository.deleteById(id);
+    }
 }
