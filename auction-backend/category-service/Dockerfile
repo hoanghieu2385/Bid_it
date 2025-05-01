@@ -9,7 +9,7 @@ COPY pom.xml .
 COPY src ./src
 
 # Cài đặt Maven và build ứng dụng
-# RUN apt-get update && apt-get install -y maven
+RUN apt-get update && apt-get install -y maven
 # RUN mvn clean package -DskipTests
 
 # Copy file JAR đã build vào container
