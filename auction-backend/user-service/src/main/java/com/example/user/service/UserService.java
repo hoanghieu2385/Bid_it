@@ -3,18 +3,22 @@ package com.example.user.service;
 import com.example.user.Dtos.UserUpdateRequest;
 import com.example.user.model.User;
 import com.example.user.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+
+    // Constructor manually created to replace @RequiredArgsConstructor
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
