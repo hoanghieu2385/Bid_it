@@ -3,7 +3,6 @@ package com.example.user.controller;
 import com.example.user.Dtos.*;
 import com.example.user.config.JwtUtil;
 import com.example.user.service.AuthService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,12 +10,18 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-@Controller  // Change from @RestController to @Controller
+@Controller
 @RequestMapping("/auth")
-@RequiredArgsConstructor
 public class AuthController {
+
     private final AuthService authService;
     private final JwtUtil jwtUtil;
+
+    // Constructor thủ công thay cho @RequiredArgsConstructor
+    public AuthController(AuthService authService, JwtUtil jwtUtil) {
+        this.authService = authService;
+        this.jwtUtil = jwtUtil;
+    }
 
     @GetMapping("/verify-account")
     public String verifyAccount(
@@ -85,7 +90,6 @@ public class AuthController {
         return ResponseEntity.ok(token);
     }
 
-    // RESET PASSWORD
     @PostMapping("/forgot-password")
     @ResponseBody
     public ResponseEntity<ForgotPasswordResponse> forgotPassword(@RequestBody ForgotPasswordRequest request) {

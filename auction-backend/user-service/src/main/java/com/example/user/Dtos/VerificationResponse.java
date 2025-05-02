@@ -1,15 +1,20 @@
 package com.example.user.Dtos;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
 public class VerificationResponse {
     private String message;
 
-    // Keep only one constructor
+    public VerificationResponse() {
+    }
+
     public VerificationResponse(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
         this.message = message;
     }
 
