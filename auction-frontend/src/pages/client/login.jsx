@@ -12,19 +12,38 @@ function Login() {
     e.preventDefault();
     try {
       const response = await login(username, password);
-      setMessage(response);
+  
+      // Response should contain token and user details
+      if (response.token) {
+        localStorage.setItem('jwt', response.token);
+        localStorage.setItem(
+          'user',
+          JSON.stringify({
+            id: response.id,
+            email: response.email,
+            firstName: response.firstName,
+            lastName: response.lastName,
+            score: response.score,
+          })
+        );
+  
+        setMessage('Login successful!');
+        // window.location.href = '/';
+      } else {
+        setMessage('Login failed: Invalid response');
+      }
     } catch (error) {
-      setMessage(error);
+      setMessage(error.message || 'Login failed.');
     }
-  };
+  };  
 
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
       const response = await register(username, password);
-      setMessage(response);
+      setMessage(response.message || 'Register successful!');
     } catch (error) {
-      setMessage(error);
+      setMessage(error.message || 'Registration failed.');
     }
   };
 
@@ -85,7 +104,7 @@ function Login() {
         {message && (
           <p
             className={`client-message mt-3 text-center ${
-              message.includes('successful') ? 'text-success' : 'text-danger'
+              message.toLowerCase().includes('success') ? 'text-success' : 'text-danger'
             }`}
           >
             {message}

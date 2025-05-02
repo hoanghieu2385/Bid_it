@@ -155,7 +155,16 @@ public class AuthService {
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token);
+        return new AuthResponse(
+                token,
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPhoneNumber(),
+                user.getAddress(),
+                user.getScore()
+        );
     }
 
     public AuthResponse authenticate(LoginRequest request) {
@@ -175,7 +184,17 @@ public class AuthService {
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token);
+
+        return new AuthResponse(
+                token,
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPhoneNumber(),
+                user.getAddress(),
+                user.getScore()
+        );
     }
 
     public ForgotPasswordResponse forgotPassword(String email) {
