@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
-import 'package:flutter/material.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -29,42 +29,53 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Search'),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: AppColors.black,
-          unselectedLabelColor: AppColors.grey,
-          indicatorColor: Colors.orange,
-          tabs: const [
-            Tab(text: 'Newly Listed'),
-            Tab(text: 'Ending Soon'),
-            Tab(text: 'Best Bids'),
-            Tab(text: 'Most Watched'),
-          ],
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        title: const Text(
+          'Search',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.black),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48.0),
+          child: Container(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              labelColor: AppColors.black,
+              unselectedLabelColor: AppColors.grey,
+              indicatorColor: Colors.orange,
+              tabs: const [
+                Tab(text: 'Newly Listed'),
+                Tab(text: 'Ending Soon'),
+                Tab(text: 'Best Bids'),
+                Tab(text: 'Most Watched'),
+              ],
+            ),
+          ),
         ),
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search',
+                hintText: 'Search...',
+                filled: true,
+                fillColor: Colors.white,
                 prefixIcon: const Icon(Icons.search, color: AppColors.grey),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide(color: AppColors.grey),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide(color: AppColors.grey),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide(color: AppColors.black),
+                  borderRadius: BorderRadius.circular(30.0),
+                  borderSide: BorderSide.none,
                 ),
               ),
               onChanged: (value) {
@@ -88,6 +99,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
     );
   }
 }
+
 class SearchResults extends StatelessWidget {
   final String tab;
 
@@ -123,17 +135,37 @@ class SearchResults extends StatelessWidget {
     ];
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       itemCount: searchItems.length,
       itemBuilder: (context, index) {
         final item = searchItems[index];
-        return Card(
+        return Container(
           margin: const EdgeInsets.only(bottom: 16.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(12.0),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/product-img.png',
+                    width: 80,
+                    height: 90,
+                    fit: BoxFit.cover,
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -145,33 +177,28 @@ class SearchResults extends StatelessWidget {
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.gavel, size: 16, color: AppColors.grey),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${item['bids']} bids',
-                                style: const TextStyle(fontSize: 14, color: AppColors.grey),
-                              ),
-                            ],
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.favorite_border),
-                            onPressed: () {
-                              print('Add to watchlist');
-                            },
+                          const Icon(Icons.gavel, size: 16, color: AppColors.grey),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${item['bids']} bids',
+                            style: const TextStyle(fontSize: 13, color: AppColors.grey),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
                         'Current Bid: ${item['currentBid']}',
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.black,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       CustomButton(
@@ -184,6 +211,12 @@ class SearchResults extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.favorite_border),
+                  onPressed: () {
+                    print('Add to watchlist');
+                  },
                 ),
               ],
             ),
