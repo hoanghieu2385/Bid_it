@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.example</groupId>
-    <artifactId>bidding-service</artifactId>
+    <artifactId>bid-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>bid-service</name>
     <description>bid-service</description>
@@ -82,12 +82,6 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
-        <!-- Apache HttpClient-->
-        <!--        <dependency>-->
-        <!--            <groupId>org.apache.httpcomponents.client5</groupId>-->
-        <!--            <artifactId>httpclient5</artifactId>-->
-        <!--            <version>5.4.2</version>-->
-        <!--        </dependency>-->
     </dependencies>
 
     <build>

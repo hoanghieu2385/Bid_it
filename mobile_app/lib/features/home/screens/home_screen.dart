@@ -9,6 +9,8 @@ import 'package:mobile_app/features/auction/screens/create_aution.dart';
 import 'package:mobile_app/features/profile/screens/user_screen.dart';
 import 'package:flutter/material.dart';
 
+import '../../auth/screens/start_screen.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -36,10 +38,15 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: AppColors.black),
-          onPressed: () {
-            Scaffold.of(context).openDrawer();
+        leading: Builder(
+          builder: (BuildContext context) {
+            return IconButton(
+              icon: const Icon(Icons.menu, color: AppColors.black),
+              onPressed: () {
+                print('Menu button pressed');
+                Scaffold.of(context).openDrawer();
+              },
+            );
           },
         ),
         title: Row(
@@ -70,9 +77,9 @@ class _HomePageState extends State<HomePage> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
+            const DrawerHeader(
               decoration: BoxDecoration(
-                color: AppColors.grey.withOpacity(0.1),
+                color: AppColors.grey,
               ),
               child: Row(
                 children: [
@@ -139,27 +146,16 @@ class _HomePageState extends State<HomePage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.login),
-              title: const Text('Sign In'),
-              onTap: () {
-                Navigator.pop(context);
-                navigateTo(context, const LoginPage());
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_add),
-              title: const Text('Register'),
-              onTap: () {
-                Navigator.pop(context);
-                navigateTo(context, const RegisterPage());
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
               onTap: () {
                 Navigator.pop(context);
-                print('Logout pressed');
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const StartPage()),
+                  );
+                };
               },
             ),
           ],
@@ -335,20 +331,30 @@ class AuctionList extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8.0),
-                  // child: Image.asset(
-                  //   item['image'],
-                  //   width: 120,
-                  //   height: 120,
-                  //   fit: BoxFit.cover,
-                  // ),
-                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8.0),
+                        child: Image.asset(
+                          item['image'],
+                          width: 100,
+                          height: 100,
+
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+
+                              width: 500,
+                              height: 200,
+                              color: AppColors.grey,
+                              child: const Icon(Icons.broken_image, color: AppColors.white), // Icon hình ảnh lỗi, màu trắng
+                            );
+                          },
+                        ),
+                      ),
                       Text(
                         item['title'],
                         style: const TextStyle(
