@@ -2,7 +2,7 @@
 import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaBars, FaTimes } from 'react-icons/fa';
-import logoImage from '../../assets/images/logo.png';
+import logoImage from '../../assets/images/Logo2.png';
 import '../../assets/styles/client/header.css';
 import { UserContext } from '../../contexts/UserContext.jsx';
 
