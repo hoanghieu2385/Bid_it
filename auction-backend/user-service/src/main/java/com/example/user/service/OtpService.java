@@ -3,7 +3,6 @@ package com.example.user.service;
 import com.example.user.model.Otp;
 import com.example.user.model.OtpType;
 import com.example.user.repository.OtpRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -11,13 +10,18 @@ import java.time.LocalDateTime;
 import java.util.Random;
 
 @Service
-@RequiredArgsConstructor
 public class OtpService {
     private final OtpRepository otpRepository;
     private final EmailService emailService;
 
     @Value("${otp.expiration.minutes}")
     private int otpExpirationMinutes;
+
+    // Constructor manually created to replace @RequiredArgsConstructor
+    public OtpService(OtpRepository otpRepository, EmailService emailService) {
+        this.otpRepository = otpRepository;
+        this.emailService = emailService;
+    }
 
     public String generateOtp() {
         Random random = new Random();

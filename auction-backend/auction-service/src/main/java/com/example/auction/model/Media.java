@@ -1,43 +1,103 @@
-//package com.example.auction.model;
-//
-//import jakarta.persistence.*;
-//import lombok.*;
-//import org.hibernate.annotations.CreationTimestamp;
-//import org.hibernate.annotations.UpdateTimestamp;
-//
-//import java.time.LocalDateTime;
-//
-//@Entity
-//@Table(name = "media")
-//@Getter
-//@Setter
-//@NoArgsConstructor
-//@AllArgsConstructor
-//@Builder
-//public class Media {
-//
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    private Long id;
-//
-//    // Associate media with an Auction; assuming many media items per auction.
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "auction_id", nullable = false)
-//    private Auction auction;
-//
-//    // URL returned by Cloudinary after upload.
-//    @Column(nullable = false)
-//    private String url;
-//
-//    // You might store a type such as "image" or "video"
-//    @Column(nullable = false)
-//    private String mediaType;
-//
-//    @CreationTimestamp
-//    @Column(name = "created_at", updatable = false)
-//    private LocalDateTime createdAt;
-//
-//    @UpdateTimestamp
-//    @Column(name = "updated_at")
-//    private LocalDateTime updatedAt;
-//}
+package com.example.auction.model;
+
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "media")
+public class Media {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "auction_id", nullable = false)
+    private Long auctionId;
+
+    @Column(name = "public_id", length = 100)
+    private String publicId;
+
+    @Column(name = "url", length = 255)
+    private String url;
+
+    @Column(name = "format", length = 10)
+    private String format;
+
+    @Column(name = "resource_type", length = 20)
+    private String resourceType;
+
+    @Column(name = "is_thumbnail")
+    private Boolean isThumbnail;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    public Media() {
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getAuctionId() {
+        return auctionId;
+    }
+
+    public void setAuctionId(Long auctionId) {
+        this.auctionId = auctionId;
+    }
+
+    public String getPublicId() {
+        return publicId;
+    }
+
+    public void setPublicId(String publicId) {
+        this.publicId = publicId;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    public Boolean getIsThumbnail() {
+        return isThumbnail;
+    }
+
+    public void setIsThumbnail(Boolean thumbnail) {
+        isThumbnail = thumbnail;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+}

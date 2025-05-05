@@ -1,6 +1,7 @@
 package com.example.auction.dto;
 
-import com.example.auction.validator.ValidAuctionTime;
+import com.example.auction.validation.ValidAuctionDeposit;
+import com.example.auction.validation.ValidAuctionTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
@@ -9,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@ValidAuctionDeposit
 @ValidAuctionTime(minGapMinutes = 60, message = "End time must be after start time")
 public class AuctionRequestDTO {
 

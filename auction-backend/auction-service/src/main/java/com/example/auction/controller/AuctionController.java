@@ -3,10 +3,12 @@ package com.example.auction.controller;
 import com.example.auction.dto.AuctionRequestDTO;
 import com.example.auction.dto.AuctionResponseDTO;
 import com.example.auction.dto.AuctionStatusUpdateDTO;
+import com.example.auction.dto.MediaResponseDTO;
 import com.example.auction.exception.ResourceNotFoundException;
 import com.example.auction.model.Auction;
 import com.example.auction.model.AuctionStatus;
 import com.example.auction.service.AuctionService;
+import com.example.auction.service.MediaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -23,14 +25,15 @@ import java.util.stream.Collectors;
 public class AuctionController {
 
     private final AuctionService auctionService;
+    private final MediaService mediaService;
 
-    @Autowired
-    public AuctionController(AuctionService auctionService) {
+    public AuctionController(AuctionService auctionService, MediaService mediaService) {
         this.auctionService = auctionService;
+        this.mediaService = mediaService;
     }
 
     @PostMapping
-    public ResponseEntity<AuctionResponseDTO> createAuction(@Valid @RequestBody AuctionRequestDTO auctionRequest) {
+    public ResponseEntity<AuctionResponseDTO> createAuction(@RequestBody @Valid AuctionRequestDTO auctionRequest) {
         Auction auction = new Auction.Builder()
                 .title(auctionRequest.getTitle())
                 .description(auctionRequest.getDescription())
@@ -111,7 +114,7 @@ public class AuctionController {
         Auction auction = auctionService.getAuctionById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
 
-        // Validate and convert status; handle invalid status string gracefully
+        // Validate and convert status; handle invalid status string
         try {
             AuctionStatus newStatus = AuctionStatus.valueOf(statusUpdateDTO.getStatus().toUpperCase());
             auction.setStatus(newStatus);
@@ -135,7 +138,7 @@ public class AuctionController {
         // Check if auction has already started
         if (existingAuction.getStartTime().isBefore(LocalDateTime.now())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(null); // Alternatively, you can return an error message
+                    .body(null); // Alternatively, replace with an error message
         }
 
         // Update fields based on the DTO
@@ -178,6 +181,15 @@ public class AuctionController {
 
     // Helper method to map Auction entity to AuctionResponseDTO
     private AuctionResponseDTO mapToResponseDTO(Auction auction) {
+
+        List<MediaResponseDTO> mediaList = mediaService.getMediaByAuctionId(auction.getId());
+
+        String thumbnailUrl = mediaList.stream()
+                .filter(media -> Boolean.TRUE.equals(media.getIsThumbnail()))
+                .map(MediaResponseDTO::getUrl)
+                .findFirst()
+                .orElse(null);
+
         return new AuctionResponseDTO.Builder()
                 .id(auction.getId())
                 .title(auction.getTitle())
@@ -199,6 +211,8 @@ public class AuctionController {
                 .createdAt(auction.getCreatedAt())
                 .updatedAt(auction.getUpdatedAt())
                 .deletedAt(auction.getDeletedAt())
+                .media(mediaList)
+                .thumbnailUrl(thumbnailUrl)
                 .build();
     }
 }

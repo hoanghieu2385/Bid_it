@@ -3,7 +3,8 @@ package com.example.user.controller;
 import com.example.user.Dtos.*;
 import com.example.user.config.JwtUtil;
 import com.example.user.service.AuthService;
-import lombok.RequiredArgsConstructor;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,10 +12,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-@Controller  // Change from @RestController to @Controller
 @RequestMapping("/auth")
-@RequiredArgsConstructor
 public class AuthController {
+
     private final AuthService authService;
     private final JwtUtil jwtUtil;
 
@@ -62,8 +62,6 @@ public class AuthController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.authenticate(request));
     }
 
     @PostMapping("/request-otp")
@@ -85,7 +83,6 @@ public class AuthController {
         return ResponseEntity.ok(token);
     }
 
-    // RESET PASSWORD
     @PostMapping("/forgot-password")
     @ResponseBody
     public ResponseEntity<ForgotPasswordResponse> forgotPassword(@RequestBody ForgotPasswordRequest request) {

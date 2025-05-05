@@ -1,5 +1,6 @@
 package com.example.category.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class CategoryDTO {
@@ -7,11 +8,10 @@ public class CategoryDTO {
     private String name;
     private String icon;
     private String description;
-    private Double commissionRate;
+    private BigDecimal commissionRate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Getters and Setters
     public Integer getId() {
         return id;
     }
@@ -44,11 +44,11 @@ public class CategoryDTO {
         this.description = description;
     }
 
-    public Double getCommissionRate() {
+    public BigDecimal getCommissionRate() {
         return commissionRate;
     }
 
-    public void setCommissionRate(Double commissionRate) {
+    public void setCommissionRate(BigDecimal commissionRate) {
         this.commissionRate = commissionRate;
     }
 

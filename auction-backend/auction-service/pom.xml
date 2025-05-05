@@ -28,7 +28,19 @@
     </scm>
     <properties>
         <java.version>17</java.version>
+        <spring-cloud.version>2024.0.1</spring-cloud.version>
     </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -54,24 +66,40 @@
             <artifactId>jakarta.validation-api</artifactId>
             <version>3.1.1</version>
         </dependency>
+        <!-- SpringBoot Validation-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+            <version>3.4.4</version>
+        </dependency>
         <!-- Spring OpenAPI (Swagger) -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.8.5</version>
         </dependency>
-        <!-- Cloudinary -->
+        <!-- Cloudinary newest version that also requires Android support -->
+<!--        <dependency>-->
+<!--            <groupId>com.cloudinary</groupId>-->
+<!--            <artifactId>cloudinary-core</artifactId>-->
+<!--            <version>2.2.0</version>-->
+<!--        </dependency>-->
+        <!-- Cloudinary older version that runs with just Spring Boot -->
         <dependency>
             <groupId>com.cloudinary</groupId>
-            <artifactId>cloudinary-core</artifactId>
-            <version>2.2.0</version>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>1.39.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
         <!-- Apache HttpClient-->
-        <dependency>
-            <groupId>org.apache.httpcomponents.client5</groupId>
-            <artifactId>httpclient5</artifactId>
-            <version>5.4.2</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.httpcomponents.client5</groupId>-->
+<!--            <artifactId>httpclient5</artifactId>-->
+<!--            <version>5.4.2</version>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>

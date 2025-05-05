@@ -9,7 +9,6 @@ import com.example.user.model.User;
 import com.example.user.repository.BankRepository;
 import com.example.user.repository.PasswordResetTokenRepository;
 import com.example.user.repository.UserRepository;
-import lombok.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,8 +18,8 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 
 @Service
-@RequiredArgsConstructor
 public class AuthService {
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
@@ -33,6 +32,20 @@ public class AuthService {
     @Value("${app.base-url}")
     private String appBaseUrl;
 
+    // Constructor manually created to replace @RequiredArgsConstructor
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil,
+                       BankRepository bankRepository, OtpService otpService, VerificationTokenService verificationTokenService,
+                       PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+        this.bankRepository = bankRepository;
+        this.otpService = otpService;
+        this.verificationTokenService = verificationTokenService;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.emailService = emailService;
+    }
+
     public RegisterResponse register(RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
@@ -40,21 +53,20 @@ public class AuthService {
 
         Bank bank = bankRepository.findById(request.getBankId())
                 .orElseThrow(() -> new RuntimeException("Bank not found"));
-        User user = User.builder()
-                .email(request.getEmail())
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .phoneNumber(request.getPhoneNumber())
-                .address(request.getAddress())
-                .bank(bank)
-                .bankAccountNumber(request.getBankAccountNumber())
-                .createdAt(LocalDateTime.now())
-                .enable(false)
-                .verified(false)
-                .locked(false)
-                .score(0)
-                .build();
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setAddress(request.getAddress());
+        user.setBank(bank);
+        user.setBankAccountNumber(request.getBankAccountNumber());
+        user.setCreatedAt(LocalDateTime.now());
+        user.setEnable(false);
+        user.setVerified(false);
+        user.setLocked(false);
+        user.setScore(0);
 
         userRepository.save(user);
 
@@ -143,7 +155,16 @@ public class AuthService {
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token);
+        return new AuthResponse(
+                token,
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPhoneNumber(),
+                user.getAddress(),
+                user.getScore()
+        );
     }
 
     public AuthResponse authenticate(LoginRequest request) {
@@ -163,38 +184,48 @@ public class AuthService {
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token);
+
+        return new AuthResponse(
+                token,
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPhoneNumber(),
+                user.getAddress(),
+                user.getScore()
+        );
     }
 
     public ForgotPasswordResponse forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
-        // Tao reset password token
+        // Create reset password token
         String resetToken = generateRandomToken();
 
-        // Kiem tra neu user da tao request reset roi
+        // Check if user already has a password reset request
         PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByUser(user)
                 .orElse(new PasswordResetToken());
 
         passwordResetToken.setToken(resetToken);
         passwordResetToken.setUser(user);
-        passwordResetToken.setExpiryDate(LocalDateTime.now().plusHours(1)); // Chinh thoi gian token valid o day
+        passwordResetToken.setExpiryDate(LocalDateTime.now().plusHours(1)); // Set token validity period
         passwordResetTokenRepository.save(passwordResetToken);
 
-        // Gui email reset password
+        // Send email with reset password link
         emailService.sendPasswordResetEmail(email, resetToken);
 
         return new ForgotPasswordResponse(true, "Password reset link has been sent to your email");
     }
 
     public ResetPasswordResponse resetPassword(ResetPasswordRequest request) {
-        // Check password xem co match khong
+        // Check if passwords match
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new RuntimeException("Passwords do not match");
         }
 
-        // Tim email cua user xem co ton tai khong
+        // Find user by email
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + request.getEmail()));
 
@@ -202,18 +233,18 @@ public class AuthService {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenAndUser(request.getToken(), user)
                 .orElseThrow(() -> new RuntimeException("Invalid or expired token"));
 
-        // Check xem token da het han chua
+        // Check if token has expired
         if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             passwordResetTokenRepository.delete(resetToken);
             throw new RuntimeException("Token has expired. Please request a new password reset");
         }
 
-        // Cap nhat password
+        // Update password
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
-        // Xoa token neu cap nhat password thanh cong
+        // Delete token after password reset
         passwordResetTokenRepository.delete(resetToken);
 
         return new ResetPasswordResponse(true, "Password has been reset successfully");
