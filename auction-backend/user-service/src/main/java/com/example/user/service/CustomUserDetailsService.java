@@ -1,5 +1,6 @@
 package com.example.user.service;
 
+import com.example.user.model.Role;
 import com.example.user.model.User;
 import com.example.user.repository.UserRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -8,7 +9,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
@@ -25,6 +27,19 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User account is disabled, not verified, or locked");
         }
 
+        // Create authorities list based on user roles
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+
+        // Add role-based authorities
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            for (Role role : user.getRoles()) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
+            }
+        } else {
+            // If no roles defined, default to USER role
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        }
+
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
@@ -32,7 +47,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 true, // accountNonExpired
                 true, // credentialsNonExpired
                 !user.getLocked(), // accountNonLocked
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                authorities
         );
     }
 }

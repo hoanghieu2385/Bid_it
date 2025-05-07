@@ -1,5 +1,7 @@
 package com.example.user.Dtos;
 
+import java.util.List;
+
 public class AuthResponse {
     private String token;
     private Long id;
@@ -9,8 +11,13 @@ public class AuthResponse {
     private String phoneNumber;
     private String address;
     private Integer score;
+    private List<String> roles; // 🆕
 
     public AuthResponse() {
+    }
+
+    public AuthResponse(String token) {
+        this.token = token;
     }
 
     public AuthResponse(String token, Long id, String email, String firstName, String lastName,
@@ -23,6 +30,20 @@ public class AuthResponse {
         this.phoneNumber = phoneNumber;
         this.address = address;
         this.score = score;
+    }
+
+    // 🆕 Constructor đầy đủ có roles
+    public AuthResponse(String token, Long id, String email, String firstName, String lastName,
+                        String phoneNumber, String address, Integer score, List<String> roles) {
+        this.token = token;
+        this.id = id;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.phoneNumber = phoneNumber;
+        this.address = address;
+        this.score = score;
+        this.roles = roles;
     }
 
     // Getters & setters
@@ -88,5 +109,13 @@ public class AuthResponse {
 
     public void setScore(Integer score) {
         this.score = score;
+    }
+
+    public List<String> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<String> roles) {
+        this.roles = roles;
     }
 }
