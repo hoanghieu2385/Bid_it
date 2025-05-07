@@ -10,14 +10,7 @@ export const login = async (email, password) => {
   return response.data;
 };
 
-export const register = async (username, password) => {
-  try {
-    const response = await api.post('/register', null, {
-      baseURL: API_CONFIG.USER_SERVICE,
-      params: { username, password },
-    });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || 'Error occurred during registration';
-  }
+export const register = async (formData) => {
+  const response = await api.post(`${API_CONFIG.USER_SERVICE}/register`, formData);
+  return response.data;
 };

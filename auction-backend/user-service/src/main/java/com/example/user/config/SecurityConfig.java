@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -47,20 +48,21 @@ public class SecurityConfig {
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/auth/ping",
-                                "/auth/register",
-                                "/auth/login",
-                                "/auth/generate-token",
-                                "/auth/verify-account",
-                                "/auth/verify-email",
-                                "/auth/request-otp",
-                                "/auth/login-with-otp",
-                                "/auth/forgot-password",
-                                "/auth/reset-password"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                )
+                    .requestMatchers(
+                        "/auth/ping",
+                        "/auth/register",
+                        "/auth/login",
+                        "/auth/generate-token",
+                        "/auth/verify-account",
+                        "/auth/verify-email",
+                        "/auth/request-otp",
+                        "/auth/login-with-otp",
+                        "/auth/forgot-password",
+                        "/auth/reset-password"
+                    ).permitAll()
+                    .requestMatchers(HttpMethod.GET, "/banks/**").permitAll() // Allow GET requests to /banks/** without authentication
+                    .anyRequest().authenticated()
+                    )
                 .sessionManagement(session -> session.sessionCreationPolicy(
                         SessionCreationPolicy.STATELESS
                 ))
