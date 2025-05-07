@@ -14,6 +14,11 @@ public class EmailService {
     @Value("${app.base-url}")
     private String baseUrl;
 
+    // Constructor manually created to replace @RequiredArgsConstructor
+    public EmailService(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
+
     public void sendEmail(String to, String subject, String content) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
