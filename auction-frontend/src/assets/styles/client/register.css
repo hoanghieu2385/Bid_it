@@ -8,3 +8,14 @@
 .fade-in {
 	opacity: 1;
 }
+
+.auth-switch-link,
+.auth-forgot-link {
+	color: #007bff;
+	text-decoration: none;
+}
+
+.auth-switch-link:hover,
+.auth-forgot-link:hover {
+	text-decoration: underline;
+}

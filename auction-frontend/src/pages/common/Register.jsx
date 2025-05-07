@@ -207,14 +207,18 @@ function Register() {
 									{message}
 								</div>
 							)}
-
-							<div className="text-center mt-4">
-								<Link to="/login" className="text-decoration-none d-block">
-									← Back to Login
-								</Link>
-								<Link to="/forgot-password" className="text-decoration-none d-block mt-1">
-									Forgot password?
-								</Link>
+							<div className="text-center mt-4 pt-2">
+								<p className="small fw-bold mb-1">
+									Already have an account?{' '}
+									<Link to="/login" className="auth-switch-link">
+										Login
+									</Link>
+								</p>
+								<p className="small">
+									<Link to="/forgot-password" className="auth-forgot-link">
+										Forgot password?
+									</Link>
+								</p>
 							</div>
 						</form>
 					</div>
