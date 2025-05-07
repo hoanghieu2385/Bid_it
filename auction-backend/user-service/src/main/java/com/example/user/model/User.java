@@ -2,6 +2,8 @@ package com.example.user.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -59,6 +61,13 @@ public class User {
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean locked = false;
 
+    // Add roles field
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role")
+    private Set<Role> roles = new HashSet<>();
+
     // Default constructor
     public User() {}
 
@@ -67,7 +76,7 @@ public class User {
                 String avatarPublicId, String phoneNumber, String address, Bank bank,
                 String bankAccountNumber, Integer score, LocalDateTime createdAt,
                 LocalDateTime updatedAt, Boolean enable, Boolean verified,
-                String verifiedResponse, Boolean locked) {
+                String verifiedResponse, Boolean locked, Set<Role> roles) {
         this.id = id;
         this.email = email;
         this.firstName = firstName;
@@ -86,9 +95,31 @@ public class User {
         this.verified = verified;
         this.verifiedResponse = verifiedResponse;
         this.locked = locked;
+        this.roles = roles;
     }
 
-    // Getters and Setters for all fields
+    // Add roles getter and setter
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
+
+    // Add convenience method to add a role
+    public void addRole(Role role) {
+        if (this.roles == null) {
+            this.roles = new HashSet<>();
+        }
+        this.roles.add(role);
+    }
+
+    // Add convenience method to check if user has a specific role
+    public boolean hasRole(Role role) {
+        return this.roles != null && this.roles.contains(role);
+    }
+
     public Long getId() {
         return id;
     }
