@@ -12,18 +12,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
 @RequestMapping("/auth")
 public class AuthController {
 
     private final AuthService authService;
     private final JwtUtil jwtUtil;
-
-    // Constructor thủ công thay cho @RequiredArgsConstructor
-    public AuthController(AuthService authService, JwtUtil jwtUtil) {
-        this.authService = authService;
-        this.jwtUtil = jwtUtil;
-    }
 
     @GetMapping("/verify-account")
     public String verifyAccount(
@@ -69,21 +62,6 @@ public class AuthController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
-        AuthResponse authResponse = authService.authenticate(request);
-
-        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
-                .httpOnly(true)
-                .secure(false) // true nếu HTTPS
-                .path("/")
-                .sameSite("None")
-                .maxAge(24 * 60 * 60)
-                .build();
-
-        response.addHeader("Set-Cookie", cookie.toString());
-
-        // Trả response không có token nếu bạn không cần hiển thị ở client
-        return ResponseEntity.ok(authResponse);
     }
 
     @PostMapping("/request-otp")

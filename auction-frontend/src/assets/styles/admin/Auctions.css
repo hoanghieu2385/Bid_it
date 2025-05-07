@@ -1,0 +1,485 @@
+/* CSS cho Auctions - đảm bảo không ảnh hưởng đến sidebar và topbar */
+
+/* Container chính - sử dụng namespace để không ảnh hưởng đến các thành phần khác */
+.auctions-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+  }
+  
+  /* Header */
+  .auctions-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .auctions-header .title-section h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .auctions-header .title-section p {
+    font-size: 14px;
+    color: #6c757d;
+    margin: 0;
+    padding-top: 4px;
+  }
+  
+  /* Thẻ thống kê - chính xác như trong ảnh */
+  .stats-cards {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .stat-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 95px;
+  }
+  
+  .stat-number {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  
+  .stat-label {
+    font-size: 13px;
+    color: #6c757d;
+    margin-bottom: 16px;
+  }
+  
+  .stat-tag {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  
+  /* Màu sắc chính xác cho các thẻ thống kê như trong ảnh */
+  .stat-card.all {
+    border-bottom: 3px solid #FFA000;
+  }
+  
+  .stat-card.all .stat-number {
+    color: #FFA000;
+  }
+  
+  .stat-card.all .stat-tag {
+    background-color: #FFF8E1;
+    color: #FFA000;
+  }
+  
+  .stat-card.active {
+    border-bottom: 3px solid #9C27B0;
+  }
+  
+  .stat-card.active .stat-number {
+    color: #9C27B0;
+  }
+  
+  .stat-card.active .stat-tag {
+    background-color: #F3E5F5;
+    color: #9C27B0;
+  }
+  
+  .stat-card.draft {
+    border-bottom: 3px solid #8BC34A;
+  }
+  
+  .stat-card.draft .stat-number {
+    color: #8BC34A;
+  }
+  
+  .stat-card.draft .stat-tag {
+    background-color: #F1F8E9;
+    color: #8BC34A;
+  }
+  
+  .stat-card.delivered {
+    border-bottom: 3px solid #03A9F4;
+  }
+  
+  .stat-card.delivered .stat-number {
+    color: #03A9F4;
+  }
+  
+  .stat-card.delivered .stat-tag {
+    background-color: #E1F5FE;
+    color: #03A9F4;
+  }
+  
+  .stat-card.pending {
+    border-bottom: 3px solid #F44336;
+  }
+  
+  .stat-card.pending .stat-number {
+    color: #F44336;
+  }
+  
+  .stat-card.pending .stat-tag {
+    background-color: #FFEBEE;
+    color: #F44336;
+  }
+  
+  .stat-card.completed {
+    border-bottom: 3px solid #3F51B5;
+  }
+  
+  .stat-card.completed .stat-number {
+    color: #3F51B5;
+  }
+  
+  .stat-card.completed .stat-tag {
+    background-color: #E8EAF6;
+    color: #3F51B5;
+  }
+  
+  /* Search và filter section - chính xác như trong ảnh */
+  .search-filter-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .search-box {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 4px;
+    padding: 8px 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    width: 250px;
+  }
+  
+  .search-box svg {
+    color: #6c757d;
+    margin-right: 8px;
+  }
+  
+  .search-box input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
+    background: transparent;
+  }
+  
+  .filters {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .filter-dropdown {
+    position: relative;
+    background-color: #fff;
+    border-radius: 4px;
+    padding: 8px 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    min-width: 150px;
+    cursor: pointer;
+  }
+  
+  .filter-dropdown span {
+    font-size: 14px;
+    margin-right: auto;
+    color: #333;
+  }
+  
+  .filter-dropdown svg {
+    color: #6c757d;
+  }
+  
+  .filter-dropdown select {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+  
+  /* Table styling - chính xác với hình ảnh */
+  .auctions-table-container {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  
+  .auctions-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .auctions-table thead th {
+    background-color: #f8f9fa;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .auctions-table tbody td {
+    padding: 16px;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 14px;
+    color: #333;
+    vertical-align: top;
+  }
+  
+  /* Auction title cell styling */
+  .auction-title-cell {
+    display: flex;
+    align-items: center;
+  }
+  
+  .auction-image {
+    width: 50px;
+    height: 50px;
+    margin-right: 12px;
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  
+  .auction-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .auction-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .auction-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #333;
+    font-size: 14px;
+    text-shadow: none;
+    margin-left: 0;
+  }
+  
+  .auction-category {
+    font-size: 12px;
+    color: #6c757d;
+  }
+  
+  /* Seller cell styling */
+  .seller-cell {
+    min-width: 160px;
+  }
+  
+  .seller-name {
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  
+  .seller-verified {
+    display: inline-block;
+    background-color: #E8F5E9;
+    color: #4CAF50;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  
+  .seller-email {
+    font-size: 12px;
+    color: #6c757d;
+  }
+  
+  /* Date cell styling */
+  .dates-cell {
+    font-size: 12px;
+    color: #333;
+    line-height: 1.6;
+    min-width: 180px;
+  }
+  
+  /* Price cell styling */
+  .price-cell, .bid-cell {
+    font-size: 12px;
+    min-width: 110px;
+  }
+  
+  .price, .bid {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+  }
+  
+  .price-detail, .bid-count {
+    font-size: 11px;
+    color: #6c757d;
+  }
+  
+  /* Status cell styling - chính xác như trong ảnh */
+  .status-cell {
+    text-align: center;
+    min-width: 100px;
+  }
+  
+  .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  
+  .status-cell.opened .status-badge {
+    background-color: #F3E5F5;
+    color: #9C27B0;
+  }
+  
+  .status-cell.completed .status-badge {
+    background-color: #E8EAF6;
+    color: #3F51B5;
+  }
+  
+  .status-cell.pending .status-badge {
+    background-color: #FFEBEE;
+    color: #F44336;
+  }
+  
+  .status-cell.draft .status-badge {
+    background-color: #F1F8E9;
+    color: #8BC34A;
+  }
+  
+  .status-cell.delivered .status-badge {
+    background-color: #E1F5FE;
+    color: #03A9F4;
+  }
+  
+  /* Created at cell */
+  .created-at-cell {
+    font-size: 12px;
+    line-height: 1.6;
+    min-width: 150px;
+  }
+  
+  .time-detail {
+    font-size: 11px;
+    color: #6c757d;
+  }
+  
+  /* Action button */
+  .action-cell {
+    text-align: center;
+    width: 50px;
+  }
+  
+  .action-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+  
+  .action-button:hover {
+    background-color: #f0f0f0;
+  }
+  
+  /* Pagination - chính xác với hình ảnh */
+  .pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .pagination-info {
+    font-size: 14px;
+    color: #6c757d;
+  }
+  
+  .pagination-info span {
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .pagination-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .pagination-button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .pagination-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  
+  .pagination-number.active {
+    background-color: #3F51B5;
+    color: #fff;
+    border-color: #3F51B5;
+  }
+  
+  /* Loading và no data states */
+  .loading-row, .no-data-row {
+    text-align: center;
+    color: #6c757d;
+    padding: 24px !important;
+  }
