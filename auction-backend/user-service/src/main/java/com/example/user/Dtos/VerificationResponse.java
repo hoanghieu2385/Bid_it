@@ -10,6 +10,14 @@ public class VerificationResponse {
         this.message = message;
     }
 
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     // Helper method to determine if response indicates success
     public boolean isSuccess() {
         return message != null &&

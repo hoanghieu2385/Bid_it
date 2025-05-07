@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "verification_tokens")
-
 public class VerificationToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
