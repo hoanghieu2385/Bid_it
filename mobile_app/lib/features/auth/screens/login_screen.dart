@@ -44,11 +44,11 @@ class _LoginPageState extends State<LoginPage> {
           password: _passwordController.text.trim());
 
       final user = userCredential.user;
-      if (user != null) {
+      if (user != null) { //da dang nhap
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login successful')),
         );
-        navigateTo(context, const HomePage());
+        navigateTo(context, const HomePage()); //dieu huong den home
       }
     } on FirebaseAuthException catch (e) {
       String message = 'Login failed';
@@ -74,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
-      body: SafeArea(
+      body: SafeArea( //safe area dùng để tránh đề lên phân tai thỏ
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Form(
@@ -143,7 +143,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       filled: true,
                       fillColor: Colors.white,
-                      suffixIcon: IconButton(
+                      suffixIcon: IconButton( //icon mat an hien
                         icon: Icon(
                           _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
                           color: Colors.grey,

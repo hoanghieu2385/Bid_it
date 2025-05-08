@@ -1,17 +1,52 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
-import 'package:flutter/material.dart';
+import 'package:mobile_app/features/auction/screens/watchlist_screen.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
 import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
+
 class UserPage extends StatelessWidget {
   const UserPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic> userProfile = {
-      'name': 'Tran Hung',
-      'email': 'user@email.com',
-      'avatar': 'https://via.placeholder.com/150',
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'You did not logined.',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                CustomButton(
+                  text: 'Return to Start Page',
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const StartPage()),
+                    );
+                  },
+                  backgroundColor: Colors.orange,
+                  textColor: AppColors.white,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final userProfile = {
+      'name': user.displayName ?? 'User',
+      'email': user.email ?? 'Dont have any email',
+      'avatar': user.photoURL ?? '',
     };
 
     return Scaffold(
@@ -23,15 +58,11 @@ class UserPage extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: NetworkImage(userProfile['avatar']),
                   backgroundColor: AppColors.grey,
-                  child: userProfile['avatar'] == null
-                      ? const Icon(Icons.person, size: 50, color: AppColors.white)
-                      : null,
                 ),
                 const SizedBox(height: 16.0),
                 Text(
-                  userProfile['name'],
+                  userProfile['name']!,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -40,7 +71,7 @@ class UserPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8.0),
                 Text(
-                  userProfile['email'],
+                  userProfile['email']!,
                   style: const TextStyle(
                     fontSize: 16,
                     color: AppColors.grey,
@@ -67,7 +98,7 @@ class UserPage extends StatelessWidget {
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const MyAuctionList()),
+                      MaterialPageRoute(builder: (_) => const WatchlistPage()),
                     );
                   },
                 ),
@@ -108,12 +139,12 @@ class UserPage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: CustomButton(
                     text: 'Logout',
-                    onPressed: () {
+                    onPressed: () async {
+                      await FirebaseAuth.instance.signOut();
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => const StartPage()),
+                        MaterialPageRoute(builder: (_) => const StartPage()),
                       );
-                      print('Logouted');
                     },
                     backgroundColor: Colors.orange,
                     textColor: AppColors.white,
@@ -127,6 +158,7 @@ class UserPage extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildMenuItem({
     required BuildContext context,
     required IconData icon,
@@ -134,11 +166,7 @@ class UserPage extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: Colors.orange,
-        size: 24,
-      ),
+      leading: Icon(icon, color: Colors.orange, size: 24),
       title: Text(
         title,
         style: const TextStyle(
