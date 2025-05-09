@@ -1,12 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/utils/navigation.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/register_screen.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
-
-import '../../home/screens/home_screen.dart';
+import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,7 +18,6 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -30,43 +26,9 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  Future<void> _signIn() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim());
-
-      final user = userCredential.user;
-      if (user != null) { //da dang nhap
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login successful')),
-        );
-        navigateTo(context, const HomePage()); //dieu huong den home
-      }
-    } on FirebaseAuthException catch (e) {
-      String message = 'Login failed';
-      if (e.code == 'user-not-found') {
-        message = 'No user found with this email.';
-      } else if (e.code == 'wrong-password') {
-        message = 'Incorrect password.';
-      } else {
-        message = e.message ?? message;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+  void _signIn() {
+    if (_formKey.currentState!.validate()) {
+      print('Email: ${_emailController.text}, Password: ${_passwordController.text}, Remember Me: $_rememberMe');
     }
   }
 
@@ -74,7 +36,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
-      body: SafeArea( //safe area dùng để tránh đề lên phân tai thỏ
+      body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Form(
@@ -143,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       filled: true,
                       fillColor: Colors.white,
-                      suffixIcon: IconButton( //icon mat an hien
+                      suffixIcon: IconButton(
                         icon: Icon(
                           _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
                           color: Colors.grey,
@@ -184,9 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
                   const SizedBox(height: 30),
-                  _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : CustomButton(
+                  CustomButton(
                     text: 'Sign In',
                     onPressed: _signIn,
                     backgroundColor: AppColors.black,
@@ -217,7 +177,8 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                        },
                         child: const Text(
                           'Forget password?',
                           style: TextStyle(

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequestMapping("/auth")
 public class AuthController {
+
     private final AuthService authService;
     private final JwtUtil jwtUtil;
 
