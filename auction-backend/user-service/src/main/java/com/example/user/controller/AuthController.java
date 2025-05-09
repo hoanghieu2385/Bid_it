@@ -52,14 +52,17 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseBody
-    public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
             return ResponseEntity.ok(authService.register(request));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new RegisterResponse(e.getMessage()));
         } catch (Exception e) {
-            e.printStackTrace(); // log lỗi ra console
-            return ResponseEntity.internalServerError().build();
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new RegisterResponse("Internal server error"));
         }
     }
+
 
     @PostMapping("/verify-email")
     @ResponseBody
