@@ -49,8 +49,13 @@ public class AuthService {
     }
 
     public RegisterResponse register(RegisterRequest request) {
+        // Kiểm tra email trùng
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
+        }
+
+        if (userRepository.findByPhoneNumber(request.getPhoneNumber()).isPresent()) {
+            throw new RuntimeException("Phone number already exists");
         }
 
         Bank bank = bankRepository.findById(request.getBankId())
@@ -77,6 +82,7 @@ public class AuthService {
 
         return new RegisterResponse("Registration successful. Please check your email for verification link.");
     }
+
 
     public VerificationResponse verifyAccountByToken(String email, String token) {
         User user = userRepository.findByEmail(email)

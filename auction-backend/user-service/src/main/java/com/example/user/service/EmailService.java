@@ -49,9 +49,7 @@ public class EmailService {
                             Xác thực tài khoản
                         </a>
                     </div>
-                    <p>Hoặc bạn có thể copy đường link sau vào trình duyệt:</p>
-                    <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px;">%s</p>
-                    <p>Đường link này sẽ hết hạn sau 24 giờ.</p>
+                    <p>Mail này sẽ hết hạn sau 24 giờ.</p>
                     <p>Xin vui lòng không chia sẻ đường link này với bất kỳ ai.</p>
                     <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
                 </div>
@@ -95,9 +93,7 @@ public class EmailService {
                             Đặt lại mật khẩu
                         </a>
                     </div>
-                    <p>Hoặc bạn có thể copy đường link sau vào trình duyệt:</p>
-                    <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px;">%s</p>
-                    <p>Đường link này sẽ hết hạn sau 24 giờ.</p>
+                    <p>Mail này sẽ hết hạn sau 24 giờ.</p>
                     <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này hoặc liên hệ với chúng tôi nếu bạn có bất kỳ thắc mắc nào.</p>
                     <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
                 </div>
