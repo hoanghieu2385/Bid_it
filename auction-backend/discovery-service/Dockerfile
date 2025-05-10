@@ -1,6 +1,14 @@
-FROM openjdk:17-jdk-slim
+# ---------- Stage 1 ----------
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
-RUN apt-get update && apt-get install -y curl
-COPY target/discovery-service-0.0.1-SNAPSHOT.jar discovery-service.jar
+COPY pom.xml .
+RUN mvn dependency:go-offline
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# ---------- Stage 2 ----------
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /app/target/*.jar discovery-service.jar
 EXPOSE 8761
-ENTRYPOINT ["java", "-jar", "discovery-service.jar"]
+ENTRYPOINT ["java", "-Dspring.profiles.active=docker", "-jar", "discovery-service.jar"]
