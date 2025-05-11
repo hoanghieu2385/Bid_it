@@ -3,6 +3,8 @@ package com.example.user.controller;
 import com.example.user.Dtos.*;
 import com.example.user.config.JwtUtil;
 import com.example.user.service.AuthService;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -50,14 +52,17 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseBody
-    public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
             return ResponseEntity.ok(authService.register(request));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new RegisterResponse(e.getMessage()));
         } catch (Exception e) {
-            e.printStackTrace(); // log lỗi ra console
-            return ResponseEntity.internalServerError().build();
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new RegisterResponse("Internal server error"));
         }
     }
+
 
     @PostMapping("/verify-email")
     @ResponseBody
@@ -67,8 +72,21 @@ public class AuthController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.authenticate(request));
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
+        AuthResponse authResponse = authService.authenticate(request);
+
+        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
+                .httpOnly(true)
+                .secure(false) // true nếu HTTPS
+                .path("/")
+                .sameSite("None")
+                .maxAge(24 * 60 * 60)
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+
+        // Trả response không có token nếu bạn không cần hiển thị ở client
+        return ResponseEntity.ok(authResponse);
     }
 
     @PostMapping("/request-otp")

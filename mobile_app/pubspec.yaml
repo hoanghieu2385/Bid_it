@@ -16,9 +16,12 @@ environment:
 
 # Dependencies required for the application
 dependencies:
+  firebase_core: ^2.30.0
+  firebase_auth: ^4.17.0
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  cloud_firestore: ^4.17.5
 
 # Development and testing dependencies
 dev_dependencies:
@@ -29,5 +32,5 @@ dev_dependencies:
 # Flutter-specific configurations
 flutter:
   uses-material-design: true
-#  assets:
-#    - assets/images/product-img.png
+  assets:
+    - assets/images/

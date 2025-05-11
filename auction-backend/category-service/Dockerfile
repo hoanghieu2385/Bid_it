@@ -1,22 +1,14 @@
-# Sử dụng image Java 17 làm base image
-FROM openjdk:17-jdk-slim
-
-# Đặt thư mục làm việc trong container
+# ---------- Stage 1 ----------
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
-
-# Copy file pom.xml và mã nguồn vào container
 COPY pom.xml .
+RUN mvn dependency:go-offline
 COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Cài đặt Maven và build ứng dụng
-RUN apt-get update && apt-get install -y maven
-# RUN mvn clean package -DskipTests
-
-# Copy file JAR đã build vào container
-COPY target/category-service-0.0.1-SNAPSHOT.jar app.jar
-
-# Expose port 8084 (port mà category-service chạy)
+# ---------- Stage 2 ----------
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8084
-
-# Lệnh để chạy ứng dụng
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dspring.profiles.active=docker", "-jar", "app.jar"]
