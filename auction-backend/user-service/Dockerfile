@@ -1,26 +1,17 @@
-FROM maven:3.9.6-eclipse-temurin-21 AS build
+FROM eclipse-temurin:21-jdk AS build
 
 WORKDIR /app
-
-# Tăng tốc độ build bằng cách cache dependency trước
-COPY pom.xml .
-# RUN mvn dependency:go-offline
-
-
+COPY pom.xml ./
 COPY src ./src
-
-# Build 
-RUN mvn clean package -DskipTests
+RUN apt-get update && apt-get install -y maven
+# RUN mvn package -DskipTests
 
 FROM eclipse-temurin:21-jre
-
 WORKDIR /app
-
-# copy file JAR 
 COPY --from=build /app/target/*.jar app.jar
 
-# Mở port mặc định của Spring Boot
-EXPOSE 8082
+# Expose port
+EXPOSE 8081
 
-# Chạy ứng dụng Spring Boot
-ENTRYPOINT ["java", "-Dspring.profiles.active=docker", "-jar", "app.jar"]
+# Chạy app sau khi DB sẵn sàng
+ENTRYPOINT [ "java", "-Dspring.profiles.active=docker", "-jar", "app.jar"]
