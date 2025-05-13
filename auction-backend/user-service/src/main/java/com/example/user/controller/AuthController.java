@@ -12,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Controller
 @RequestMapping("/auth")
 public class AuthController {
@@ -72,21 +74,27 @@ public class AuthController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
-        AuthResponse authResponse = authService.authenticate(request);
+    public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletResponse response) {
+        try {
+            AuthResponse authResponse = authService.authenticate(request);
 
-        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
-                .httpOnly(true)
-                .secure(false) // true nếu HTTPS
-                .path("/")
-                .sameSite("None")
-                .maxAge(24 * 60 * 60)
-                .build();
+            ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .sameSite("None")
+                    .maxAge(24 * 60 * 60)
+                    .build();
 
-        response.addHeader("Set-Cookie", cookie.toString());
+            response.addHeader("Set-Cookie", cookie.toString());
+            return ResponseEntity.ok(authResponse);
 
-        // Trả response không có token nếu bạn không cần hiển thị ở client
-        return ResponseEntity.ok(authResponse);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("message", "Internal server error"));
+        }
     }
 
     @PostMapping("/request-otp")
