@@ -1,0 +1,94 @@
+/* Categories-list.css */
+
+/* Main layout */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  /* Category icon container */
+  .category-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+  }
+  
+  /* Table styling */
+  .table {
+    margin-bottom: 0;
+  }
+  
+  .table thead th {
+    font-weight: 500;
+    color: #6c757d;
+    border-bottom: 1px solid #eaedf2;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  
+  .table tbody td {
+    border-bottom: 1px solid #eaedf2;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    vertical-align: middle;
+  }
+  
+  .table tr:hover {
+    background-color: #f8fafc;
+  }
+  
+  /* Button styling */
+  .btn-primary {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+  }
+  
+  .btn-primary:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+  }
+  
+  /* Action buttons */
+  .btn-link {
+    color: #64748b;
+    text-decoration: none;
+  }
+  
+  .btn-link:hover {
+    color: #1e293b;
+  }
+  
+  /* Breadcrumb styles */
+  .breadcrumb-item {
+    font-size: 14px;
+    color: #64748b;
+  }
+  
+  .breadcrumb-item.active {
+    color: #1e293b;
+    font-weight: 500;
+  }
+  
+  /* Card & container styling */
+  .bg-white {
+    background-color: white;
+  }
+  
+  .shadow-sm {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  /* Text styles */
+  .fw-medium {
+    font-weight: 500;
+  }
+  
+  .text-muted {
+    color: #64748b !important;
+  }
