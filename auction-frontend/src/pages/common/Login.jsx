@@ -42,7 +42,11 @@ function Login() {
 				setMessage('Login failed: Invalid response');
 			}
 		} catch (error) {
-			setMessage(error.message || 'Login failed.');
+			if (error.response && error.response.data && error.response.data.message) {
+				setMessage(error.response.data.message);
+			} else {
+				setMessage('Login failed.');
+			}
 		}
 	};
 
