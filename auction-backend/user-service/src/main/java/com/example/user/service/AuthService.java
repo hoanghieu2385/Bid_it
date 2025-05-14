@@ -13,6 +13,8 @@ import com.example.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -31,6 +33,8 @@ public class AuthService {
     private final VerificationTokenService verificationTokenService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
+    ZoneId vietnamZone = ZoneId.of("Asia/Ho_Chi_Minh");
+    LocalDateTime nowInVietnam = ZonedDateTime.now(vietnamZone).toLocalDateTime();
 
     @Value("${app.base-url}")
     private String appBaseUrl;
@@ -67,10 +71,9 @@ public class AuthService {
         user.setLastName(request.getLastName());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhoneNumber(request.getPhoneNumber());
-        user.setAddress(request.getAddress());
         user.setBank(bank);
         user.setBankAccountNumber(request.getBankAccountNumber());
-        user.setCreatedAt(LocalDateTime.now());
+        user.setCreatedAt(nowInVietnam);
         user.setEnable(false);
         user.setVerified(false);
         user.setLocked(false);
@@ -172,10 +175,10 @@ public class AuthService {
 
     public AuthResponse authenticate(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Email does not exist"));
 
         if (!user.getVerified()) {
-            throw new RuntimeException("Email not verified");
+            throw new RuntimeException("Email is not verified");
         }
 
         if (user.getLocked()) {
@@ -183,7 +186,7 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new RuntimeException("Incorrect email or password");
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
@@ -241,7 +244,7 @@ public class AuthService {
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        user.setUpdatedAt(LocalDateTime.now());
+        user.setUpdatedAt(nowInVietnam);
         userRepository.save(user);
 
         passwordResetTokenRepository.delete(resetToken);

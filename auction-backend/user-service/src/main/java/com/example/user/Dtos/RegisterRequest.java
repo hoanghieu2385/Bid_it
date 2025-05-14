@@ -6,7 +6,6 @@ public class RegisterRequest {
     private String lastName;
     private String password;
     private String phoneNumber;
-    private String address;
     private Long bankId;
     private String bankAccountNumber;
 
@@ -14,13 +13,12 @@ public class RegisterRequest {
     }
 
     public RegisterRequest(String email, String firstName, String lastName, String password,
-                           String phoneNumber, String address, Long bankId, String bankAccountNumber) {
+                           String phoneNumber, Long bankId, String bankAccountNumber) {
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
         this.password = password;
         this.phoneNumber = phoneNumber;
-        this.address = address;
         this.bankId = bankId;
         this.bankAccountNumber = bankAccountNumber;
     }
@@ -63,14 +61,6 @@ public class RegisterRequest {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
     }
 
     public Long getBankId() {

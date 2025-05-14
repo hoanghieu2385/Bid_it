@@ -14,6 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -54,6 +55,7 @@ public class SecurityConfig {
                                 "/auth/forgot-password",
                                 "/auth/reset-password"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/banks/**").permitAll() // Allow GET requests to /banks/** without authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(
