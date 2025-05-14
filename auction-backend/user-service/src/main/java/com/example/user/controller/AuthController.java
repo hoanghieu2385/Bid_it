@@ -74,26 +74,12 @@ public class AuthController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletResponse response) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
             AuthResponse authResponse = authService.authenticate(request);
-
-            ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
-                    .httpOnly(true)
-                    .secure(false)
-                    .path("/")
-                    .sameSite("None")
-                    .maxAge(24 * 60 * 60)
-                    .build();
-
-            response.addHeader("Set-Cookie", cookie.toString());
-            return ResponseEntity.ok(authResponse);
-
+            return ResponseEntity.ok(authResponse); // chứa token và user info
         } catch (RuntimeException e) {
             return ResponseEntity.status(401).body(Map.of("message", e.getMessage()));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(Map.of("message", "Internal server error"));
         }
     }
 

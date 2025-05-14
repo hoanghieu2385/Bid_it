@@ -1,8 +1,7 @@
 // src/pages/common/Login.jsx
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Cookies from 'js-cookie';
-import { login } from '../../services/user-api';
+import { login, getCurrentUser } from '../../services/user-api';
 import { UserContext } from '../../contexts/UserContext.jsx';
 import '../../assets/styles/client/login.css';
 
@@ -16,25 +15,29 @@ function Login() {
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		const token = Cookies.get('jwt');
-		if (token) {
-			navigate('/');
-		}
+		// Nếu đã có cookie jwt, tự động chuyển trang
+		(async () => {
+			try {
+				const user = await getCurrentUser();
+				if (user) {
+					loginUser(user);
+					navigate('/');
+				}
+			} catch {
+				// Không đăng nhập thì không cần làm gì
+			}
+		})();
 	}, []);
 
 	const handleLogin = async (e) => {
 		e.preventDefault();
 		try {
 			const response = await login(email, password);
+
 			if (response.token) {
-				Cookies.set('jwt', response.token, { expires: 7 });
-				const userData = {
-					id: response.id,
-					email: response.email,
-					firstName: response.firstName,
-					lastName: response.lastName,
-					score: response.score,
-				};
+				localStorage.setItem('jwt', response.token);
+
+				const userData = await getCurrentUser(); // call api need token
 				loginUser(userData);
 				setMessage('Login successful!');
 				navigate('/');
@@ -42,11 +45,7 @@ function Login() {
 				setMessage('Login failed: Invalid response');
 			}
 		} catch (error) {
-			if (error.response && error.response.data && error.response.data.message) {
-				setMessage(error.response.data.message);
-			} else {
-				setMessage('Login failed.');
-			}
+			setMessage(error.response?.data?.message || 'Login failed.');
 		}
 	};
 
