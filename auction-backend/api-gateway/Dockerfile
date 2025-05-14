@@ -1,5 +1,14 @@
-FROM openjdk:17-jdk-slim
+# ---------- Stage 1 ----------
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
-COPY target/api-gateway-0.0.1-SNAPSHOT.jar api-gateway.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "api-gateway.jar"]
+COPY pom.xml .
+RUN mvn dependency:go-offline
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# ---------- Stage 2 ----------
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8083
+ENTRYPOINT ["java", "-Dspring.profiles.active=docker", "-jar", "app.jar"]
