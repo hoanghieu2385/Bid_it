@@ -40,8 +40,9 @@ public class User {
     @Column(nullable = false)
     private String bankAccountNumber;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "INT NOT NULL DEFAULT 0")
     private Integer score = 0;
+
 
     @Column(nullable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
