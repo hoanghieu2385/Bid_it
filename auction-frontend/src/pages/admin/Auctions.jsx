@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import "../../assets/styles/admin/Auctions.css";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
@@ -393,11 +394,13 @@ const Auctions = () => {
                   auctions.map((auction) => (
                     <tr key={auction.id}>
                       <td className="auction-title-cell">
-                        <div className="auction-image">
-                          <img src={auction.image} alt={auction.title} />
-                        </div>
+                      <Link to={`/admin/auction/${auction.id}`} className="auction-image">
+                        <img src={auction.image} alt={auction.title} />
+                      </Link>
                         <div className="auction-info">
-                          <div className="auction-title">{auction.title}</div>
+                        <Link to={`/admin/auction/${auction.id}`} className="auction-title">
+                          {auction.title}
+                        </Link>
                           <div className="auction-category">
                             ID #{auction.id} | Category: {auction.category}
                           </div>

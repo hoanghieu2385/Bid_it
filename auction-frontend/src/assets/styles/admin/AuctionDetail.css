@@ -1,0 +1,373 @@
+/* src/assets/styles/admin/AuctionDetail.css */
+
+.auction-detail-container {
+    padding: 20px;
+  }
+  
+  /* Breadcrumb và header */
+  .detail-header {
+    margin-bottom: 20px;
+  }
+  
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    color: #6c757d;
+    font-size: 14px;
+  }
+  
+  .breadcrumb a {
+    color: #6c757d;
+    text-decoration: none;
+  }
+  
+  .breadcrumb a:hover {
+    color: #007bff;
+  }
+  
+  .breadcrumb svg {
+    margin: 0 10px;
+  }
+  
+  /* Auction header card */
+  .auction-header-card {
+    display: flex;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  
+  .auction-header-left {
+    width: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border-right: 1px solid #f0f0f0;
+  }
+  
+  .auction-main-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  
+  .auction-header-content {
+    flex: 1;
+    padding: 20px;
+  }
+  
+  .auction-title-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .auction-title-section h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  
+  .seller-tag {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .seller-tag svg {
+    margin-right: 5px;
+    color: #6c757d;
+  }
+  
+  .auction-meta {
+    display: flex;
+    margin-bottom: 20px;
+  }
+  
+  .meta-item {
+    display: flex;
+    align-items: center;
+    margin-right: 20px;
+    color: #6c757d;
+    font-size: 14px;
+  }
+  
+  .meta-item svg {
+    margin-right: 5px;
+  }
+  
+  /* Stats cards */
+  .auction-stats {
+    display: flex;
+    gap: 15px;
+  }
+  
+  .stat-card {
+    flex: 1;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    text-align: center;
+  }
+  
+  .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 5px;
+    text-align: center;
+  }
+  
+  .price-value {
+    color: #28a745;
+  }
+  
+  .increment-value {
+    color: #6c757d;
+  }
+  
+  .bid-value {
+    color: #17a2b8;
+  }
+  
+  .count-value {
+    color: #ffc107;
+  }
+  
+  .stat-label {
+    font-size: 12px;
+    color: #6c757d;
+  }
+  
+  /* Tabs */
+  .auction-tabs {
+    display: flex;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 20px;
+  }
+  
+  .tab-button {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.2s;
+  }
+  
+  .tab-button:hover {
+    color: #007bff;
+  }
+  
+  .tab-button.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+  }
+  
+  /* Tab content */
+  .tab-content {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+  }
+  
+  /* Status badges */
+  .status-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  
+  .status-badge.opened {
+    background-color: #e6f7ff;
+    color: #0095ff;
+  }
+  
+  .status-badge.completed {
+    background-color: #e6fff2;
+    color: #00c853;
+  }
+  
+  .status-badge.disputed {
+    background-color: #fff3e6;
+    color: #ff9500;
+  }
+  
+  .status-badge.pending {
+    background-color: #f5f5f5;
+    color: #757575;
+  }
+  
+  .status-badge.approved {
+    background-color: #e6fff2;
+    color: #00c853;
+  }
+  
+  .status-badge.active {
+    background-color: #e6f7ff;
+    color: #0095ff;
+  }
+  
+  .status-badge.outbid {
+    background-color: #f5f5f5;
+    color: #757575;
+  }
+  
+  /* Details section */
+  .auction-details h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  .detail-row {
+    display: flex;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 15px 0;
+  }
+  
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+  
+  .detail-label {
+    width: 150px;
+    font-weight: 500;
+    color: #6c757d;
+  }
+  
+  .detail-value {
+    flex: 1;
+  }
+  
+  .detail-value.description {
+    white-space: pre-wrap;
+  }
+  
+  /* Media grid */
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+  
+  .media-item {
+    aspect-ratio: 1;
+    border-radius: 5px;
+    overflow: hidden;
+    background-color: #f8f9fa;
+  }
+  
+  .media-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  /* Data tables */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .data-table th {
+    font-weight: 500;
+    color: #6c757d;
+    background-color: #f8f9fa;
+  }
+  
+  .data-table tr:last-child td {
+    border-bottom: none;
+  }
+  
+  /* No data message */
+  .no-data-message {
+    padding: 30px;
+    text-align: center;
+    color: #6c757d;
+  }
+  
+  /* Loading state */
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+  }
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f0f0f0;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Dispute section */
+  .dispute-card {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+  }
+  
+  .dispute-header {
+    padding: 15px;
+    background-color: #fff3e6;
+    border-bottom: 1px solid #ffe0b2;
+  }
+  
+  .dispute-status {
+    color: #ff9500;
+    font-weight: 500;
+  }
+  
+  .dispute-body {
+    padding: 15px;
+  }
+  
+  .dispute-row {
+    display: flex;
+    margin-bottom: 10px;
+  }
+  
+  .dispute-row:last-child {
+    margin-bottom: 0;
+  }
+  
+  .dispute-label {
+    width: 120px;
+    font-weight: 500;
+    color: #6c757d;
+  }
+  
+  .dispute-value {
+    flex: 1;
+  }
