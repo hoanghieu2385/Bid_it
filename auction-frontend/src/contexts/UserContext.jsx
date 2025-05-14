@@ -11,7 +11,7 @@ export const UserProvider = ({ children }) => {
 	};
 
 	const logoutUser = () => {
-		document.cookie = 'jwt=; Max-Age=0; path=/;';
+		localStorage.removeItem('jwt');
 		setUser(null);
 	};
 
