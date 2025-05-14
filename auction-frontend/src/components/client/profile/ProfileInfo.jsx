@@ -23,7 +23,6 @@ const ProfileInfo = () => {
 		detail: '',
 	});
 
-	// Load user and province list
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
@@ -36,8 +35,6 @@ const ProfileInfo = () => {
 					address: userData.address || '',
 				});
 				await loadProvinces();
-
-				// Auto-parse address into location
 				if (userData.address) {
 					parseAddress(userData.address);
 				}
@@ -54,7 +51,6 @@ const ProfileInfo = () => {
 		fetchData();
 	}, []);
 
-	// Parse full address into dropdowns
 	const parseAddress = async (address) => {
 		const parts = address.split(',').map((p) => p.trim());
 		if (parts.length < 4) return;
@@ -135,15 +131,16 @@ const ProfileInfo = () => {
 	if (!user) return <div>Loading...</div>;
 
 	return (
-		<div className="card p-3">
-			<h5>Personal Information</h5>
-			<div className="row">
+		<div className="profile-info-card p-4 shadow-sm rounded">
+			<h4 className="mb-4 text-primary fw-bold">Personal Information</h4>
+			<div className="row g-3">
 				<div className="col-md-6">
-					<label>Email (read-only)</label>
+					<label className="form-label">Email</label>
 					<input type="email" className="form-control" value={user.email} disabled />
 				</div>
+
 				<div className="col-md-6">
-					<label>First Name</label>
+					<label className="form-label">First Name</label>
 					<input
 						type="text"
 						className="form-control"
@@ -153,8 +150,9 @@ const ProfileInfo = () => {
 						disabled={!editMode}
 					/>
 				</div>
-				<div className="col-md-6 mt-3">
-					<label>Last Name</label>
+
+				<div className="col-md-6">
+					<label className="form-label">Last Name</label>
 					<input
 						type="text"
 						className="form-control"
@@ -164,8 +162,9 @@ const ProfileInfo = () => {
 						disabled={!editMode}
 					/>
 				</div>
-				<div className="col-md-6 mt-3">
-					<label>Phone Number</label>
+
+				<div className="col-md-6">
+					<label className="form-label">Phone Number</label>
 					<input
 						type="text"
 						className="form-control"
@@ -178,9 +177,9 @@ const ProfileInfo = () => {
 
 				{editMode ? (
 					<>
-						<div className="col-md-4 mt-3">
-							<label>Province / City</label>
-							<select className="form-control" value={location.province} onChange={handleProvinceChange}>
+						<div className="col-md-4">
+							<label className="form-label">Province / City</label>
+							<select className="form-select" value={location.province} onChange={handleProvinceChange}>
 								<option value="">Select province</option>
 								{provinces.map((prov) => (
 									<option key={prov.code} value={prov.code}>
@@ -190,9 +189,9 @@ const ProfileInfo = () => {
 							</select>
 						</div>
 
-						<div className="col-md-4 mt-3">
-							<label>District</label>
-							<select className="form-control" value={location.district} onChange={handleDistrictChange}>
+						<div className="col-md-4">
+							<label className="form-label">District</label>
+							<select className="form-select" value={location.district} onChange={handleDistrictChange}>
 								<option value="">Select district</option>
 								{districts.map((dist) => (
 									<option key={dist.code} value={dist.code}>
@@ -202,9 +201,9 @@ const ProfileInfo = () => {
 							</select>
 						</div>
 
-						<div className="col-md-4 mt-3">
-							<label>Ward</label>
-							<select className="form-control" value={location.ward} onChange={handleWardChange}>
+						<div className="col-md-4">
+							<label className="form-label">Ward</label>
+							<select className="form-select" value={location.ward} onChange={handleWardChange}>
 								<option value="">Select ward</option>
 								{wards.map((ward) => (
 									<option key={ward.code} value={ward.code}>
@@ -214,34 +213,40 @@ const ProfileInfo = () => {
 							</select>
 						</div>
 
-						<div className="col-md-12 mt-3">
-							<label>Detail Address</label>
+						<div className="col-md-12">
+							<label className="form-label">Detail Address</label>
 							<input type="text" className="form-control" value={location.detail} onChange={handleDetailChange} />
 						</div>
 					</>
 				) : (
-					<div className="col-md-12 mt-3">
-						<label>Address</label>
+					<div className="col-md-12">
+						<label className="form-label">Address</label>
 						<input type="text" className="form-control" value={form.address} disabled />
 					</div>
 				)}
-			</div>
 
-			<div className="mt-3">
-				{editMode ? (
-					<>
-						<button className="btn btn-primary me-2" onClick={handleSave}>
-							Save
+				{/* Score luôn hiển thị */}
+				<div className="col-md-6">
+					<label className="form-label">Score</label>
+					<input type="text" className="form-control" value={user.score} disabled />
+				</div>
+
+				<div className="col-12 d-flex justify-content-end mt-3">
+					{editMode ? (
+						<>
+							<button className="btn btn-success me-2" onClick={handleSave}>
+								Save
+							</button>
+							<button className="btn btn-outline-secondary" onClick={() => setEditMode(false)}>
+								Cancel
+							</button>
+						</>
+					) : (
+						<button className="btn btn-outline-primary" onClick={() => setEditMode(true)}>
+							Edit
 						</button>
-						<button className="btn btn-secondary" onClick={() => setEditMode(false)}>
-							Cancel
-						</button>
-					</>
-				) : (
-					<button className="btn btn-outline-primary" onClick={() => setEditMode(true)}>
-						Edit
-					</button>
-				)}
+					)}
+				</div>
 			</div>
 		</div>
 	);
