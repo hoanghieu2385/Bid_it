@@ -12,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Controller
 @RequestMapping("/auth")
 public class AuthController {
@@ -72,21 +74,13 @@ public class AuthController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
-        AuthResponse authResponse = authService.authenticate(request);
-
-        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
-                .httpOnly(true)
-                .secure(false) // true nếu HTTPS
-                .path("/")
-                .sameSite("None")
-                .maxAge(24 * 60 * 60)
-                .build();
-
-        response.addHeader("Set-Cookie", cookie.toString());
-
-        // Trả response không có token nếu bạn không cần hiển thị ở client
-        return ResponseEntity.ok(authResponse);
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        try {
+            AuthResponse authResponse = authService.authenticate(request);
+            return ResponseEntity.ok(authResponse); // chứa token và user info
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PostMapping("/request-otp")

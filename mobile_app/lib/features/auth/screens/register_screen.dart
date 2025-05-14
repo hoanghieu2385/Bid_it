@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/login_screen.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
+import 'package:mobile_app/core/services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -18,24 +17,27 @@ class _RegisterPageState extends State<RegisterPage> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneNumberController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isTermsAccepted = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
+    _phoneNumberController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _register() async {
+  Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (!_isTermsAccepted) {
@@ -45,54 +47,38 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    setState(() => _isLoading = true);
+
     try {
-      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      final result = await AuthService.register(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        phoneNumber: _phoneNumberController.text.trim(),
+        
       );
 
-      final user = userCredential.user;
-
-      if (user != null) {
-        await user.updateDisplayName(
-          '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
-        );
-
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-          'uid': user.uid,
-          'email': user.email,
-          'firstName': _firstNameController.text.trim(),
-          'lastName': _lastNameController.text.trim(),
-          'createdAt': FieldValue.serverTimestamp(),
-          'role': 'user',
-        });
-
-        // Chuyển đến LoginPage kèm thông báo
+      if (result != null) {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => const LoginPage(),
-          ),
+          MaterialPageRoute(builder: (_) => const LoginPage()),
         );
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful. Please log in to continue.')),
+          const SnackBar(content: Text('Registration successful. Please log in.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registration failed.')),
         );
       }
-    } on FirebaseAuthException catch (e) {
-      String error = 'Registration failed';
-      if (e.code == 'email-already-in-use') {
-        error = 'This email is already in use.';
-      } else if (e.code == 'invalid-email') {
-        error = 'Invalid email address.';
-      } else if (e.code == 'weak-password') {
-        error = 'Password is too weak.';
-      }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An unexpected error occurred.')),
+        SnackBar(content: Text('Error: ${e.toString()}')),
       );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -123,13 +109,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: AppColors.black),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    "Sign up and get started",
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
+                  const Text("Sign up and get started", style: TextStyle(fontSize: 16, color: Colors.grey)),
                   const SizedBox(height: 40),
-
-                  // Name fields
                   Row(
                     children: [
                       Expanded(
@@ -162,8 +143,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     ],
                   ),
                   const SizedBox(height: 20),
-
-                  // Email
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
@@ -180,8 +159,22 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                   ),
                   const SizedBox(height: 20),
-
-                  // Password
+                  TextFormField(
+                    controller: _phoneNumberController,
+                    decoration: const InputDecoration(
+                      labelText: 'Phone Number',
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Enter phone number';
+                      if (!RegExp(r'^[0-9]{9,11}$').hasMatch(value)) return 'Invalid phone number';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
@@ -195,9 +188,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
                           color: Colors.grey,
                         ),
-                        onPressed: () => setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        }),
+                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                       ),
                     ),
                     validator: (value) {
@@ -207,8 +198,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                   ),
                   const SizedBox(height: 20),
-
-                  // Confirm Password
                   TextFormField(
                     controller: _confirmPasswordController,
                     obscureText: !_isConfirmPasswordVisible,
@@ -222,9 +211,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
                           color: Colors.grey,
                         ),
-                        onPressed: () => setState(() {
-                          _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                        }),
+                        onPressed: () =>
+                            setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
                       ),
                     ),
                     validator: (value) {
@@ -234,8 +222,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                   ),
                   const SizedBox(height: 20),
-
-                  // Terms
                   Row(
                     children: [
                       Checkbox(
@@ -248,43 +234,33 @@ class _RegisterPageState extends State<RegisterPage> {
                         onTap: () {},
                         child: const Text(
                           'terms and conditions',
-                          style: TextStyle(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 30),
-
-                  // Submit
-                  CustomButton(
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : CustomButton(
                     text: 'Register',
                     onPressed: _register,
                     backgroundColor: AppColors.black,
                     textColor: AppColors.white,
                   ),
                   const SizedBox(height: 20),
-
-                  // Sign In
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text('Already have an account? ', style: TextStyle(color: AppColors.black)),
                       TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const LoginPage()),
-                          );
-                        },
+                        onPressed: () => Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginPage()),
+                        ),
                         child: const Text(
                           'Sign In',
-                          style: TextStyle(
-                            color: AppColors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],

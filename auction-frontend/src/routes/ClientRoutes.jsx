@@ -11,6 +11,7 @@ import Auction from '../pages/client/Auction.jsx';
 import ViewDetail from '../pages/client/ViewDetail.jsx';
 import Blog from '../pages/client/Blog.jsx';
 import BlogPostDetail from '../pages/client/BlogPostDetail.jsx';
+import UserProfile from '../pages/client/UserProfile.jsx';
 
 function ClientRoutes() {
 	return (
@@ -19,6 +20,7 @@ function ClientRoutes() {
 				<Route path="/" element={<Home />} />
 				<Route path="/login" element={<Login />} />
 				<Route path="/register" element={<Register />} />
+				<Route path="/profile" element={<UserProfile />} />
 				<Route path="/about" element={<About />} />
 				<Route path="/contact" element={<Contact />} />
 				<Route path="/how-it-works" element={<HowItWork />} />

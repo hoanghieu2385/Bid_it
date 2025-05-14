@@ -5,6 +5,7 @@ import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auction/screens/watchlist_screen.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
 import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
+import 'package:mobile_app/features/profile/screens/profile_screen.dart';
 
 class UserPage extends StatelessWidget {
   const UserPage({super.key});
@@ -88,7 +89,10 @@ class UserPage extends StatelessWidget {
                   icon: Icons.person_outline,
                   title: 'Profile',
                   onTap: () {
-                    print('Profile pressed');
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfilePage()),
+                    );
                   },
                 ),
                 _buildMenuItem(

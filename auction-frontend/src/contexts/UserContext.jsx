@@ -1,33 +1,23 @@
 // src/contexts/UserContext.jsx
-import React, { createContext, useState, useEffect } from 'react';
-import Cookies from 'js-cookie';
+import React, { createContext, useState } from 'react';
 
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+	const [user, setUser] = useState(null);
 
-    useEffect(() => {
-    const storedUser = Cookies.get('user');
-    if (storedUser) {
-        setUser(JSON.parse(storedUser));
-    }
-    }, []);
+	const loginUser = (userData) => {
+		setUser(userData);
+	};
 
-    const loginUser = (userData) => {
-    Cookies.set('user', JSON.stringify(userData), { expires: 7 });
-    setUser(userData);
-    };
+	const logoutUser = () => {
+		localStorage.removeItem('jwt');
+		setUser(null);
+	};
 
-    const logoutUser = () => {
-    Cookies.remove('user');
-    Cookies.remove('jwt');
-    setUser(null);
-    };
-
-    return (
-    <UserContext.Provider value={{ user, loginUser, logoutUser }}>
-        {children}
-    </UserContext.Provider>
-    );
+	return (
+		<UserContext.Provider value={{ user, loginUser, logoutUser }}>
+			{children}
+		</UserContext.Provider>
+	);
 };

@@ -49,43 +49,9 @@ const Header = () => {
 									About Us
 								</Link>
 							</li>
-							<li className="nav-item dropdown d-xl-none">
-								<a
-									className="client-nav-link nav-link dropdown-toggle"
-									href="#"
-									id="moreDropdown"
-									role="button"
-									data-bs-toggle="dropdown"
-									aria-expanded="false"
-								>
-									More
-								</a>
-								<ul className="dropdown-menu" aria-labelledby="moreDropdown">
-									<li>
-										<Link to="/how-it-works" className="dropdown-item" onClick={() => setExpanded(false)}>
-											How it Works
-										</Link>
-									</li>
-									<li>
-										<Link to="/blog" className="dropdown-item" onClick={() => setExpanded(false)}>
-											Blog
-										</Link>
-									</li>
-								</ul>
-							</li>
-							<li className="nav-item d-none d-xl-block">
-								<Link to="/how-it-works" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
-									How it Works
-								</Link>
-							</li>
 							<li className="nav-item">
 								<Link to="/auctions" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
 									Browse Auctions
-								</Link>
-							</li>
-							<li className="nav-item d-none d-xl-block">
-								<Link to="/blog" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
-									Blog
 								</Link>
 							</li>
 							<li className="nav-item">
@@ -104,39 +70,36 @@ const Header = () => {
 							</div>
 
 							{user ? (
-								<div className="dropdown">
+								<div className="dropdown user-dropdown">
 									<button
-										className="btn btn-secondary dropdown-toggle"
+										className="btn user-dropdown-toggle d-flex align-items-center"
 										type="button"
 										id="userDropdown"
 										data-bs-toggle="dropdown"
 										aria-expanded="false"
 									>
-										{user.firstName}
+										<div className="user-initial bg-primary text-white rounded-circle me-2">
+											{user.firstName?.charAt(0).toUpperCase()}
+										</div>
+										<span className="fw-medium">{user.firstName}</span>
 									</button>
-									<ul className="dropdown-menu" aria-labelledby="userDropdown">
+									<ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
 										<li>
 											<Link to="/profile" className="dropdown-item" onClick={() => setExpanded(false)}>
-												Profile
+												<i className="fas fa-user me-2"></i> Profile
 											</Link>
 										</li>
+										<li><hr className="dropdown-divider" /></li>
 										<li>
-											<hr className="dropdown-divider" />
-										</li>
-										<li>
-											<button className="dropdown-item" onClick={handleLogout}>
-												Logout
+											<button className="dropdown-item text-danger" onClick={handleLogout}>
+												<i className="fas fa-sign-out-alt me-2"></i> Logout
 											</button>
 										</li>
 									</ul>
 								</div>
 							) : (
 								<>
-									<Link
-										to="/login"
-										className="client-btn-login btn d-none d-sm-inline-block"
-										onClick={() => setExpanded(false)}
-									>
+									<Link to="/login" className="client-btn-login btn d-none d-sm-inline-block" onClick={() => setExpanded(false)}>
 										Login
 									</Link>
 									<Link to="/register" className="client-btn-register btn" onClick={() => setExpanded(false)}>
