@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../../assets/styles/admin/Sidebar.css';
+import Logo from '../../assets/images/Logo2.png';
 
 const Sidebar = () => {
     // State để quản lý trạng thái mở/đóng của các menu
@@ -56,7 +57,7 @@ const Sidebar = () => {
         <ul className="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
             <Link className="sidebar-brand d-flex align-items-center justify-content-center" to="/">
                 <div className="sidebar-brand-icon">
-                    <img src="" alt="Logo" />
+                    <img src={Logo} alt="Logo" />
                 </div>
                 <div className="sidebar-brand-text mx-3">Bit it Admin</div>
             </Link>
