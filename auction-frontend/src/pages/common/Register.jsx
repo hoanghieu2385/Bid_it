@@ -27,6 +27,11 @@ function Register() {
 	const navigate = useNavigate();
 
 	useEffect(() => {
+		document.title = 'Register | Bid it';
+	}, []);
+
+
+	useEffect(() => {
 		const token = Cookies.get('jwt');
 		if (token) navigate('/');
 		getAllBanks().then(setBanks).catch(console.error);

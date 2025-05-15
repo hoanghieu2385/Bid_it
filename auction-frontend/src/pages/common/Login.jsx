@@ -15,6 +15,11 @@ function Login() {
 	const navigate = useNavigate();
 
 	useEffect(() => {
+		document.title = 'Login | Bid it';
+	}, []);
+
+
+	useEffect(() => {
 		// Nếu đã có cookie jwt, tự động chuyển trang
 		(async () => {
 			try {
