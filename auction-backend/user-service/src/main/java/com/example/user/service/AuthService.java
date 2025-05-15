@@ -2,7 +2,6 @@ package com.example.user.service;
 
 import com.example.user.Dtos.*;
 import com.example.user.config.JwtUtil;
-import com.example.user.model.Bank;
 import com.example.user.model.OtpType;
 import com.example.user.model.PasswordResetToken;
 import com.example.user.model.Role;
@@ -53,40 +52,47 @@ public class AuthService {
     }
 
     public RegisterResponse register(RegisterRequest request) {
-        // Kiểm tra email trùng
+        // Check if email already exists
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
 
-        if (userRepository.findByPhoneNumber(request.getPhoneNumber()).isPresent()) {
-            throw new RuntimeException("Phone number already exists");
-        }
-
-        Bank bank = bankRepository.findById(request.getBankId())
-                .orElseThrow(() -> new RuntimeException("Bank not found"));
-
+        // Create a new user with email, password, first name, and last name
         User user = new User();
         user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setBank(bank);
-        user.setBankAccountNumber(request.getBankAccountNumber());
+
+        // Set default or placeholder values for other required fields
+        user.setPhoneNumber(request.getPhoneNumber() != null ? request.getPhoneNumber() : null);
+        user.setBankAccountNumber(request.getBankAccountNumber() != null ? request.getBankAccountNumber() : null);
+
+
+        // Get a default bank or the first one available
+        try {
+            user.setBank(bankRepository.findById(1L).orElse(null));
+        } catch (Exception e) {
+            // If no bank is available, we'll handle this later when the user completes their profile
+        }
+
+        // Set other required fields
         user.setCreatedAt(nowInVietnam);
-        user.setEnable(false);
+        user.setEnable(false); // User is disabled until email verification
         user.setVerified(false);
         user.setLocked(false);
         user.setScore(0);
         user.addRole(Role.USER);
 
         userRepository.save(user);
+
+        // Send verification email
         verificationTokenService.sendVerificationToken(user.getEmail());
 
-        return new RegisterResponse("Registration successful. Please check your email for verification link.");
+        return new RegisterResponse("Registration successful. Please check your email for the verification link. You'll need to complete your profile after verification.");
     }
 
-
+    // Rest of the methods remain unchanged
     public VerificationResponse verifyAccountByToken(String email, String token) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -256,5 +262,38 @@ public class AuthService {
         byte[] randomBytes = new byte[32];
         new SecureRandom().nextBytes(randomBytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    }
+
+    public CompleteProfileResponse completeProfile(String email, CompleteProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Verify that the user has verified their email
+        if (!user.getVerified()) {
+            throw new RuntimeException("Please verify your email before completing your profile");
+        }
+
+        // Check if phone number already exists for another user
+        userRepository.findByPhoneNumber(request.getPhoneNumber())
+                .ifPresent(existingUser -> {
+                    if (!existingUser.getId().equals(user.getId())) {
+                        throw new RuntimeException("Phone number already in use by another account");
+                    }
+                });
+
+        // Get bank by ID
+        var bank = bankRepository.findById(request.getBankId())
+                .orElseThrow(() -> new RuntimeException("Bank not found"));
+
+        // Update user profile
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setAddress(request.getAddress());
+        user.setBank(bank);
+        user.setBankAccountNumber(request.getBankAccountNumber());
+        user.setUpdatedAt(nowInVietnam);
+
+        userRepository.save(user);
+
+        return new CompleteProfileResponse(true, "Profile completed successfully");
     }
 }

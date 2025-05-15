@@ -2,7 +2,6 @@ package com.example.user.Dtos;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class RegisterRequest {
@@ -21,17 +20,19 @@ public class RegisterRequest {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
-    @NotBlank(message = "Phone number is required")
-    @Size(min = 10, max = 11, message = "Phone number must be 10 or 11 digits")
-    @Pattern(regexp = "\\d+", message = "Phone number must contain only digits")
+    // Keep these fields but make them optional
     private String phoneNumber;
-
     private Long bankId;
-
-    @NotBlank(message = "Bank account number is required")
     private String bankAccountNumber;
 
     public RegisterRequest() {
+    }
+
+    public RegisterRequest(String email, String firstName, String lastName, String password) {
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.password = password;
     }
 
     public RegisterRequest(String email, String firstName, String lastName, String password,

@@ -27,17 +27,17 @@ public class User {
     private String avatar;
     private String avatarPublicId;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = true, unique = true)
     private String phoneNumber;
 
     @Column
     private String address;
 
     @ManyToOne
-    @JoinColumn(name = "bank_id", nullable = false)
+    @JoinColumn(name = "bank_id", nullable = true)
     private Bank bank;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String bankAccountNumber;
 
     @Column(nullable = false, columnDefinition = "INT NOT NULL DEFAULT 0")
