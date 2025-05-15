@@ -6,6 +6,7 @@ export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
 	const [user, setUser] = useState(null);
+	const [loading, setLoading] = useState(true); // loading
 
 	useEffect(() => {
 		const fetchUser = async () => {
@@ -16,9 +17,10 @@ export const UserProvider = ({ children }) => {
 					setUser(userData);
 				} catch (error) {
 					console.error('Error fetching user:', error);
-					localStorage.removeItem('jwt'); // Clear token nếu lỗi (ví dụ hết hạn)
+					localStorage.removeItem('jwt');
 				}
 			}
+			setLoading(false); // Set loading to false after fetching
 		};
 
 		fetchUser();
@@ -31,7 +33,7 @@ export const UserProvider = ({ children }) => {
 	};
 
 	return (
-		<UserContext.Provider value={{ user, loginUser, logoutUser }}>
+		<UserContext.Provider value={{ user, loginUser, logoutUser, loading }}>
 			{children}
 		</UserContext.Provider>
 	);

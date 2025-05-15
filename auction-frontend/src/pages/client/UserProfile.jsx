@@ -1,5 +1,7 @@
 // src/components/client/UserProfile.jsx
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { UserContext } from '../../contexts/UserContext.jsx';
 import ProfileInfo from '../../components/client/profile/ProfileInfo';
 import AuctionHistory from '../../components/client/profile/AuctionHistory';
 import ChangePassword from '../../components/client/profile/ChangePassword';
@@ -8,6 +10,18 @@ import '../../assets/styles/client/user-profile.css';
 
 const UserProfile = () => {
 	const [activeTab, setActiveTab] = useState('info');
+	const { user, loading } = useContext(UserContext);
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (!loading && !user) {
+			navigate('/login');
+		}
+		document.title = 'User Profile | Bid it';
+	}, [user, loading, navigate]);
+
+	if (loading) return <div className="text-center mt-5">Loading...</div>;
+	if (!user) return null;
 
 	return (
 		<div className="user-profile-wrapper py-4">
