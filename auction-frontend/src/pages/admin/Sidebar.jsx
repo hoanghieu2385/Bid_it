@@ -12,11 +12,11 @@ const Sidebar = () => {
     
     // Refs để quản lý chiều cao của các dropdown
     const paymentRef = useRef(null);
-    const categoryRef = useRef(null); // Thêm ref mới cho Categories
+    // const categoryRef = useRef(null); // Thêm ref mới cho Categories
     
     // State để quản lý hiệu ứng animation của các dropdown
     const [paymentHeight, setPaymentHeight] = useState("0px");
-    const [categoryHeight, setCategoryHeight] = useState("0px"); // Thêm state mới cho chiều cao của Categories
+    // const [categoryHeight, setCategoryHeight] = useState("0px"); // Thêm state mới cho chiều cao của Categories
     
     // Dùng useEffect để tính toán chiều cao thực của các dropdown
     useEffect(() => {
@@ -26,11 +26,11 @@ const Sidebar = () => {
             setPaymentHeight("0px");
         }
         
-        if (isCategoryOpen && categoryRef.current) {
-            setCategoryHeight(`${categoryRef.current.scrollHeight}px`);
-        } else {
-            setCategoryHeight("0px");
-        }
+        // if (isCategoryOpen && categoryRef.current) {
+        //     setCategoryHeight(`${categoryRef.current.scrollHeight}px`);
+        // } else {
+        //     setCategoryHeight("0px");
+        // }
     }, [isDashboardOpen, isAuctionOpen, isPaymentOpen, isCategoryOpen]);
     
     // Hàm xử lý việc toggle các dropdown
@@ -81,59 +81,10 @@ const Sidebar = () => {
             
             <hr className="sidebar-divider d-none d-md-block" />
 
-            {/* Categories Menu - Sửa lại sử dụng state và ref riêng */}
             <li className="nav-item">
-                <a 
-                    className={`nav-link ${isCategoryOpen ? '' : 'collapsed'}`}
-                    href="#"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        toggleCollapse('category');
-                    }}
-                    data-toggle="collapse"
-                    data-target="#collapseCategory" // Đổi ID thành mới
-                    aria-expanded={isCategoryOpen}
-                    aria-controls="collapseCategory" // Đổi aria-controls thành mới
-                >
+                <Link className="nav-link" to="/admin/categories">
                     <span>Categories</span>
-                </a>
-                <div 
-                    id="collapseCategory" // Đổi ID thành mới
-                    ref={categoryRef} // Sử dụng ref mới
-                    className="collapse-container"
-                    style={{ 
-                        maxHeight: categoryHeight, // Sử dụng state mới
-                        overflow: 'hidden',
-                        transition: 'max-height 0.3s ease'
-                    }}
-                >
-                    <div className="bg-white py-2 collapse-inner rounded">
-                        <Link 
-                            className={`collapse-item ${isCategoryOpen ? 'animate-item' : ''}`} 
-                            to="/admin/categories-list" // Thay đổi đường dẫn cho phù hợp
-                            style={{ 
-                                transitionDelay: '0.1s',
-                                opacity: isCategoryOpen ? 1 : 0,
-                                transform: isCategoryOpen ? 'translateY(0)' : 'translateY(-10px)',
-                                transition: 'opacity 0.3s ease, transform 0.3s ease'
-                            }}
-                        >
-                            List
-                        </Link>
-                        <Link 
-                            className={`collapse-item ${isCategoryOpen ? 'animate-item' : ''}`} 
-                            to="/admin/categories-delete" // Thay đổi đường dẫn cho phù hợp
-                            style={{ 
-                                transitionDelay: '0.2s',
-                                opacity: isCategoryOpen ? 1 : 0,
-                                transform: isCategoryOpen ? 'translateY(0)' : 'translateY(-10px)',
-                                transition: 'opacity 0.3s ease, transform 0.3s ease'
-                            }}
-                        >
-                            Delete
-                        </Link>
-                    </div>
-                </div>
+                </Link>
             </li>
 
             <hr className="sidebar-divider d-none d-md-block" />

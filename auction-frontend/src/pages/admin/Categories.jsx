@@ -1,152 +1,25 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
-import "../../assets/styles/admin/Categories-list.css";
+import "../../assets/styles/admin/Categories.css";
 import { FaEdit, FaTrash, FaSearch, FaFilter, FaPlus } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
-
-// Mock data for demo purposes
-const mockCategories = [
-  {
-    id: 1,
-    name: "Cars/Trucks",
-    icon: "/icons/car.svg",
-    description: "Various cars and trucks",
-    commissionRate: 0.03,
-    createdAt: "2024-07-22T01:42:00",
-    updatedAt: null,
-    deletedAt: null,
-    status: "active"
-  },
-  {
-    id: 2,
-    name: "Motorcycles",
-    icon: "/icons/motorcycle.svg",
-    description: "All kinds of motorcycles",
-    commissionRate: 0.03,
-    createdAt: "2024-07-22T01:42:00",
-    updatedAt: null,
-    deletedAt: null,
-    status: "active"
-  },
-  {
-    id: 3,
-    name: "Jewelry",
-    icon: "/icons/jewelry.svg",
-    description: "Luxury jewelry items",
-    commissionRate: 0.03,
-    createdAt: "2024-07-22T01:42:00",
-    updatedAt: null,
-    deletedAt: null,
-    status: "active"
-  },
-  {
-    id: 4,
-    name: "Watches",
-    icon: "/icons/watch.svg",
-    description: "Luxury and casual watches",
-    commissionRate: 0.03,
-    createdAt: "2024-07-22T01:42:00",
-    updatedAt: null,
-    deletedAt: null,
-    status: "active"
-  },
-  {
-    id: 5,
-    name: "Electronics",
-    icon: "/icons/electronics.svg",
-    description: "Modern electronics",
-    commissionRate: 0.03,
-    createdAt: "2024-07-22T01:42:00",
-    updatedAt: null,
-    deletedAt: null,
-    status: "active"
-  },
-  {
-    id: 6,
-    name: "Clothes",
-    icon: "/icons/clothes.svg",
-    description: "Fashion items",
-    commissionRate: 0.03,
-    createdAt: "2024-07-22T01:42:00",
-    updatedAt: "2024-07-23T10:15:00",
-    deletedAt: null,
-    status: "active"
-  },
-  {
-    id: 7,
-    name: "Sports",
-    icon: "/icons/sports.svg",
-    description: "Sports equipment",
-    commissionRate: 0.03,
-    createdAt: "2024-07-22T01:42:00",
-    updatedAt: null,
-    deletedAt: null,
-    status: "active"
-  },
-  {
-    id: 8,
-    name: "Furniture",
-    icon: "/icons/furniture.svg",
-    description: "Home furniture",
-    commissionRate: 0.03,
-    createdAt: "2024-07-22T01:42:00",
-    updatedAt: null,
-    deletedAt: "2024-07-25T08:30:00",
-    status: "deleted"
-  },
-  {
-    id: 9,
-    name: "Arts",
-    icon: "/icons/arts.svg",
-    description: "Artwork and collectibles",
-    commissionRate: 0.03,
-    createdAt: "2024-07-22T01:42:00",
-    updatedAt: null,
-    deletedAt: null,
-    status: "active"
-  },
-  {
-    id: 10,
-    name: "Real Estate",
-    icon: "/icons/realestate.svg",
-    description: "Properties and land",
-    commissionRate: 0.03,
-    createdAt: "2024-07-22T01:42:00",
-    updatedAt: null,
-    deletedAt: null,
-    status: "active"
-  },
-  {
-    id: 11,
-    name: "Books",
-    icon: "/icons/books.svg",
-    description: "Books and literature",
-    commissionRate: 0.02,
-    createdAt: "2024-07-24T14:20:00",
-    updatedAt: null,
-    deletedAt: null,
-    status: "active"
-  },
-  {
-    id: 12,
-    name: "Toys",
-    icon: "/icons/toys.svg",
-    description: "Children's toys and games",
-    commissionRate: 0.025,
-    createdAt: "2024-07-25T09:45:00",
-    updatedAt: null,
-    deletedAt: null,
-    status: "active"
-  }
-];
+import { 
+  getAllCategories, 
+  createCategory, 
+  updateCategory, 
+  deleteCategory,
+  restoreCategory
+} from "../../services/category-api";
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -170,77 +43,128 @@ const Categories = () => {
     commissionRate: 0.03
   });
 
-  useEffect(() => {
-    // Load mock data
-    setCategories(mockCategories);
-  }, []);
-
-  const handleDelete = (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa danh mục này không?")) {
-      // Soft delete - just mark as deleted
-      setCategories(prev => prev.map(cat => 
-        cat.id === id 
-          ? { ...cat, deletedAt: new Date().toISOString(), status: "deleted" } 
-          : cat
-      ));
-      toast.success("Đã xóa danh mục thành công");
+  // Fetch categories from API
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllCategories();
+      setCategories(data);
+      setError(null);
+    } catch {
+      setError("Không thể tải danh sách danh mục. Vui lòng thử lại sau.");
+      toast.error("Lỗi khi tải danh sách danh mục");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAddCategory = () => {
-    const newId = Math.max(...categories.map(cat => cat.id)) + 1;
-    const newCategory = {
-      ...formData,
-      id: newId,
-      createdAt: new Date().toISOString(),
-      updatedAt: null,
-      deletedAt: null,
-      status: "active"
-    };
-    
-    setCategories([...categories, newCategory]);
-    setShowAddModal(false);
-    setFormData({
-      name: "",
-      icon: "",
-      description: "",
-      commissionRate: 0.03
-    });
-    toast.success("Đã thêm danh mục mới thành công");
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa danh mục này không?")) {
+      try {
+        await deleteCategory(id);
+        // Sau khi xóa thành công, cập nhật lại danh sách từ server
+        fetchCategories();
+        toast.success("Đã xóa danh mục thành công");
+      } catch {
+        toast.error("Không thể xóa danh mục. Vui lòng thử lại sau.");
+      }
+    }
   };
 
-  const handleEditCategory = () => {
-    setCategories(prev => prev.map(cat => 
-      cat.id === currentCategory.id 
-        ? { 
-            ...cat, 
-            ...formData, 
-            updatedAt: new Date().toISOString() 
-          } 
-        : cat
-    ));
-    setShowEditModal(false);
-    toast.success("Đã cập nhật danh mục thành công");
+  const handleAddCategory = async () => {
+    try {
+      // Validate form
+      if (!formData.name.trim()) {
+        toast.error("Vui lòng nhập tên danh mục");
+        return;
+      }
+
+      // Tạo object data gửi đi
+      const categoryData = {
+        name: formData.name,
+        icon: formData.icon, 
+        description: formData.description,
+        commissionRate: formData.commissionRate
+      };
+      
+      // Gọi API tạo danh mục
+      await createCategory(categoryData);
+      
+      // Refresh danh sách
+      fetchCategories();
+      
+      setShowAddModal(false);
+      
+      // Reset form
+      setFormData({
+        name: "",
+        icon: "",
+        description: "",
+        commissionRate: 0.03
+      });
+      
+      toast.success("Đã thêm danh mục mới thành công");
+    } catch {
+      toast.error("Không thể thêm danh mục. Vui lòng thử lại sau.");
+    }
+  };
+
+  const handleEditCategory = async () => {
+    try {
+      // Validate form
+      if (!formData.name.trim()) {
+        toast.error("Vui lòng nhập tên danh mục");
+        return;
+      }
+      
+      // Tạo object data gửi đi
+      const categoryData = {
+        name: formData.name,
+        icon: formData.icon,
+        description: formData.description,
+        commissionRate: formData.commissionRate
+      };
+      
+      // Gọi API cập nhật danh mục
+      await updateCategory(currentCategory.id, categoryData);
+      
+      // Refresh danh sách
+      fetchCategories();
+      
+      setShowEditModal(false);
+      toast.success("Đã cập nhật danh mục thành công");
+    } catch {
+      toast.error("Không thể cập nhật danh mục. Vui lòng thử lại sau.");
+    }
   };
 
   const handleEditClick = (category) => {
     setCurrentCategory(category);
     setFormData({
       name: category.name,
-      icon: category.icon,
-      description: category.description,
-      commissionRate: category.commissionRate
+      icon: category.icon || "",
+      description: category.description || "",
+      commissionRate: category.commissionRate || 0.03
     });
     setShowEditModal(true);
   };
 
-  const handleRestore = (id) => {
-    setCategories(prev => prev.map(cat => 
-      cat.id === id 
-        ? { ...cat, deletedAt: null, status: "active" } 
-        : cat
-    ));
-    toast.success("Đã khôi phục danh mục thành công");
+  const handleRestore = async (id) => {
+    try {
+      // Gọi API để khôi phục danh mục đã xóa
+      await restoreCategory(id);
+      
+      // Refresh danh sách
+      fetchCategories();
+      
+      toast.success("Đã khôi phục danh mục thành công");
+    } catch {
+      toast.error("Không thể khôi phục danh mục. Vui lòng thử lại sau.");
+    }
   };
 
   // Filter logic
@@ -251,13 +175,17 @@ const Categories = () => {
     if (searchTerm) {
       filtered = filtered.filter(cat =>
         cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cat.description.toLowerCase().includes(searchTerm.toLowerCase())
+        cat.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
     // Status filter
     if (filters.status !== "all") {
-      filtered = filtered.filter(cat => cat.status === filters.status);
+      if (filters.status === "active") {
+        filtered = filtered.filter(cat => !cat.deletedAt);
+      } else if (filters.status === "deleted") {
+        filtered = filtered.filter(cat => cat.deletedAt);
+      }
     }
     
     // Date range filter
@@ -280,7 +208,7 @@ const Categories = () => {
       }
       
       filtered = filtered.filter(cat => 
-        new Date(cat.createdAt) >= pastDate
+        cat.createdAt && new Date(cat.createdAt) >= pastDate
       );
     }
     
@@ -415,95 +343,115 @@ const Categories = () => {
               </div>
             )}
 
+            {/* Loading state */}
+            {loading && (
+              <div className="text-center py-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="mt-2">Đang tải danh mục...</p>
+              </div>
+            )}
+
+            {/* Error state */}
+            {error && !loading && (
+              <div className="alert alert-danger" role="alert">
+                {error}
+              </div>
+            )}
+
             {/* Categories Table */}
-            <div className="table-responsive">
-              <table className="table align-middle">
-                <thead className="bg-light">
-                  <tr>
-                    <th className="ps-3">Danh mục</th>
-                    <th>Mô tả</th>
-                    <th>Tỷ lệ hoa hồng</th>
-                    <th>Ngày tạo</th>
-                    <th>Cập nhật</th>
-                    <th>Trạng thái</th>
-                    <th className="text-end pe-3">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentItems.length > 0 ? (
-                    currentItems.map(cat => (
-                      <tr key={cat.id} className={cat.status === "deleted" ? "table-secondary" : ""}>
-                        <td className="ps-3">
-                          <div className="d-flex align-items-center">
-                            <div className="category-icon me-3">
-                              <img
-                                src={cat.icon}
-                                alt={cat.name}
-                                width={32}
-                                height={32}
-                              />
+            {!loading && !error && (
+              <div className="table-responsive">
+                <table className="table align-middle">
+                  <thead className="bg-light">
+                    <tr>
+                      <th className="ps-3">Danh mục</th>
+                      <th>Mô tả</th>
+                      <th>Tỷ lệ hoa hồng</th>
+                      <th>Ngày tạo</th>
+                      <th>Cập nhật</th>
+                      <th>Trạng thái</th>
+                      <th className="text-end pe-3">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentItems.length > 0 ? (
+                      currentItems.map(cat => (
+                        <tr key={cat.id} className={cat.deletedAt ? "table-secondary" : ""}>
+                          <td className="ps-3">
+                            <div className="d-flex align-items-center">
+                              <div className="category-icon me-3">
+                                <img
+                                  src={cat.icon}
+                                  alt={cat.name}
+                                  width={32}
+                                  height={32}
+                                  onError={(e) => {e.target.src = ""}}
+                                />
+                              </div>
+                              <div>
+                                <div className="fw-medium">{cat.name}</div>
+                                <small className="text-muted">ID: #{cat.id}</small>
+                              </div>
                             </div>
-                            <div>
-                              <div className="fw-medium">{cat.name}</div>
-                              <small className="text-muted">ID: #{cat.id}</small>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="text-muted">{cat.description || 'N/A'}</td>
-                        <td>{(cat.commissionRate * 100).toFixed(0)}%</td>
-                        <td>
-                          <div>{formatDate(cat.createdAt)}</div>
-                        </td>
-                        <td className="text-muted">
-                          {formatDate(cat.updatedAt)}
-                        </td>
-                        <td>
-                          {cat.status === "active" ? (
-                            <span className="badge bg-success">Đang hoạt động</span>
-                          ) : (
-                            <span className="badge bg-secondary">Đã xóa</span>
-                          )}
-                        </td>
-                        <td className="text-end pe-3">
-                          {cat.status === "active" ? (
-                            <>
-                              <button 
-                                className="btn btn-sm btn-link text-secondary p-0 me-3"
-                                onClick={() => handleEditClick(cat)}
-                              >
-                                <FaEdit />
-                              </button>
+                          </td>
+                          <td className="text-muted">{cat.description || 'N/A'}</td>
+                          <td>{(cat.commissionRate).toFixed(0)}%</td>
+                          <td>
+                            <div>{formatDate(cat.createdAt)}</div>
+                          </td>
+                          <td className="text-muted">
+                            {formatDate(cat.updatedAt)}
+                          </td>
+                          <td>
+                            {cat.deletedAt ? (
+                              <span className="badge bg-secondary">Đã xóa</span>
+                            ) : (
+                              <span className="badge bg-success">Đang hoạt động</span>
+                            )}
+                          </td>
+                          <td className="text-end pe-3">
+                            {!cat.deletedAt ? (
+                              <>
+                                <button 
+                                  className="btn btn-sm btn-link text-secondary p-0 me-3"
+                                  onClick={() => handleEditClick(cat)}
+                                >
+                                  <FaEdit />
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-link text-secondary p-0"
+                                  onClick={() => handleDelete(cat.id)}
+                                >
+                                  <FaTrash />
+                                </button>
+                              </>
+                            ) : (
                               <button
-                                className="btn btn-sm btn-link text-secondary p-0"
-                                onClick={() => handleDelete(cat.id)}
+                                className="btn btn-sm btn-outline-success"
+                                onClick={() => handleRestore(cat.id)}
                               >
-                                <FaTrash />
+                                Khôi phục
                               </button>
-                            </>
-                          ) : (
-                            <button
-                              className="btn btn-sm btn-outline-success"
-                              onClick={() => handleRestore(cat.id)}
-                            >
-                              Khôi phục
-                            </button>
-                          )}
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7" className="text-center py-4">
+                          Không tìm thấy danh mục nào
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="7" className="text-center py-4">
-                        Không tìm thấy danh mục nào
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {!loading && !error && totalPages > 1 && (
               <nav className="mt-4 d-flex justify-content-center">
                 <ul className="pagination">
                   <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
@@ -553,12 +501,13 @@ const Categories = () => {
           <Modal.Body>
             <Form>
               <Form.Group className="mb-3">
-                <Form.Label>Tên danh mục</Form.Label>
+                <Form.Label>Tên danh mục <span className="text-danger">*</span></Form.Label>
                 <Form.Control 
                   type="text" 
                   placeholder="Nhập tên danh mục"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  required
                 />
               </Form.Group>
               
@@ -614,12 +563,13 @@ const Categories = () => {
           <Modal.Body>
             <Form>
               <Form.Group className="mb-3">
-                <Form.Label>Tên danh mục</Form.Label>
+                <Form.Label>Tên danh mục <span className="text-danger">*</span></Form.Label>
                 <Form.Control 
                   type="text" 
                   placeholder="Nhập tên danh mục"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  required
                 />
               </Form.Group>
               
