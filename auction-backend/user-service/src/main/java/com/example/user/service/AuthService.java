@@ -6,7 +6,6 @@ import com.example.user.model.OtpType;
 import com.example.user.model.PasswordResetToken;
 import com.example.user.model.Role;
 import com.example.user.model.User;
-import com.example.user.repository.BankRepository;
 import com.example.user.repository.PasswordResetTokenRepository;
 import com.example.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +26,6 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final BankRepository bankRepository;
     private final OtpService otpService;
     private final VerificationTokenService verificationTokenService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -39,12 +37,11 @@ public class AuthService {
     private String appBaseUrl;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil,
-                       BankRepository bankRepository, OtpService otpService, VerificationTokenService verificationTokenService,
+                       OtpService otpService, VerificationTokenService verificationTokenService,
                        PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
-        this.bankRepository = bankRepository;
         this.otpService = otpService;
         this.verificationTokenService = verificationTokenService;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
@@ -52,33 +49,20 @@ public class AuthService {
     }
 
     public RegisterResponse register(RegisterRequest request) {
-        // Check if email already exists
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
 
-        // Create a new user with email, password, first name, and last name
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
 
-        // Set default or placeholder values for other required fields
         user.setPhoneNumber(request.getPhoneNumber() != null ? request.getPhoneNumber() : null);
-        user.setBankAccountNumber(request.getBankAccountNumber() != null ? request.getBankAccountNumber() : null);
 
-
-        // Get a default bank or the first one available
-        try {
-            user.setBank(bankRepository.findById(1L).orElse(null));
-        } catch (Exception e) {
-            // If no bank is available, we'll handle this later when the user completes their profile
-        }
-
-        // Set other required fields
         user.setCreatedAt(nowInVietnam);
-        user.setEnable(false); // User is disabled until email verification
+        user.setEnable(false);
         user.setVerified(false);
         user.setLocked(false);
         user.setScore(0);
@@ -86,13 +70,11 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // Send verification email
         verificationTokenService.sendVerificationToken(user.getEmail());
 
         return new RegisterResponse("Registration successful. Please check your email for the verification link. You'll need to complete your profile after verification.");
     }
 
-    // Rest of the methods remain unchanged
     public VerificationResponse verifyAccountByToken(String email, String token) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -268,12 +250,10 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Verify that the user has verified their email
         if (!user.getVerified()) {
             throw new RuntimeException("Please verify your email before completing your profile");
         }
 
-        // Check if phone number already exists for another user
         userRepository.findByPhoneNumber(request.getPhoneNumber())
                 .ifPresent(existingUser -> {
                     if (!existingUser.getId().equals(user.getId())) {
@@ -281,15 +261,8 @@ public class AuthService {
                     }
                 });
 
-        // Get bank by ID
-        var bank = bankRepository.findById(request.getBankId())
-                .orElseThrow(() -> new RuntimeException("Bank not found"));
-
-        // Update user profile
         user.setPhoneNumber(request.getPhoneNumber());
         user.setAddress(request.getAddress());
-        user.setBank(bank);
-        user.setBankAccountNumber(request.getBankAccountNumber());
         user.setUpdatedAt(nowInVietnam);
 
         userRepository.save(user);
