@@ -1,12 +1,34 @@
 package com.example.user.Dtos;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
 public class RegisterRequest {
+
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
     private String email;
+
+    @NotBlank(message = "First name is required")
     private String firstName;
+
+    @NotBlank(message = "Last name is required")
     private String lastName;
+
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
+
+    @NotBlank(message = "Phone number is required")
+    @Size(min = 10, max = 11, message = "Phone number must be 10 or 11 digits")
+    @Pattern(regexp = "\\d+", message = "Phone number must contain only digits")
     private String phoneNumber;
+
     private Long bankId;
+
+    @NotBlank(message = "Bank account number is required")
     private String bankAccountNumber;
 
     public RegisterRequest() {
