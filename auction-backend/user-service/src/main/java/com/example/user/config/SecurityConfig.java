@@ -55,8 +55,10 @@ public class SecurityConfig {
                                 "/auth/forgot-password",
                                 "/auth/reset-password"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/banks/**").permitAll() // Allow GET requests to /banks/** without authentication
-                        .anyRequest().authenticated()
+                        .requestMatchers(HttpMethod.GET, "/banks/**").permitAll()
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll()
+
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(
                         SessionCreationPolicy.STATELESS

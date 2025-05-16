@@ -1,13 +1,19 @@
 package com.example.user.controller;
 
 import com.example.user.Dtos.RoleUpdateRequest;
+import com.example.user.Dtos.UserCCCDVerifyDto;
 import com.example.user.Dtos.UserUpdateRequest;
+import com.example.user.Dtos.UpdateCCCDRequest;
 import com.example.user.model.User;
 import com.example.user.service.UserService;
+import com.example.user.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,7 +23,6 @@ public class UserController {
 
     private final UserService userService;
 
-    // Constructor thay thế cho @RequiredArgsConstructor
     public UserController(UserService userService) {
         this.userService = userService;
     }
@@ -60,6 +65,61 @@ public class UserController {
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
         }
     }
+    // VERIFY CCCD !!!
+    @PutMapping("/update-cccd")
+    public ResponseEntity<?> updateCCCD(
+            @RequestParam("citizenId") String citizenId,
+            @RequestParam("frontImage") MultipartFile frontImage,
+            @RequestParam("backImage") MultipartFile backImage,
+            Principal principal) {
+        try {
+            userService.updateCCCDWithImages(principal.getName(), citizenId, frontImage, backImage);
+            return ResponseEntity.ok("CCCD info uploaded. Awaiting admin verification.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to upload CCCD: " + e.getMessage());
+        }
+    }
+    @GetMapping("/verify-requests")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserCCCDVerifyDto>> getVerifyRequests() {
+        return ResponseEntity.ok(userService.getUsersPendingVerification());
+    }
+
+
+    @PostMapping("/{id}/verify/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> approveCCCD(@PathVariable Long id) {
+        Optional<User> userOpt = userService.getUserById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User user = userOpt.get();
+        user.setVerifiedAccount(1);
+        user.setUpdatedAt(LocalDateTime.now());
+        userService.saveUser(user); // hoặc userRepository.save(user) nếu bạn muốn nhanh
+        return ResponseEntity.ok("User CCCD approved");
+    }
+
+    @PostMapping("/{id}/verify/deny")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> denyCCCD(@PathVariable Long id) {
+        Optional<User> userOpt = userService.getUserById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User user = userOpt.get();
+        user.setCitizenId(null);
+        user.setCitizenIdFrontImage(null);
+        user.setCitizenIdBackImage(null);
+        user.setVerifiedAccount(0);
+        user.setUpdatedAt(LocalDateTime.now());
+        userService.saveUser(user);
+        return ResponseEntity.ok("User CCCD denied and data cleared");
+    }
+///  ///////////////////////
+
 
     @GetMapping("/me")
     public ResponseEntity<User> getCurrentUserProfile() {

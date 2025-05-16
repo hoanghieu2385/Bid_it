@@ -1,13 +1,17 @@
 package com.example.user.service;
 
+import com.example.user.Dtos.UpdateCCCDRequest;
+import com.example.user.Dtos.UserCCCDVerifyDto;
 import com.example.user.Dtos.UserUpdateRequest;
 import com.example.user.model.Role;
 import com.example.user.model.User;
 import com.example.user.repository.UserRepository;
+import com.example.user.service.CloudinaryService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -18,13 +22,15 @@ import java.util.Set;
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final CloudinaryService cloudinaryService;
 
-    // Constructor manually created to replace @RequiredArgsConstructor
-    public UserService(UserRepository userRepository) {
+
+    public UserService(UserRepository userRepository, CloudinaryService cloudinaryService) {
         this.userRepository = userRepository;
+        this.cloudinaryService = cloudinaryService;
     }
 
-    // Method to check if current user is an admin
+    
     private boolean isAdmin() {
         return SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
@@ -121,6 +127,36 @@ public class UserService {
         return userRepository.save(user);
     }
 
+
+    // CCCD!!!
+    public User updateCCCD(String email, UpdateCCCDRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setCitizenId(request.getCitizenId());
+        user.setCitizenIdFrontImage(request.getCitizenIdFrontImage());
+        user.setCitizenIdBackImage(request.getCitizenIdBackImage());
+        user.setVerifiedAccount(0); // chờ admin duyệt
+        user.setUpdatedAt(LocalDateTime.now());
+
+        return userRepository.save(user);
+    }
+    public void updateCCCDWithImages(String email, String citizenId, MultipartFile frontImage, MultipartFile backImage) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String frontUrl = cloudinaryService.uploadImage(frontImage);
+        String backUrl = cloudinaryService.uploadImage(backImage);
+
+        user.setCitizenId(citizenId);
+        user.setCitizenIdFrontImage(frontUrl);
+        user.setCitizenIdBackImage(backUrl);
+        user.setVerifiedAccount(0); // reset verify trạng thái
+
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+    }
+
     // Get currently logged-in user's profile
     public User getCurrentUserProfile() {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -142,4 +178,22 @@ public class UserService {
 
         return userRepository.save(user);
     }
+    public void saveUser(User user) {
+        userRepository.save(user);
+    }
+    public List<UserCCCDVerifyDto> getUsersPendingVerification() {
+        return userRepository.findByVerifiedAccount(0)
+                .stream()
+                .map(user -> new UserCCCDVerifyDto(
+                        user.getId(),
+                        user.getEmail(),
+                        user.getFirstName() + " " + user.getLastName(),
+                        user.getCitizenId(),
+                        user.getCitizenIdFrontImage(),
+                        user.getCitizenIdBackImage()
+                ))
+                .toList();
+    }
+
+
 }

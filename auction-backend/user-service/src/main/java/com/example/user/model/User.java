@@ -33,6 +33,20 @@ public class User {
     @Column
     private String address;
 
+    // CCCD ( CHUA THEM FULL CONSTRUCT O DUOI !!! )
+    @Column(unique = true)
+    private String citizenId;
+
+    @Column
+    private String citizenIdFrontImage;
+
+    @Column
+    private String citizenIdBackImage;
+
+    @Column(nullable = false, columnDefinition = "TINYINT DEFAULT 0")
+    private Integer verifiedAccount = 0;
+
+    // CCCD END
     @Column(nullable = false, columnDefinition = "INT NOT NULL DEFAULT 0")
     private Integer score = 0;
 
@@ -64,6 +78,7 @@ public class User {
 
     public User(Long id, String email, String firstName, String lastName, String password, String avatar,
                 String avatarPublicId, String phoneNumber, String address,
+                String citizenId, String citizenIdFrontImage, String citizenIdBackImage, Integer verifiedAccount,
                 Integer score, LocalDateTime createdAt,
                 LocalDateTime updatedAt, Boolean enable, Boolean verified,
                 String verifiedResponse, Boolean locked, Set<Role> roles) {
@@ -76,6 +91,10 @@ public class User {
         this.avatarPublicId = avatarPublicId;
         this.phoneNumber = phoneNumber;
         this.address = address;
+        this.citizenId = citizenId;
+        this.citizenIdFrontImage = citizenIdFrontImage;
+        this.citizenIdBackImage = citizenIdBackImage;
+        this.verifiedAccount = verifiedAccount;
         this.score = score;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -85,6 +104,7 @@ public class User {
         this.locked = locked;
         this.roles = roles;
     }
+
 
     public Set<Role> getRoles() {
         return roles;
@@ -231,5 +251,37 @@ public class User {
 
     public void setLocked(Boolean locked) {
         this.locked = locked;
+    }
+
+    public String getCitizenId() {
+        return citizenId;
+    }
+
+    public void setCitizenId(String citizenId) {
+        this.citizenId = citizenId;
+    }
+
+    public String getCitizenIdFrontImage() {
+        return citizenIdFrontImage;
+    }
+
+    public void setCitizenIdFrontImage(String citizenIdFrontImage) {
+        this.citizenIdFrontImage = citizenIdFrontImage;
+    }
+
+    public String getCitizenIdBackImage() {
+        return citizenIdBackImage;
+    }
+
+    public void setCitizenIdBackImage(String citizenIdBackImage) {
+        this.citizenIdBackImage = citizenIdBackImage;
+    }
+
+    public Integer getVerifiedAccount() {
+        return verifiedAccount;
+    }
+
+    public void setVerifiedAccount(Integer verifiedAccount) {
+        this.verifiedAccount = verifiedAccount;
     }
 }
