@@ -1,5 +1,6 @@
+// src/routes/ClientRoutes.jsx
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import ClientLayout from '../layout/ClientLayout.jsx'; 
 import Home from '../pages/client/Home.jsx';
 import Login from '../pages/common/Login.jsx';
@@ -14,8 +15,10 @@ import BlogPostDetail from '../pages/client/BlogPostDetail.jsx';
 import UserProfile from '../pages/client/UserProfile.jsx';
 
 function ClientRoutes() {
+	const location = useLocation();
+
 	return (
-		<Routes>
+		<Routes location={location} key={location.pathname}>
 			<Route element={<ClientLayout />}>
 				<Route path="/" element={<Home />} />
 				<Route path="/login" element={<Login />} />

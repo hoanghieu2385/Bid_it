@@ -4,7 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import Dashboard from '../pages/admin/Dashboard.jsx';
 import Auctions from '../pages/admin/Auctions.jsx';
 import AuctionDetail from '../pages/admin/AuctionDetail.jsx';
-import Categories from '../pages/admin/Categories-list.jsx';
+import Categories from '../pages/admin/Categories.jsx';
 
 function AdminRoutes() {
 	return (
@@ -12,7 +12,7 @@ function AdminRoutes() {
 			<Route path="/dashboard" element={<Dashboard />} />
 			<Route path="/auctions" element={<Auctions />} />
 			<Route path="/auction/:id" element={<AuctionDetail />} />
-			<Route path="/categories-list" element={<Categories />} />
+			<Route path="/categories" element={<Categories />} />
 		</Routes>
 	);
 }

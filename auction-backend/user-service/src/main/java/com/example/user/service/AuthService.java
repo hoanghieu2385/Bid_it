@@ -2,12 +2,10 @@ package com.example.user.service;
 
 import com.example.user.Dtos.*;
 import com.example.user.config.JwtUtil;
-import com.example.user.model.Bank;
 import com.example.user.model.OtpType;
 import com.example.user.model.PasswordResetToken;
 import com.example.user.model.Role;
 import com.example.user.model.User;
-import com.example.user.repository.BankRepository;
 import com.example.user.repository.PasswordResetTokenRepository;
 import com.example.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +26,6 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final BankRepository bankRepository;
     private final OtpService otpService;
     private final VerificationTokenService verificationTokenService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -40,12 +37,11 @@ public class AuthService {
     private String appBaseUrl;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil,
-                       BankRepository bankRepository, OtpService otpService, VerificationTokenService verificationTokenService,
+                       OtpService otpService, VerificationTokenService verificationTokenService,
                        PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
-        this.bankRepository = bankRepository;
         this.otpService = otpService;
         this.verificationTokenService = verificationTokenService;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
@@ -53,26 +49,18 @@ public class AuthService {
     }
 
     public RegisterResponse register(RegisterRequest request) {
-        // Kiểm tra email trùng
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
 
-        if (userRepository.findByPhoneNumber(request.getPhoneNumber()).isPresent()) {
-            throw new RuntimeException("Phone number already exists");
-        }
-
-        Bank bank = bankRepository.findById(request.getBankId())
-                .orElseThrow(() -> new RuntimeException("Bank not found"));
-
         User user = new User();
         user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setBank(bank);
-        user.setBankAccountNumber(request.getBankAccountNumber());
+
+        user.setPhoneNumber(request.getPhoneNumber() != null ? request.getPhoneNumber() : null);
+
         user.setCreatedAt(nowInVietnam);
         user.setEnable(false);
         user.setVerified(false);
@@ -81,11 +69,11 @@ public class AuthService {
         user.addRole(Role.USER);
 
         userRepository.save(user);
+
         verificationTokenService.sendVerificationToken(user.getEmail());
 
-        return new RegisterResponse("Registration successful. Please check your email for verification link.");
+        return new RegisterResponse("Registration successful. Please check your email for the verification link. You'll need to complete your profile after verification.");
     }
-
 
     public VerificationResponse verifyAccountByToken(String email, String token) {
         User user = userRepository.findByEmail(email)
@@ -256,5 +244,29 @@ public class AuthService {
         byte[] randomBytes = new byte[32];
         new SecureRandom().nextBytes(randomBytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    }
+
+    public CompleteProfileResponse completeProfile(String email, CompleteProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.getVerified()) {
+            throw new RuntimeException("Please verify your email before completing your profile");
+        }
+
+        userRepository.findByPhoneNumber(request.getPhoneNumber())
+                .ifPresent(existingUser -> {
+                    if (!existingUser.getId().equals(user.getId())) {
+                        throw new RuntimeException("Phone number already in use by another account");
+                    }
+                });
+
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setAddress(request.getAddress());
+        user.setUpdatedAt(nowInVietnam);
+
+        userRepository.save(user);
+
+        return new CompleteProfileResponse(true, "Profile completed successfully");
     }
 }

@@ -89,6 +89,10 @@ const MOCK_ARCHIVES = [
 ];
 
 const Blog = () => {
+  useEffect(() => {
+		document.title = 'Blog | Bid it';
+	}, []);
+
   // Posts per page
   const postsPerPage = 4;
   

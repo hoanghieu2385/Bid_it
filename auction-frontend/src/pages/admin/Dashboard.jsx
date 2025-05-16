@@ -627,7 +627,7 @@ const Dashboard = () => {
                                       src={`/assets/images/placeholders/item${index + 1}.jpg`} 
                                       alt={auction.name}
                                       onError={(e) => {
-                                        e.target.src = "/assets/images/placeholders/default.jpg";
+                                        e.target.src = "";
                                       }}
                                     />
                                   </div>
