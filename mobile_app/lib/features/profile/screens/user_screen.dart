@@ -8,6 +8,8 @@ import 'package:mobile_app/features/profile/screens/profile_screen.dart';
 import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/services/user_service.dart';
+
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
 
@@ -34,7 +36,7 @@ class _UserPageState extends State<UserPage> {
       return;
     }
 
-    final user = await AuthService.getCurrentUser(token);
+    final user = await UserService.getUserProfile(token);
     setState(() {
       _userData = user;
       _isLoading = false;

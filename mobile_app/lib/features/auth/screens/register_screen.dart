@@ -50,32 +50,31 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
 
     try {
-      final result = await AuthService.register(
+      final response = await AuthService.register(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         phoneNumber: _phoneNumberController.text.trim(),
-
       );
 
-      if (result != null) {
+      if (response != null && response['id'] != null) {
         if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Registration successful. Please login.')),
+        );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const LoginPage()),
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful. Please log in.')),
-        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration failed.')),
+          SnackBar(content: Text('❌ Registration failed: ${response?['message'] ?? ''}')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        SnackBar(content: Text('❌ Error: $e')),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -111,6 +110,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 8),
                   const Text("Sign up and get started", style: TextStyle(fontSize: 16, color: Colors.grey)),
                   const SizedBox(height: 40),
+
+                  // Full name
                   Row(
                     children: [
                       Expanded(
@@ -122,8 +123,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             filled: true,
                             fillColor: Colors.white,
                           ),
-                          validator: (value) =>
-                          value == null || value.isEmpty ? 'Enter first name' : null,
+                          validator: (value) => value == null || value.isEmpty ? 'Enter first name' : null,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -136,13 +136,14 @@ class _RegisterPageState extends State<RegisterPage> {
                             filled: true,
                             fillColor: Colors.white,
                           ),
-                          validator: (value) =>
-                          value == null || value.isEmpty ? 'Enter last name' : null,
+                          validator: (value) => value == null || value.isEmpty ? 'Enter last name' : null,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
+
+                  // Email
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
@@ -159,6 +160,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                   ),
                   const SizedBox(height: 20),
+
+                  // Phone
                   TextFormField(
                     controller: _phoneNumberController,
                     decoration: const InputDecoration(
@@ -175,6 +178,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                   ),
                   const SizedBox(height: 20),
+
+                  // Password
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
@@ -198,6 +203,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                   ),
                   const SizedBox(height: 20),
+
+                  // Confirm password
                   TextFormField(
                     controller: _confirmPasswordController,
                     obscureText: !_isConfirmPasswordVisible,
@@ -211,8 +218,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
                           color: Colors.grey,
                         ),
-                        onPressed: () =>
-                            setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
+                        onPressed: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
                       ),
                     ),
                     validator: (value) {
@@ -222,12 +228,13 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                   ),
                   const SizedBox(height: 20),
+
+                  // Terms checkbox
                   Row(
                     children: [
                       Checkbox(
                         value: _isTermsAccepted,
-                        onChanged: (value) =>
-                            setState(() => _isTermsAccepted = value ?? false),
+                        onChanged: (value) => setState(() => _isTermsAccepted = value ?? false),
                       ),
                       const Text('I agree to the ', style: TextStyle(color: AppColors.black)),
                       GestureDetector(
@@ -240,6 +247,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     ],
                   ),
                   const SizedBox(height: 30),
+
+                  // Register button
                   _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : CustomButton(
@@ -249,6 +258,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     textColor: AppColors.white,
                   ),
                   const SizedBox(height: 20),
+
+                  // Navigate to login
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
