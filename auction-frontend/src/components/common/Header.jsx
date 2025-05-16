@@ -1,17 +1,18 @@
-// src/components/common/Header.jsx
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaBars, FaTimes } from 'react-icons/fa';
-import logoImage from '../../assets/images/Logo2.png';
+import logoImage from '../../assets/images/logo.png';
 import '../../assets/styles/client/header.css';
-import { UserContext } from '../../contexts/UserContext.jsx';
 
 const Header = () => {
 	const [expanded, setExpanded] = useState(false);
-	const { user, logoutUser } = useContext(UserContext);
+
+	const storedUser = localStorage.getItem('user');
+	const user = storedUser ? JSON.parse(storedUser) : null;
 
 	const handleLogout = () => {
-		logoutUser();
+		localStorage.removeItem('jwt');
+		localStorage.removeItem('user');
 		window.location.href = '/login';
 	};
 
@@ -19,6 +20,7 @@ const Header = () => {
 		<header className="client-header">
 			<nav className="navbar navbar-expand-lg">
 				<div className="container-fluid">
+					{/* Logo */}
 					<Link to="/" className="client-header-logo navbar-brand">
 						<div className="d-flex align-items-center">
 							<img src={logoImage} alt="Logo" className="logo-image me-1" />
@@ -27,6 +29,7 @@ const Header = () => {
 						</div>
 					</Link>
 
+					{/* Mobile Toggle */}
 					<button
 						className="navbar-toggler border-0"
 						type="button"
@@ -37,7 +40,9 @@ const Header = () => {
 						{expanded ? <FaTimes /> : <FaBars />}
 					</button>
 
+					{/* Navigation Menu and Actions */}
 					<div className={`collapse navbar-collapse ${expanded ? 'show' : ''}`} id="client-navbar-nav">
+						{/* Navigation Links */}
 						<ul className="client-header-nav navbar-nav mx-lg-auto mb-3 mb-lg-0">
 							<li className="nav-item">
 								<Link to="/" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
@@ -61,7 +66,9 @@ const Header = () => {
 							</li>
 						</ul>
 
+						{/* User Actions */}
 						<div className="client-header-actions d-flex align-items-center gap-3">
+							{/* Search */}
 							<div className="input-group w-auto d-none d-lg-flex">
 								<span className="input-group-text bg-white border-end-0">
 									<FaSearch className="text-muted" />
@@ -69,6 +76,7 @@ const Header = () => {
 								<input type="text" className="form-control border-start-0" placeholder="Search" />
 							</div>
 
+							{/* User Menu or Login/Register */}
 							{user ? (
 								<div className="dropdown user-dropdown">
 									<button

@@ -1,63 +1,88 @@
-.login-section {
-    /* background: linear-gradient(135deg, #74ebd5, #acb6e5); */
-    min-height: 100vh;
-    padding: 2rem;
+/* Basic reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    /* Keep font if installed */
 }
 
-.login-container {
-    height: calc(100% - 73px);
+/* Main container */
+/* .client-login-container {
+    background: linear-gradient(135deg, #74ebd5, #acb6e5);
+} */
+
+/* Form wrapper */
+.client-form-wrapper {
+    max-width: 400px;
+    width: 100%;
+    transition: transform 0.3s ease;
 }
 
-@media (max-width: 450px) {
-    .login-container {
-        height: 100%;
-    }
+.client-form-wrapper:hover {
+    transform: translateY(-5px);
 }
 
-.login-image {
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+/* Form title */
+.client-form-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #333;
 }
 
-.login-divider::before,
-.login-divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: #eee;
+/* Form label */
+.client-form-label {
+    font-size: 0.9rem;
+    color: #555;
+    font-weight: 500;
 }
 
-.login-input {
+/* Form input */
+.client-form-input {
+    padding: 10px;
     font-size: 1rem;
+    transition: border-color 0.3s ease;
 }
 
-.login-toggle-password {
-    color: #007bff;
-    background: none;
-    border: none;
-    font-size: 0.875rem;
+.client-form-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
 }
 
-.login-switch-btn {
+.client-form-input::placeholder {
+    color: #aaa;
+}
+
+/* Submit button */
+.client-submit-btn {
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 10px;
+    transition: transform 0.1s ease;
+}
+
+.client-submit-btn:hover {
+    transform: translateY(-2px);
+}
+
+.client-submit-btn:active {
+    transform: translateY(0);
+}
+
+/* Toggle button */
+.client-toggle-btn {
+    font-size: 0.9rem;
     color: #007bff;
     text-decoration: none;
 }
 
-.login-switch-btn:hover {
+.client-toggle-btn:hover {
+    color: #0056b3;
     text-decoration: underline;
 }
 
-.login-message {
+/* Message */
+.client-message {
     font-size: 0.9rem;
-    padding: 0.75rem 1rem;
-}
-
-.password-toggle-icon {
-	position: absolute;
-	top: 50%;
-	right: 1rem;
-	transform: translateY(-50%);
-	cursor: pointer;
-	color: #6c757d;
-	z-index: 10;
+    font-weight: 500;
 }

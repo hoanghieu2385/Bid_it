@@ -1,12 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/utils/navigation.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/register_screen.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
-import 'package:mobile_app/core/services/auth_service.dart';
-import '../../home/screens/home_screen.dart';
+import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,7 +18,6 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -30,38 +26,11 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  Future<void> _signIn() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final result = await AuthService.login(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
-
-      if (result != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login successful')),
-        );
-        navigateTo(context, const HomePage());
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid email or password')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
+  void _signIn() {
+    if (_formKey.currentState!.validate()) {
+      print('Email: ${_emailController.text}, Password: ${_passwordController.text}, Remember Me: $_rememberMe');
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -78,32 +47,51 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 20),
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AppColors.black, size: 30),
-                    onPressed: () => navigateTo(context, const StartPage()),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: AppColors.black,
+                      size: 30,
+                    ),
+                    onPressed: () {
+                      navigateTo(context, const StartPage());
+                    },
                   ),
                   const SizedBox(height: 20),
                   const Text(
                     "It's great that you are back!",
-                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: AppColors.black),
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.black,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   const Text(
                     "Sign in and continue your journey",
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
                   ),
                   const SizedBox(height: 40),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
                       labelText: 'Email',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
                       filled: true,
                       fillColor: Colors.white,
                     ),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Please enter your email';
-                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return 'Please enter a valid email';
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                        return 'Please enter a valid email';
+                      }
                       return null;
                     },
                   ),
@@ -112,18 +100,31 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _passwordController,
                     decoration: InputDecoration(
                       labelText: 'Password',
-                      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                      border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
                       filled: true,
                       fillColor: Colors.white,
                       suffixIcon: IconButton(
-                        icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
-                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                        icon: Icon(
+                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
                       ),
                     ),
                     obscureText: !_isPasswordVisible,
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Please enter your password';
-                      if (value.length < 6) return 'Password must be at least 6 characters';
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your password';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
                       return null;
                     },
                   ),
@@ -132,15 +133,20 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       Checkbox(
                         value: _rememberMe,
-                        onChanged: (value) => setState(() => _rememberMe = value ?? false),
+                        onChanged: (value) {
+                          setState(() {
+                            _rememberMe = value ?? false;
+                          });
+                        },
                       ),
-                      const Text('Remember me', style: TextStyle(color: AppColors.black)),
+                      const Text(
+                        'Remember me',
+                        style: TextStyle(color: AppColors.black),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 30),
-                  _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : CustomButton(
+                  CustomButton(
                     text: 'Sign In',
                     onPressed: _signIn,
                     backgroundColor: AppColors.black,
@@ -152,21 +158,33 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       Row(
                         children: [
-                          const Text('New user? ', style: TextStyle(color: AppColors.black)),
+                          const Text(
+                            'New user? ',
+                            style: TextStyle(color: AppColors.black),
+                          ),
                           GestureDetector(
-                            onTap: () => navigateTo(context, const RegisterPage()),
+                            onTap: () {
+                              navigateTo(context, const RegisterPage());
+                            },
                             child: const Text(
                               'Register',
-                              style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                        },
                         child: const Text(
                           'Forget password?',
-                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],

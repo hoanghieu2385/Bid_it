@@ -24,7 +24,7 @@ auction-frontend/
 │   ├── services/              # Logic gọi API
 │   │   ├── api.js             # Cấu hình base API
 │   │   ├── clientApi.js       # Cấu hình client API
-│   │   ├── user-api.js        # Cấu hình admin API
+│   │   ├── adminApi.js        # Cấu hình admin API
 │   ├── hooks/                 # Custom hooks
 │   │   ├── useAuth.js         # Hook quản lý xác thực
 │   │   └── useRealTime.js     # Hook quản lý realtime bidding
