@@ -9,14 +9,14 @@ COPY pom.xml .
 
 COPY src ./src
 
-# Build 
+# Build
 RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-# copy file JAR 
+# copy file JAR
 COPY --from=build /app/target/*.jar app.jar
 
 # Mở port mặc định của Spring Boot

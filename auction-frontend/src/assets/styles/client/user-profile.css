@@ -1,0 +1,42 @@
+/* src/assets/styles/client/user-profile.css */
+
+.user-profile-wrapper {
+    min-height: 100vh; /* Ensure enough height for pages with short content */
+}
+
+.user-profile-sidebar {
+    border-right: 1px solid #e0e0e0;
+}
+
+.user-profile-sidebar .list-group-item {
+    border: none;
+    border-radius: 0;
+    font-weight: 500;
+    color: #555;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-profile-sidebar .list-group-item.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.user-profile-sidebar .list-group-item:hover {
+    background-color: #f1f1f1;
+}
+
+.user-profile-content .card {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    border: none;
+}
+
+.user-profile-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1rem;
+}
