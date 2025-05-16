@@ -240,6 +240,23 @@ public class AuthService {
         return new ResetPasswordResponse(true, "Password has been reset successfully");
     }
 
+    public void changePassword(ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        if (request.getNewPassword().length() < 6) {
+            throw new RuntimeException("New password must be at least 6 characters");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setUpdatedAt(ZonedDateTime.now(vietnamZone).toLocalDateTime());
+        userRepository.save(user);
+    }
+
     private String generateRandomToken() {
         byte[] randomBytes = new byte[32];
         new SecureRandom().nextBytes(randomBytes);
