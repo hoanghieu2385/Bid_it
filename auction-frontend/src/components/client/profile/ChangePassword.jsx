@@ -16,9 +16,48 @@ const ChangePassword = () => {
 		confirm: false,
 	});
 	const [loading, setLoading] = useState(false);
+	const [errors, setErrors] = useState({});
+	const [message, setMessage] = useState('');
+
+	const validate = () => {
+		const newErrors = {};
+		if (!form.currentPassword) newErrors.currentPassword = 'Current password is required.';
+		if (form.newPassword.length < 6) newErrors.newPassword = 'New password must be at least 6 characters.';
+		if (form.newPassword !== form.confirmPassword) newErrors.confirmPassword = 'Passwords do not match.';
+		setErrors(newErrors);
+		return Object.keys(newErrors).length === 0;
+	};
 
 	const handleChange = (e) => {
-		setForm({ ...form, [e.target.name]: e.target.value });
+		const { name, value } = e.target;
+		setForm((prev) => ({ ...prev, [name]: value }));
+		setMessage('');
+
+		const newErrors = { ...errors };
+
+		if (name === 'newPassword') {
+			if (value.length < 6) {
+				newErrors.newPassword = 'New password must be at least 6 characters.';
+			} else {
+				delete newErrors.newPassword;
+			}
+
+			if (form.confirmPassword && value !== form.confirmPassword) {
+				newErrors.confirmPassword = 'Passwords do not match.';
+			} else {
+				delete newErrors.confirmPassword;
+			}
+		}
+
+		if (name === 'confirmPassword') {
+			if (value !== form.newPassword) {
+				newErrors.confirmPassword = 'Passwords do not match.';
+			} else {
+				delete newErrors.confirmPassword;
+			}
+		}
+
+		setErrors(newErrors);
 	};
 
 	const toggleVisibility = (field) => {
@@ -26,23 +65,16 @@ const ChangePassword = () => {
 	};
 
 	const handleSubmit = async () => {
-		const { currentPassword, newPassword, confirmPassword } = form;
-		if (!currentPassword || !newPassword || !confirmPassword) {
-			alert('Please fill in all fields.');
-			return;
-		}
-		if (newPassword !== confirmPassword) {
-			alert('Passwords do not match');
-			return;
-		}
+		if (!validate()) return;
+
 		try {
 			setLoading(true);
 			const user = await getCurrentUser();
-			await changePassword(user.email, currentPassword, newPassword);
-			alert('Password changed successfully');
+			await changePassword(user.email, form.currentPassword, form.newPassword);
+			setMessage('✅ Password changed successfully!');
 			setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
 		} catch {
-			alert('Failed to change password');
+			setMessage('❌ Failed to change password. Please check your current password.');
 		} finally {
 			setLoading(false);
 		}
@@ -52,45 +84,40 @@ const ChangePassword = () => {
 		<div className="change-password-container">
 			<h5 className="change-password-title">Change Your Password</h5>
 
-			{['currentPassword', 'newPassword', 'confirmPassword'].map((field) => (
-				<div className="form-group" key={field}>
-					<label className="form-label">
-						{field === 'currentPassword' && 'Current Password'}
-						{field === 'newPassword' && 'New Password'}
-						{field === 'confirmPassword' && 'Confirm New Password'}
-					</label>
-					<div className="password-input-wrapper">
-						<input
-							type={
-								showPassword[field === 'currentPassword' ? 'current' : field === 'newPassword' ? 'new' : 'confirm']
-									? 'text'
-									: 'password'
-							}
-							className="form-control custom-input"
-							name={field}
-							value={form[field]}
-							onChange={handleChange}
-							placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
-						/>
-						<span
-							className="toggle-password-icon"
-							onClick={() =>
-								toggleVisibility(field === 'currentPassword' ? 'current' : field === 'newPassword' ? 'new' : 'confirm')
-							}
-						>
-							{showPassword[field === 'currentPassword' ? 'current' : field === 'newPassword' ? 'new' : 'confirm'] ? (
-								<FaEyeSlash />
-							) : (
-								<FaEye />
-							)}
-						</span>
+			{['currentPassword', 'newPassword', 'confirmPassword'].map((field) => {
+				const labelMap = {
+					currentPassword: 'Current Password',
+					newPassword: 'New Password',
+					confirmPassword: 'Confirm New Password',
+				};
+				const showKey = field === 'currentPassword' ? 'current' : field === 'newPassword' ? 'new' : 'confirm';
+
+				return (
+					<div className="form-group" key={field}>
+						<label className="form-label">{labelMap[field]}</label>
+						<div className="password-input-wrapper">
+							<input
+								type={showPassword[showKey] ? 'text' : 'password'}
+								className={`form-control custom-input ${errors[field] ? 'is-invalid' : ''}`}
+								name={field}
+								value={form[field]}
+								onChange={handleChange}
+								placeholder={`Enter ${labelMap[field].toLowerCase()}`}
+							/>
+							<span className="toggle-password-icon" onClick={() => toggleVisibility(showKey)}>
+								{showPassword[showKey] ? <FaEyeSlash /> : <FaEye />}
+							</span>
+						</div>
+						{errors[field] && <div className="text-danger mt-1 small">{errors[field]}</div>}
 					</div>
-				</div>
-			))}
+				);
+			})}
 
 			<button className="btn-submit-password" onClick={handleSubmit} disabled={loading}>
 				{loading ? 'Updating...' : 'Update Password'}
 			</button>
+
+			{message && <div className={`mt-3 fw-bold ${message.startsWith('✅') ? 'text-success' : 'text-danger'}`}>{message}</div>}
 		</div>
 	);
 };

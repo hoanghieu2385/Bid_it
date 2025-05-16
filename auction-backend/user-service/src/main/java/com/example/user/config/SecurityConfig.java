@@ -53,9 +53,9 @@ public class SecurityConfig {
                                 "/auth/request-otp",
                                 "/auth/login-with-otp",
                                 "/auth/forgot-password",
-                                "/auth/reset-password"
+                                "/auth/reset-password",
+                                "/auth/change-password"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/banks/**").permitAll() // Allow GET requests to /banks/** without authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(

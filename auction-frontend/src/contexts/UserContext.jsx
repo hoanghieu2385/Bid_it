@@ -6,21 +6,25 @@ export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
 	const [user, setUser] = useState(null);
-	const [loading, setLoading] = useState(true); // loading
+	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		const fetchUser = async () => {
 			const token = localStorage.getItem('jwt');
-			if (token) {
-				try {
-					const userData = await getCurrentUser();
-					setUser(userData);
-				} catch (error) {
-					console.error('Error fetching user:', error);
-					localStorage.removeItem('jwt');
-				}
+			if (!token) {
+				setLoading(false);
+				return;
 			}
-			setLoading(false); // Set loading to false after fetching
+
+			try {
+				const userData = await getCurrentUser();
+				setUser(userData);
+			} catch (error) {
+				console.error('[UserContext] Error fetching user:', error?.response?.status);
+				localStorage.removeItem('jwt');
+			} finally {
+				setLoading(false);
+			}
 		};
 
 		fetchUser();
