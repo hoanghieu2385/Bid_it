@@ -1,7 +1,11 @@
-import React from "react";
+import {React, useEffect } from 'react';
 import "../../assets/styles/client/HowItWork.css";
 
 const HowItWork = () => {
+  useEffect(() => {
+		document.title = 'How it work | Bid it';
+	}, []);
+
   return (
     <div className="how-it-works-container">
       <div className="hero-section">

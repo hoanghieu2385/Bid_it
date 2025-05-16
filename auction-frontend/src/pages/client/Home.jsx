@@ -1,11 +1,15 @@
 // src/pages/client/Home.jsx
-import React from 'react';
+import {React, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../../assets/styles/client/home.css';
 import Banner from '../../components/client/home/Banner.jsx';
 import Categories from '../../components/client/home/Category.jsx';
 
 const Home = () => {
+    useEffect(() => {
+		document.title = 'Home | Bid it';
+	}, []);
+
     const featuredAuctions = [
         {
             id: 1,

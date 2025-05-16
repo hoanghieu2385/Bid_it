@@ -1,4 +1,4 @@
-import React from "react";
+import {React, useEffect } from 'react';
 import "../../assets/styles/client/About.css";
 import {
   FaHeadset,
@@ -15,6 +15,10 @@ import {
 import { FaFacebookF, FaTwitter, FaLinkedinIn, FaVimeoV } from "react-icons/fa";
 
 function About() {
+    useEffect(() => {
+      document.title = 'About Us | Bid it';
+    }, []);
+  
   // Danh sách thành viên với thông tin chi tiết
   const teamMembers = [
     {

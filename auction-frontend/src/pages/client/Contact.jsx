@@ -1,8 +1,12 @@
-import React from 'react';
+import {React, useEffect } from 'react';
 import '../../assets/styles/client/Contact.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function ContactPage() {
+  useEffect(() => {
+		document.title = 'Contact | Bid it';
+	}, []);
+
   return (
     <div className="mp-contact-page">
       {/* Contact Content */}
