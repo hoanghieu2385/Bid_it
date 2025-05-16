@@ -5,10 +5,15 @@ import com.example.bid.model.Bid;
 import com.example.bid.repository.BidRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.example.bid.dto.UserBidGroupDTO;
+import com.example.bid.dto.BidDTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class BidService {
@@ -35,7 +40,7 @@ public class BidService {
         );
 
         // ❌ Auction not active?
-        if (!"ACTIVE".equalsIgnoreCase(auction.getStatus())) {
+        if (!"OPENED".equalsIgnoreCase(auction.getStatus())) {
             throw new IllegalArgumentException("Cannot place bid. Auction is not active.");
         }
 
@@ -48,6 +53,22 @@ public class BidService {
         BigDecimal current = auction.getCurrentBid() != null ? auction.getCurrentBid() : auction.getStartingPrice();
         if (bid.getAmount().compareTo(current) <= 0) {
             throw new IllegalArgumentException("Your bid must be higher than the current bid.");
+        }
+
+        // ❌ Same user, same amount
+        boolean alreadyPlacedSameBid = bidRepository.existsByAuctionIdAndBidderIdAndAmount(
+                bid.getAuctionId(), bid.getBidderId(), bid.getAmount()
+        );
+        if (alreadyPlacedSameBid) {
+            throw new IllegalArgumentException("You have already placed a bid with this amount.");
+        }
+
+        // ❌ Someone else already placed this exact bid first
+        Bid existing = bidRepository.findTopByAuctionIdAndAmountOrderByCreatedAtAsc(
+                bid.getAuctionId(), bid.getAmount()
+        );
+        if (existing != null && !existing.getBidderId().equals(bid.getBidderId())) {
+            throw new IllegalArgumentException("This amount has already been bid. Please choose a higher amount.");
         }
 
         return bidRepository.save(bid);
@@ -71,4 +92,52 @@ public class BidService {
     public long countBidsForAuction(Long auctionId) {
         return bidRepository.countByAuctionId(auctionId);
     }
+
+    public List<UserBidGroupDTO> getGroupedBidsByUser(Long userId) {
+        List<Bid> userBids = bidRepository.findByBidderId(userId);
+
+        // Group bids by auctionId
+        Map<Long, List<Bid>> groupedByAuction = userBids.stream()
+                .collect(Collectors.groupingBy(Bid::getAuctionId));
+
+        List<UserBidGroupDTO> groupedResult = new ArrayList<>();
+
+        for (Map.Entry<Long, List<Bid>> entry : groupedByAuction.entrySet()) {
+            Long auctionId = entry.getKey();
+            List<Bid> bidsForAuction = entry.getValue();
+
+            // Fetch auction title from auction-service
+            String auctionTitle = fetchAuctionTitle(auctionId);
+
+            // Convert bids to BidDTO
+            List<BidDTO> bidDTOs = bidsForAuction.stream().map(b -> {
+                BidDTO dto = new BidDTO();
+                dto.setAmount(b.getAmount());
+                dto.setCreatedAt(b.getCreatedAt());
+                return dto;
+            }).collect(Collectors.toList());
+
+            UserBidGroupDTO group = new UserBidGroupDTO();
+            group.setAuctionId(auctionId);
+            group.setAuctionTitle(auctionTitle);
+            group.setBids(bidDTOs);
+
+            groupedResult.add(group);
+        }
+
+        return groupedResult;
+    }
+
+    private String fetchAuctionTitle(Long auctionId) {
+        try {
+            String url = "http://auction-service/api/auctions/" + auctionId;
+            AuctionDTO auction = restTemplate.getForObject(url, AuctionDTO.class);
+            return auction != null ? auction.getTitle() : "Unknown Auction";
+        } catch (Exception e) {
+            System.err.println("Failed to fetch auction title for ID " + auctionId + ": " + e.getMessage());
+            return "Unknown Auction";
+        }
+    }
+
+
 }
