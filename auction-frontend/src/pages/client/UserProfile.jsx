@@ -3,6 +3,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../../contexts/UserContext.jsx';
 import ProfileInfo from '../../components/client/profile/ProfileInfo';
+import EKYCVerification from '../../components/client/profile/EKYCVerification';
 import AuctionHistory from '../../components/client/profile/AuctionHistory';
 import ChangePassword from '../../components/client/profile/ChangePassword';
 import { FaUser, FaHistory, FaLock } from 'react-icons/fa';
@@ -37,6 +38,13 @@ const UserProfile = () => {
 								<FaUser /> Profile Info
 							</button>
 							<button
+								className={`sidebar-tab list-group-item ${activeTab === 'ekyc' ? 'active' : ''}`}
+								onClick={() => setActiveTab('ekyc')}
+							>
+								<i className="fa-solid fa-id-card me-2" style={{ color: '#d1d3e2' }} />
+								eKYC Verification
+							</button>
+							<button
 								className={`sidebar-tab list-group-item ${activeTab === 'history' ? 'active' : ''}`}
 								onClick={() => setActiveTab('history')}
 							>
@@ -55,6 +63,7 @@ const UserProfile = () => {
 					<div className="col-md-9">
 						<div className="user-profile-content">
 							{activeTab === 'info' && <ProfileInfo />}
+							{activeTab === 'ekyc' && <EKYCVerification />}
 							{activeTab === 'history' && <AuctionHistory />}
 							{activeTab === 'password' && <ChangePassword />}
 						</div>
