@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 public class AuctionDTO {
 
     private Long id;
+    private String title;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private BigDecimal startingPrice;
@@ -21,6 +22,10 @@ public class AuctionDTO {
     public void setId(Long id) {
         this.id = id;
     }
+
+    public String getTitle() {return title;}
+
+    public void setTitle(String title) {this.title = title;}
 
     public LocalDateTime getStartTime() {
         return startTime;

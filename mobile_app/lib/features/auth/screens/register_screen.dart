@@ -56,7 +56,7 @@ class _RegisterPageState extends State<RegisterPage> {
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         phoneNumber: _phoneNumberController.text.trim(),
-        
+
       );
 
       if (result != null) {
