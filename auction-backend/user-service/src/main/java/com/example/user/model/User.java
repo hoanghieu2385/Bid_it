@@ -27,20 +27,13 @@ public class User {
     private String avatar;
     private String avatarPublicId;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = true, unique = true)
     private String phoneNumber;
 
     @Column
     private String address;
 
-    @ManyToOne
-    @JoinColumn(name = "bank_id", nullable = false)
-    private Bank bank;
-
-    @Column(nullable = false)
-    private String bankAccountNumber;
-
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "INT NOT NULL DEFAULT 0")
     private Integer score = 0;
 
     @Column(nullable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
@@ -61,20 +54,17 @@ public class User {
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean locked = false;
 
-    // Add roles field
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
     private Set<Role> roles = new HashSet<>();
 
-    // Default constructor
     public User() {}
 
-    // Constructor with parameters
     public User(Long id, String email, String firstName, String lastName, String password, String avatar,
-                String avatarPublicId, String phoneNumber, String address, Bank bank,
-                String bankAccountNumber, Integer score, LocalDateTime createdAt,
+                String avatarPublicId, String phoneNumber, String address,
+                Integer score, LocalDateTime createdAt,
                 LocalDateTime updatedAt, Boolean enable, Boolean verified,
                 String verifiedResponse, Boolean locked, Set<Role> roles) {
         this.id = id;
@@ -86,8 +76,6 @@ public class User {
         this.avatarPublicId = avatarPublicId;
         this.phoneNumber = phoneNumber;
         this.address = address;
-        this.bank = bank;
-        this.bankAccountNumber = bankAccountNumber;
         this.score = score;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -98,7 +86,6 @@ public class User {
         this.roles = roles;
     }
 
-    // Add roles getter and setter
     public Set<Role> getRoles() {
         return roles;
     }
@@ -107,7 +94,6 @@ public class User {
         this.roles = roles;
     }
 
-    // Add convenience method to add a role
     public void addRole(Role role) {
         if (this.roles == null) {
             this.roles = new HashSet<>();
@@ -115,7 +101,6 @@ public class User {
         this.roles.add(role);
     }
 
-    // Add convenience method to check if user has a specific role
     public boolean hasRole(Role role) {
         return this.roles != null && this.roles.contains(role);
     }
@@ -190,22 +175,6 @@ public class User {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public Bank getBank() {
-        return bank;
-    }
-
-    public void setBank(Bank bank) {
-        this.bank = bank;
-    }
-
-    public String getBankAccountNumber() {
-        return bankAccountNumber;
-    }
-
-    public void setBankAccountNumber(String bankAccountNumber) {
-        this.bankAccountNumber = bankAccountNumber;
     }
 
     public Integer getScore() {

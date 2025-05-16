@@ -1,19 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
+import 'package:mobile_app/core/services/auth_service.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
-import 'package:mobile_app/features/auction/screens/watchlist_screen.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
-import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
+import 'package:mobile_app/features/auction/screens/watchlist_screen.dart';
 import 'package:mobile_app/features/profile/screens/profile_screen.dart';
+import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class UserPage extends StatelessWidget {
+class UserPage extends StatefulWidget {
   const UserPage({super.key});
 
   @override
+  State<UserPage> createState() => _UserPageState();
+}
+
+class _UserPageState extends State<UserPage> {
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    final user = await AuthService.getCurrentUser(token);
+    setState(() {
+      _userData = user;
+      _isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_userData == null) {
       return Scaffold(
         body: Center(
           child: Padding(
@@ -22,7 +58,7 @@ class UserPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  'You did not logined.',
+                  'You are not logged in.',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
@@ -44,11 +80,9 @@ class UserPage extends StatelessWidget {
       );
     }
 
-    final userProfile = {
-      'name': user.displayName ?? 'User',
-      'email': user.email ?? 'Dont have any email',
-      'avatar': user.photoURL ?? '',
-    };
+    final name = '${_userData!['firstName']} ${_userData!['lastName']}';
+    final email = _userData!['email'] ?? '';
+    final avatar = _userData!['avatar'] ?? '';
 
     return Scaffold(
       body: Column(
@@ -60,10 +94,14 @@ class UserPage extends StatelessWidget {
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: AppColors.grey,
+                  backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+                  child: avatar.isEmpty
+                      ? const Icon(Icons.person, size: 50, color: AppColors.white)
+                      : null,
                 ),
                 const SizedBox(height: 16.0),
                 Text(
-                  userProfile['name']!,
+                  name,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -72,7 +110,7 @@ class UserPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8.0),
                 Text(
-                  userProfile['email']!,
+                  email,
                   style: const TextStyle(
                     fontSize: 16,
                     color: AppColors.grey,
@@ -88,55 +126,34 @@ class UserPage extends StatelessWidget {
                   context: context,
                   icon: Icons.person_outline,
                   title: 'Profile',
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ProfilePage()),
-                    );
-                  },
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfilePage()),
+                  ),
                 ),
                 _buildMenuItem(
                   context: context,
                   icon: Icons.gavel,
                   title: 'My Auctions',
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const WatchlistPage()),
-                    );
-                  },
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AuctionList()),
+                  ),
                 ),
                 _buildMenuItem(
                   context: context,
-                  icon: Icons.history,
-                  title: 'Bidding History',
-                  onTap: () {
-                    print('Bidding History pressed');
-                  },
-                ),
-                _buildMenuItem(
-                  context: context,
-                  icon: Icons.payment,
-                  title: 'Disputes & Payments',
-                  onTap: () {
-                    print('Disputes & Payments pressed');
-                  },
-                ),
-                _buildMenuItem(
-                  context: context,
-                  icon: Icons.warning,
-                  title: 'Dispute Center',
-                  onTap: () {
-                    print('Dispute Center pressed');
-                  },
+                  icon: Icons.favorite_border,
+                  title: 'Watchlist',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const WatchlistPage()),
+                  ),
                 ),
                 _buildMenuItem(
                   context: context,
                   icon: Icons.settings,
                   title: 'Settings',
-                  onTap: () {
-                    print('Settings pressed');
-                  },
+                  onTap: () => print('Settings pressed'),
                 ),
                 const SizedBox(height: 16.0),
                 Padding(
@@ -144,7 +161,8 @@ class UserPage extends StatelessWidget {
                   child: CustomButton(
                     text: 'Logout',
                     onPressed: () async {
-                      await FirebaseAuth.instance.signOut();
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.remove('jwt_token');
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => const StartPage()),
@@ -173,16 +191,9 @@ class UserPage extends StatelessWidget {
       leading: Icon(icon, color: Colors.orange, size: 24),
       title: Text(
         title,
-        style: const TextStyle(
-          fontSize: 16,
-          color: AppColors.black,
-        ),
+        style: const TextStyle(fontSize: 16, color: AppColors.black),
       ),
-      trailing: const Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: AppColors.grey,
-      ),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.grey),
       onTap: onTap,
     );
   }
