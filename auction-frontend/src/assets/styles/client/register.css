@@ -1,24 +1,19 @@
 /* register.css */
-/* register.css */
-.fade-container {
-	opacity: 0;
-	transition: opacity 0.4s ease;
-	position: relative;
+.register-form-group {
+	margin-bottom: 1.25rem;
 }
 
-.fade-in {
-	opacity: 1;
+.register-name-row {
+	display: flex;
+	gap: 1rem;
 }
 
-.auth-switch-link,
-.auth-forgot-link {
-	color: #007bff;
-	text-decoration: none;
+.register-name-row .form-floating {
+	flex: 1;
 }
 
-.auth-switch-link:hover,
-.auth-forgot-link:hover {
-	text-decoration: underline;
+.form-floating > .form-control {
+	border-radius: 0.75rem;
 }
 
 .password-toggle-icon {
@@ -34,4 +29,26 @@
 input.is-invalid {
 	border: 1px solid #dc3545 !important;
 	box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.auth-switch-link,
+.auth-forgot-link {
+	color: #007bff;
+	text-decoration: none;
+}
+
+.auth-switch-link:hover,
+.auth-forgot-link:hover {
+	text-decoration: underline;
+}
+
+.register-btn {
+	background: #3b82f6;
+	border-radius: 0.75rem;
+	font-weight: 600;
+	transition: all 0.3s ease;
+}
+
+.register-btn:hover {
+	background: #2563eb;
 }

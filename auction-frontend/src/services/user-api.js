@@ -1,6 +1,7 @@
 // src/services/user-api.js
 import api from './api';
 import API_CONFIG from './apiConfig';
+import Cookies from 'js-cookie';
 
 // Auth endpoints
 export const login = async (email, password) => {
@@ -45,6 +46,23 @@ export const resetPassword = async (token, email, newPassword) => {
   });
   return response.data;
 };
+
+export const submitEkycRequest = async (formData) => {
+	const token = Cookies.get('jwt');
+	const response = await api.post(`${API_CONFIG.USER_API}/ekyc`, formData, {
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'multipart/form-data',
+		},
+	});
+	return response.data;
+};
+
+export const getEkycStatus = async () => {
+	const response = await api.get(`${API_CONFIG.USER_API}/ekyc-status`);
+	return response.data;
+};
+
 
 // User info endpoints
 export const getCurrentUser = async () => {
