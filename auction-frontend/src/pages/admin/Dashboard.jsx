@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Container, Row, Col, Card, Badge, Table, 
   Pagination, ButtonGroup, Button 
@@ -17,6 +17,14 @@ const Dashboard = () => {
   const [categoryTimeFrame, setCategoryTimeFrame] = useState("All");
   const [auctionFilter, setAuctionFilter] = useState("Opening");
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // State for search and pagination
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showSearchInput, setShowSearchInput] = useState(false);
+  const [filteredAuctions, setFilteredAuctions] = useState([]);
+  const [displayedAuctions, setDisplayedAuctions] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage] = useState(5);
 
   // Mock data
   const dashboardData = {
@@ -115,6 +123,81 @@ const Dashboard = () => {
         currentPrice: "700.000",
         startPrice: "0",
         status: "Opened"
+      },
+      {
+        id: 812,
+        name: "BMW A100D A Class Hatch Premium",
+        category: "Motorcycles",
+        seller: {
+          name: "Christopher Anderson",
+          email: "christopher.anderson@example.com",
+          verified: true
+        },
+        startDate: "23 Jul, 2024 - 02:01",
+        endDate: "26 Jul, 2024 - 02:01",
+        currentPrice: "80.000.000",
+        startPrice: "80.500.000",
+        status: "Opened"
+      },
+      {
+        id: 811,
+        name: "Watercolor Special Lighter Collection",
+        category: "Jewelry",
+        seller: {
+          name: "Christopher Anderson",
+          email: "christopher.anderson@example.com",
+          verified: true
+        },
+        startDate: "23 Jul, 2024 - 02:01",
+        endDate: "24 Jul, 2024 - 02:01",
+        currentPrice: "50.000",
+        startPrice: "0",
+        status: "Opened"
+      },
+      {
+        id: 810,
+        name: "Michael Korian Gold Special Edition",
+        category: "Watches",
+        seller: {
+          name: "Christopher Anderson",
+          email: "christopher.anderson@example.com",
+          verified: true
+        },
+        startDate: "23 Jul, 2024 - 02:01",
+        endDate: "29 Jul, 2024 - 02:01",
+        currentPrice: "2.500.000",
+        startPrice: "0",
+        status: "Opened"
+      },
+      {
+        id: 809,
+        name: "Water resist All Variants Available",
+        category: "Watches",
+        seller: {
+          name: "Christopher Anderson",
+          email: "christopher.anderson@example.com",
+          verified: true
+        },
+        startDate: "23 Jul, 2024 - 02:01",
+        endDate: "27 Jul, 2024 - 02:01",
+        currentPrice: "4.500.000",
+        startPrice: "0",
+        status: "Sold"
+      },
+      {
+        id: 808,
+        name: "Pure leather All Variants Available",
+        category: "Clothes",
+        seller: {
+          name: "Christopher Anderson",
+          email: "christopher.anderson@example.com",
+          verified: true
+        },
+        startDate: "23 Jul, 2024 - 02:01",
+        endDate: "30 Jul, 2024 - 02:01",
+        currentPrice: "700.000",
+        startPrice: "0",
+        status: "Disputed"
       }
     ],
     chartData: {
@@ -123,15 +206,184 @@ const Dashboard = () => {
     }
   };
 
-  // Pagination calculation
-  const itemsPerPage = 5;
-  const totalPages = Math.ceil(dashboardData.auctions.length / itemsPerPage);
-  
-  // Navigation functions
+  // Filter auctions by status
+  useEffect(() => {
+    const filteredByStatus = dashboardData.auctions.filter(auction => {
+      if (auctionFilter === "Opening") return auction.status === "Opened";
+      if (auctionFilter === "Sold") return auction.status === "Sold";
+      if (auctionFilter === "Disputing") return auction.status === "Disputed";
+      return true;
+    });
+    
+    setFilteredAuctions(filteredByStatus);
+    setCurrentPage(1); // Reset to first page on filter change
+  }, [auctionFilter]);
+
+  // Apply search filter on filteredAuctions
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      // No search term, keep current filter
+      return;
+    }
+    
+    const term = searchTerm.toLowerCase();
+    const searchFiltered = filteredAuctions.filter(auction => 
+      auction.name.toLowerCase().includes(term) || 
+      auction.category.toLowerCase().includes(term) ||
+      auction.seller.name.toLowerCase().includes(term) ||
+      auction.id.toString().includes(term)
+    );
+    
+    setFilteredAuctions(searchFiltered);
+    setCurrentPage(1); // Reset to first page on search
+  }, [searchTerm]);
+
+  // Update displayed auctions and total pages when filteredAuctions or page changes
+  useEffect(() => {
+    // Calculate total pages
+    const newTotalPages = Math.max(1, Math.ceil(filteredAuctions.length / itemsPerPage));
+    setTotalPages(newTotalPages);
+    
+    // Adjust current page if it exceeds new total pages
+    if (currentPage > newTotalPages) {
+      setCurrentPage(newTotalPages);
+    }
+    
+    // Calculate start and end indices
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, filteredAuctions.length);
+    
+    // Update displayed auctions
+    setDisplayedAuctions(filteredAuctions.slice(startIndex, endIndex));
+  }, [filteredAuctions, currentPage, itemsPerPage]);
+
+  // Initialize filteredAuctions with dashboardData.auctions
+  useEffect(() => {
+    const initialFilteredAuctions = dashboardData.auctions.filter(auction => {
+      if (auctionFilter === "Opening") return auction.status === "Opened";
+      if (auctionFilter === "Sold") return auction.status === "Sold";
+      if (auctionFilter === "Disputing") return auction.status === "Disputed";
+      return true;
+    });
+    
+    setFilteredAuctions(initialFilteredAuctions);
+  }, []);
+
+  // Search handler
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    
+    if (!term.trim()) {
+      // Reset to filtered by status only
+      const resetFiltered = dashboardData.auctions.filter(auction => {
+        if (auctionFilter === "Opening") return auction.status === "Opened";
+        if (auctionFilter === "Sold") return auction.status === "Sold";
+        if (auctionFilter === "Disputing") return auction.status === "Disputed";
+        return true;
+      });
+      
+      setFilteredAuctions(resetFiltered);
+    }
+  };
+
+  // Toggle search input
+  const toggleSearchInput = () => {
+    setShowSearchInput(!showSearchInput);
+    if (showSearchInput) {
+      // If closing search, clear search term
+      setSearchTerm("");
+      // Reset to filtered by status only
+      const resetFiltered = dashboardData.auctions.filter(auction => {
+        if (auctionFilter === "Opening") return auction.status === "Opened";
+        if (auctionFilter === "Sold") return auction.status === "Sold";
+        if (auctionFilter === "Disputing") return auction.status === "Disputed";
+        return true;
+      });
+      
+      setFilteredAuctions(resetFiltered);
+    }
+  };
+
+  // Pagination logic
   const goToPage = (pageNumber) => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
     }
+  };
+
+  // Get pagination range
+  const getPaginationRange = () => {
+    // If less than or equal to 3 pages, show all
+    if (totalPages <= 3) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    
+    // If at start or near start
+    if (currentPage <= 2) {
+      return [1, 2, 3];
+    }
+    
+    // If at end or near end
+    if (currentPage >= totalPages - 1) {
+      return [totalPages - 2, totalPages - 1, totalPages];
+    }
+    
+    // If in middle
+    return [currentPage - 1, currentPage, currentPage + 1];
+  };
+
+  // Render search section
+  const renderSearchSection = () => {
+    return (
+      <div className="showing-entries d-flex align-items-center">
+        <span>{filteredAuctions.length}</span>
+        <FaSearch 
+          className="ml-2" 
+          style={{ cursor: 'pointer', marginLeft: '5px' }} 
+          onClick={toggleSearchInput} 
+        />
+        {showSearchInput && (
+          <input
+            type="text"
+            className="form-control form-control-sm ml-2"
+            placeholder="Tìm kiếm..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            style={{ width: '150px', display: 'inline-block', marginLeft: '5px' }}
+            autoFocus
+          />
+        )}
+      </div>
+    );
+  };
+
+  // Render pagination
+  const renderPagination = () => {
+    const pageNumbers = getPaginationRange();
+    
+    return (
+      <Pagination size="sm">
+        <Pagination.Prev 
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage === 1}
+        />
+        
+        {pageNumbers.map(number => (
+          <Pagination.Item
+            key={number}
+            active={currentPage === number}
+            onClick={() => goToPage(number)}
+          >
+            {number}
+          </Pagination.Item>
+        ))}
+        
+        <Pagination.Next 
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        />
+      </Pagination>
+    );
   };
 
   return (
@@ -366,7 +618,7 @@ const Dashboard = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {dashboardData.auctions.map((auction, index) => (
+                          {displayedAuctions.map((auction, index) => (
                             <tr key={auction.id}>
                               <td>
                                 <div className="d-flex align-items-center">
@@ -389,12 +641,11 @@ const Dashboard = () => {
                               </td>
                               <td>
                                 <div className="seller-info">
-                                  <div className="seller-name">{auction.seller.name}</div>
+                                  <div className="seller-name">{auction.seller.name}<div className="seller-email">{auction.seller.email}</div></div>
                                   <div className="seller-meta">
                                     {auction.seller.verified && (
                                       <span className="verified-badge">Verified</span>
                                     )}
-                                    <div className="seller-email">{auction.seller.email}</div>
                                   </div>
                                 </div>
                               </td>
@@ -433,29 +684,8 @@ const Dashboard = () => {
                     </div>
                     
                     <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
-                      <div className="showing-entries">
-                        <span>5</span>
-                        <FaSearch className="ml-2" />
-                      </div>
-                      <Pagination size="sm">
-                        <Pagination.Prev 
-                          onClick={() => goToPage(currentPage - 1)}
-                          disabled={currentPage === 1}
-                        />
-                        {Array.from({ length: Math.min(totalPages, 3) }).map((_, index) => (
-                          <Pagination.Item
-                            key={index + 1}
-                            active={currentPage === index + 1}
-                            onClick={() => goToPage(index + 1)}
-                          >
-                            {index + 1}
-                          </Pagination.Item>
-                        ))}
-                        <Pagination.Next 
-                          onClick={() => goToPage(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                        />
-                      </Pagination>
+                      {renderSearchSection()}
+                      {renderPagination()}
                     </div>
                   </Card.Body>
                 </Card>

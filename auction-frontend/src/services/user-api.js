@@ -15,7 +15,7 @@ export const register = async (formData) => {
 };
 
 export const changePassword = async (email, currentPassword, newPassword) => {
-  const response = await api.post(`${API_CONFIG.USER_AUTH}/reset-password`, {
+  const response = await api.post(`/user-service/auth/change-password`, {
     email,
     currentPassword,
     newPassword,
@@ -46,6 +46,7 @@ export const resetPassword = async (token, email, newPassword) => {
   });
   return response.data;
 };
+
 
 export const submitEkycRequest = async (formData) => {
 	const token = Cookies.get('jwt');
