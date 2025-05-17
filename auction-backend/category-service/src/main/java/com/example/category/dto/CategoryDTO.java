@@ -11,6 +11,10 @@ public class CategoryDTO {
     private BigDecimal commissionRate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
+    private LocalDateTime scheduledDeletionAt;
+    private boolean deleted;
+    private long daysUntilPermanentDeletion;
 
     public Integer getId() {
         return id;
@@ -66,5 +70,37 @@ public class CategoryDTO {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public LocalDateTime getScheduledDeletionAt() {
+        return scheduledDeletionAt;
+    }
+
+    public void setScheduledDeletionAt(LocalDateTime scheduledDeletionAt) {
+        this.scheduledDeletionAt = scheduledDeletionAt;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+
+    public long getDaysUntilPermanentDeletion() {
+        return daysUntilPermanentDeletion;
+    }
+
+    public void setDaysUntilPermanentDeletion(long daysUntilPermanentDeletion) {
+        this.daysUntilPermanentDeletion = daysUntilPermanentDeletion;
     }
 }

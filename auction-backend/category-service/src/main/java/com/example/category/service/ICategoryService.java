@@ -12,4 +12,7 @@ public interface ICategoryService {
     CategoryDTO getCategoryById(Integer id);
     CategoryDTO updateCategory(Integer id, CategoryUpdateRequest request);
     void deleteCategory(Integer id);
+    List<CategoryDTO> getAllDeletedCategories();
+    void restoreCategory(Integer id);
+    void permanentlyDeleteScheduledCategories();
 }
