@@ -44,17 +44,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/auth/ping",
-                                "/auth/register",
-                                "/auth/login",
-                                "/auth/generate-token",
-                                "/auth/verify-account",
-                                "/auth/verify-email",
-                                "/auth/request-otp",
-                                "/auth/login-with-otp",
-                                "/auth/forgot-password",
-                                "/auth/reset-password",
-                                "/auth/change-password"
+                                "/auth/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

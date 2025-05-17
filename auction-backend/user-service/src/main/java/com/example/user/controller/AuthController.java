@@ -109,14 +109,14 @@ public class AuthController {
         return ResponseEntity.ok(authService.forgotPassword(request.getEmail()));
     }
 
-    @GetMapping("/reset-password")
-    public String showResetPasswordForm(@RequestParam String token,
-                                        @RequestParam String email,
-                                        Model model) {
-        model.addAttribute("token", token);
-        model.addAttribute("email", email);
-        return "reset-password";
-    }
+    // @GetMapping("/reset-password")
+    // public String showResetPasswordForm(@RequestParam String token,
+    //                                     @RequestParam String email,
+    //                                     Model model) {
+    //     model.addAttribute("token", token);
+    //     model.addAttribute("email", email);
+    //     return "reset-password";
+    // }
 
     @PostMapping("/reset-password")
     @ResponseBody

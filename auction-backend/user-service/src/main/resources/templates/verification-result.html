@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +17,7 @@
       min-height: 100vh;
       background-color: #f7f7f7;
     }
+
     .container {
       background-color: white;
       border-radius: 8px;
@@ -25,20 +27,25 @@
       max-width: 500px;
       text-align: center;
     }
+
     .success {
       color: #4CAF50;
     }
+
     .error {
       color: #f44336;
     }
+
     .icon {
       font-size: 60px;
       margin-bottom: 20px;
     }
+
     .message {
       margin: 20px 0;
       font-size: 18px;
     }
+
     .button {
       background-color: #4CAF50;
       color: white;
@@ -51,20 +58,22 @@
     }
   </style>
 </head>
+
 <body>
-<div class="container">
-  <div th:if="${success}" class="success">
-    <div class="icon">✓</div>
-    <h1>Verification Successful</h1>
-  </div>
-  <div th:unless="${success}" class="error">
-    <div class="icon">✗</div>
-    <h1>Verification Failed</h1>
-  </div>
+  <div class="container">
+    <div th:if="${success}" class="success">
+      <div class="icon">✓</div>
+      <h1>Verification Successful</h1>
+    </div>
+    <div th:unless="${success}" class="error">
+      <div class="icon">✗</div>
+      <h1>Verification Failed</h1>
+    </div>
 
-  <div class="message" th:text="${message}">Message will be displayed here</div>
+    <div class="message" th:text="${message}">Message will be displayed here</div>
 
-  <a href="/" class="button">Go to Homepage</a>
-</div>
+    <a href="http://localhost:3000" class="button">Go to Homepage</a>
+  </div>
 </body>
+
 </html>

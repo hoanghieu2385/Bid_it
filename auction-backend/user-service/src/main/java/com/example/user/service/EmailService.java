@@ -79,7 +79,8 @@ public class EmailService {
     }
 
     public void sendPasswordResetEmail(String email, String resetToken) {
-        String resetUrl = baseUrl + "/auth/reset-password?token=" + resetToken + "&email=" + email;
+        // String resetUrl = baseUrl + "/auth/reset-password?token=" + resetToken + "&email=" + email;
+        String resetUrl = "http://localhost:3000/reset-password?token=" + resetToken + "&email=" + email;
 
         String subject = "Yêu cầu đặt lại mật khẩu";
         String content = String.format(
