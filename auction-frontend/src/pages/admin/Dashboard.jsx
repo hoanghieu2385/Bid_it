@@ -8,8 +8,8 @@ import {
   FaSearch, FaEye 
 } from "react-icons/fa";
 import "../../assets/styles/admin/Dashboard.css";
-import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
+import Sidebar from "../../components/admin/Sidebar";
+import Topbar from "../../components/admin/Topbar";
 
 const Dashboard = () => {
   // State for active tabs
