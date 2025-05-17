@@ -1,5 +1,5 @@
 // src/pages/common/ForgotPassword.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { forgotPassword } from '../../services/user-api';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,6 +9,10 @@ function ForgotPassword() {
 	const [loading, setLoading] = useState(false);
 	const [success, setSuccess] = useState(false);
 	const navigate = useNavigate();
+
+	useEffect(() => {
+		document.title = 'Forgot Password | Bid it';
+	}, []);
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
