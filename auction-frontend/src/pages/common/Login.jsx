@@ -36,7 +36,11 @@ function Login() {
 				const userData = await getCurrentUser();
 				loginUser(userData);
 				setMessage('Login successful!');
-				navigate('/');
+				if (userData.roles.includes('ADMIN')) {
+					navigate('/admin');
+				} else {
+					navigate('/');
+				}
 			} catch (err) {
 				localStorage.removeItem('jwt');
 				setMessage(err.response?.data?.message || 'Invalid token or session expired.');

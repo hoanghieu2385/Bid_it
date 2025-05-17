@@ -1,7 +1,8 @@
 // src/routes/ClientRoutes.jsx
-import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
-import ClientLayout from '../layout/ClientLayout.jsx'; 
+import React, { useContext } from 'react';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { UserContext } from '../contexts/UserContext.jsx';
+import ClientLayout from '../layout/ClientLayout.jsx';
 import Home from '../pages/client/Home.jsx';
 import Login from '../pages/common/Login.jsx';
 import Register from '../pages/common/Register.jsx';
@@ -18,6 +19,13 @@ import UserProfile from '../pages/client/UserProfile.jsx';
 
 function ClientRoutes() {
 	const location = useLocation();
+	const { user, loading } = useContext(UserContext);
+
+	if (loading) return null;
+
+	if (user && user.roles.includes('ADMIN')) {
+		return <Navigate to="/admin/dashboard" />;
+	}
 
 	return (
 		<Routes location={location} key={location.pathname}>
