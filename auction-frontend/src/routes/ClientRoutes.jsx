@@ -5,6 +5,8 @@ import ClientLayout from '../layout/ClientLayout.jsx';
 import Home from '../pages/client/Home.jsx';
 import Login from '../pages/common/Login.jsx';
 import Register from '../pages/common/Register.jsx';
+import ForgotPassword from '../pages/common/ForgotPassword.jsx';
+import ResetPassword from '../pages/common/ResetPassword.jsx';
 import About from '../pages/client/About.jsx';
 import Contact from '../pages/client/Contact.jsx';
 import HowItWork from '../pages/client/HowItWork.jsx';
@@ -23,6 +25,8 @@ function ClientRoutes() {
 				<Route path="/" element={<Home />} />
 				<Route path="/login" element={<Login />} />
 				<Route path="/register" element={<Register />} />
+				<Route path="/forgot-password" element={<ForgotPassword />} />
+				<Route path="/reset-password" element={<ResetPassword />} />
 				<Route path="/profile" element={<UserProfile />} />
 				<Route path="/about" element={<About />} />
 				<Route path="/contact" element={<Contact />} />
