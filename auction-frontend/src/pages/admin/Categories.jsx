@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
+import Sidebar from "../../components/admin/Sidebar";
+import Topbar from "../../components/admin/Topbar";
 import "../../assets/styles/admin/Categories.css";
 import { FaEdit, FaTrash, FaSearch, FaFilter, FaPlus, FaHistory } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
