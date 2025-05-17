@@ -59,13 +59,25 @@ export const deleteCategory = async (id) => {
     }
 };
 
+// Lấy tất cả danh mục đã xóa (trong thùng rác)
+export const getAllDeletedCategories = async () => {
+    try {
+        const response = await api.get(`${categoryEndpoint}/deleted`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách danh mục đã xóa:', error);
+        throw error;
+    }
+};
+
 // Khôi phục danh mục đã xóa
 export const restoreCategory = async (id) => {
     try {
-        const response = await api.patch(`${categoryEndpoint}/${id}/restore`);
+        const response = await api.post(`${categoryEndpoint}/${id}/restore`);
         return response.data;
     } catch (error) {
         console.error(`Không thể khôi phục danh mục có ID ${id}:`, error);
         throw error;
     }
 };
+
