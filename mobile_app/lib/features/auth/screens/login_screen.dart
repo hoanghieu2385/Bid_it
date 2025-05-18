@@ -48,6 +48,8 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login successful')),
         );
+        await Future.delayed(const Duration(milliseconds: 600));
+
         navigateTo(context, const HomePage());
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
