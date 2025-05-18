@@ -1,8 +1,10 @@
+// lib/features/auth/screens/register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/login_screen.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
+import 'package:mobile_app/features/auth/screens/forgot_password_screen.dart';
 import 'package:mobile_app/core/services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -55,22 +57,23 @@ class _RegisterPageState extends State<RegisterPage> {
         password: _passwordController.text.trim(),
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        phoneNumber: _phoneNumberController.text.trim(),
-
+        // phoneNumber: _phoneNumberController.text.trim(),
       );
 
-      if (result != null) {
+      if (result != null && result['error'] != true) {
         if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registration successful. Please check your email to verify your account.')),
+        );
+        await Future.delayed(const Duration(seconds: 3));
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const LoginPage()),
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful. Please log in.')),
-        );
       } else {
+        String errorMsg = result?['message'] ?? 'Registration failed.';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration failed.')),
+          SnackBar(content: Text(errorMsg)),
         );
       }
     } catch (e) {
@@ -155,22 +158,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Enter email';
                       if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return 'Invalid email';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _phoneNumberController,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone Number',
-                      border: OutlineInputBorder(),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Enter phone number';
-                      if (!RegExp(r'^[0-9]{9,11}$').hasMatch(value)) return 'Invalid phone number';
                       return null;
                     },
                   ),
@@ -265,6 +252,16 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                      ),
+                      child: const Text('Forgot Password?', style: TextStyle(color: Colors.orange)),
+                    ),
+                  )
                 ],
               ),
             ),

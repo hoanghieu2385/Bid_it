@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/utils/navigation.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/register_screen.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
+import 'package:mobile_app/features/auth/screens/forgot_password_screen.dart';
 import 'package:mobile_app/core/services/auth_service.dart';
 import '../../home/screens/home_screen.dart';
 
@@ -41,16 +41,17 @@ class _LoginPageState extends State<LoginPage> {
       final result = await AuthService.login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
+        rememberMe: _rememberMe,
       );
 
-      if (result != null) {
+      if (result != null && result['error'] != true) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login successful')),
         );
         navigateTo(context, const HomePage());
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid email or password')),
+          SnackBar(content: Text(result?['message'] ?? 'Invalid email or password')),
         );
       }
     } catch (e) {
@@ -61,7 +62,6 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _isLoading = false);
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +123,6 @@ class _LoginPageState extends State<LoginPage> {
                     obscureText: !_isPasswordVisible,
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Please enter your password';
-                      if (value.length < 6) return 'Password must be at least 6 characters';
                       return null;
                     },
                   ),
@@ -163,9 +162,9 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () => navigateTo(context, const ForgotPasswordScreen()),
                         child: const Text(
-                          'Forget password?',
+                          'Forgot password?',
                           style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
                         ),
                       ),
