@@ -33,7 +33,7 @@ public class User {
     @Column
     private String address;
 
-    // CCCD ( CHUA THEM FULL CONSTRUCT O DUOI !!! )
+    // CCCD
     @Column(unique = true)
     private String citizenId;
 
