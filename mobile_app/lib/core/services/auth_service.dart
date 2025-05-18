@@ -3,12 +3,13 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_service.dart';
 
 class AuthService {
-  static const String authBaseUrl = 'http://10.0.2.2:8080/user-service/auth';
+  static const String _baseUrl = ApiService.authBaseUrl;
 
   static Future<Map<String, dynamic>?> login(String email, String password, {bool rememberMe = false}) async {
-    final url = Uri.parse('$authBaseUrl/login');
+    final url = Uri.parse('$_baseUrl/login');
 
     try {
       final response = await http.post(
@@ -21,13 +22,14 @@ class AuthService {
         final data = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
 
-        if (rememberMe) {
-          await prefs.setBool('remember_me', true);
-          await prefs.setString('jwt_token', data['token']);
-        } else {
-          await prefs.setBool('remember_me', false);
-          await prefs.remove('jwt_token'); // tránh lưu token khi không nhớ
-        }
+        final now = DateTime.now();
+        final expiresAt = rememberMe
+            ? now.add(const Duration(days: 7))
+            : now.add(const Duration(days: 1));
+
+        await prefs.setString('jwt_token', data['token']);
+        await prefs.setString('jwt_expires_at', expiresAt.toIso8601String());
+        await prefs.setBool('remember_me', rememberMe);
 
         return data;
       } else {
@@ -43,14 +45,26 @@ class AuthService {
     }
   }
 
+  static Future<bool> isTokenValid() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    final expiresAtString = prefs.getString('jwt_expires_at');
+
+    if (token == null || expiresAtString == null) return false;
+
+    final expiresAt = DateTime.tryParse(expiresAtString);
+    if (expiresAt == null) return false;
+
+    return DateTime.now().isBefore(expiresAt);
+  }
+
   static Future<Map<String, dynamic>?> register({
     required String email,
     required String password,
     required String firstName,
     required String lastName,
-    // required String phoneNumber,
   }) async {
-    final url = Uri.parse('$authBaseUrl/register');
+    final url = Uri.parse('$_baseUrl/register');
 
     try {
       final response = await http.post(
@@ -62,7 +76,6 @@ class AuthService {
           'password': password,
           'firstName': firstName,
           'lastName': lastName,
-          // 'phoneNumber': phoneNumber,
         }),
       ).timeout(const Duration(seconds: 10));
 
@@ -83,7 +96,7 @@ class AuthService {
   }
 
   static Future<Map<String, dynamic>?> forgotPassword(String email) async {
-    final url = Uri.parse('$authBaseUrl/forgot-password');
+    final url = Uri.parse('$_baseUrl/forgot-password');
 
     try {
       final response = await http.post(

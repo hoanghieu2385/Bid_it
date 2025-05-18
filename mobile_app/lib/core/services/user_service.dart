@@ -3,17 +3,24 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_service.dart';
+import 'api_service.dart';
 
 class UserService {
-  static const String userBaseUrl = 'http://10.0.2.2:8080/user-service/api/users';
+  static const String _baseUrl = ApiService.userBaseUrl;
 
   static Future<Map<String, dynamic>?> getCurrentUser() async {
+    final isValid = await AuthService.isTokenValid();
+    if (!isValid) {
+      await logout();
+      return {'error': true, 'message': 'Session expired'};
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-
     if (token == null || token.isEmpty) return null;
 
-    final url = Uri.parse('$userBaseUrl/me');
+    final url = Uri.parse('$_baseUrl/me');
 
     try {
       final response = await http.get(
@@ -42,12 +49,14 @@ class UserService {
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt_token');
+    await prefs.remove('jwt_expires_at');
+    await prefs.remove('remember_me');
   }
 
   static Future<bool> updateUserProfile(String id, Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final url = Uri.parse('$userBaseUrl/$id');
+    final url = Uri.parse('$_baseUrl/$id');
 
     try {
       final response = await http.put(
@@ -64,5 +73,4 @@ class UserService {
       return false;
     }
   }
-
 }
