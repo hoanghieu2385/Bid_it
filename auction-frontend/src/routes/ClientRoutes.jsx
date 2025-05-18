@@ -1,10 +1,13 @@
 // src/routes/ClientRoutes.jsx
-import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
-import ClientLayout from '../layout/ClientLayout.jsx'; 
+import React, { useContext } from 'react';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { UserContext } from '../contexts/UserContext.jsx';
+import ClientLayout from '../layout/ClientLayout.jsx';
 import Home from '../pages/client/Home.jsx';
 import Login from '../pages/common/Login.jsx';
 import Register from '../pages/common/Register.jsx';
+import ForgotPassword from '../pages/common/ForgotPassword.jsx';
+import ResetPassword from '../pages/common/ResetPassword.jsx';
 import About from '../pages/client/About.jsx';
 import Contact from '../pages/client/Contact.jsx';
 import HowItWork from '../pages/client/HowItWork.jsx';
@@ -16,6 +19,13 @@ import UserProfile from '../pages/client/UserProfile.jsx';
 
 function ClientRoutes() {
 	const location = useLocation();
+	const { user, loading } = useContext(UserContext);
+
+	if (loading) return null;
+
+	if (user && user.roles.includes('ADMIN')) {
+		return <Navigate to="/admin/dashboard" />;
+	}
 
 	return (
 		<Routes location={location} key={location.pathname}>
@@ -23,6 +33,8 @@ function ClientRoutes() {
 				<Route path="/" element={<Home />} />
 				<Route path="/login" element={<Login />} />
 				<Route path="/register" element={<Register />} />
+				<Route path="/forgot-password" element={<ForgotPassword />} />
+				<Route path="/reset-password" element={<ResetPassword />} />
 				<Route path="/profile" element={<UserProfile />} />
 				<Route path="/about" element={<About />} />
 				<Route path="/contact" element={<Contact />} />

@@ -33,6 +33,9 @@ public class Category {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "scheduled_deletion_at")
+    private LocalDateTime scheduledDeletionAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -106,5 +109,13 @@ public class Category {
 
     public void setDeletedAt(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public LocalDateTime getScheduledDeletionAt() {
+        return scheduledDeletionAt;
+    }
+
+    public void setScheduledDeletionAt(LocalDateTime scheduledDeletionAt) {
+        this.scheduledDeletionAt = scheduledDeletionAt;
     }
 }

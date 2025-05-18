@@ -30,14 +30,17 @@ function Login() {
 				setMessage('Login failed: No token received');
 				return;
 			}
-
 			localStorage.setItem('jwt', response.token);
 
 			try {
 				const userData = await getCurrentUser();
 				loginUser(userData);
 				setMessage('Login successful!');
-				navigate('/');
+				if (userData.roles.includes('ADMIN')) {
+					navigate('/admin');
+				} else {
+					navigate('/');
+				}
 			} catch (err) {
 				localStorage.removeItem('jwt');
 				setMessage(err.response?.data?.message || 'Invalid token or session expired.');
@@ -53,7 +56,6 @@ function Login() {
 		<section className="login-section vh-100">
 			<div className="container-fluid login-container h-custom">
 				<div className="row d-flex justify-content-center align-items-center h-100">
-					{/* Auction image */}
 					<div className="col-md-9 col-lg-6 col-xl-5">
 						<img
 							src="../../../public/istockphoto-1077553098-1024x1024.jpg"
@@ -62,7 +64,6 @@ function Login() {
 						/>
 					</div>
 
-					{/* Login form */}
 					<div className="col-md-8 col-lg-6 col-xl-4 offset-xl-1">
 						<form onSubmit={handleLogin} className="login-form">
 							<div className="d-flex flex-row align-items-center justify-content-center justify-content-lg-start mb-3">
@@ -118,6 +119,9 @@ function Login() {
 										Remember me
 									</label>
 								</div>
+								<button type="button" className="btn btn-link p-0" onClick={() => navigate('/forgot-password')}>
+									Forgot password?
+								</button>
 							</div>
 
 							<div className="text-center text-lg-start mt-4 pt-2">

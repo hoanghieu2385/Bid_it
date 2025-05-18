@@ -44,4 +44,15 @@ public class CategoryController {
         categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/deleted")
+    public ResponseEntity<List<CategoryDTO>> getAllDeletedCategories() {
+        return ResponseEntity.ok(categoryService.getAllDeletedCategories());
+    }
+    
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<Void> restoreCategory(@PathVariable Integer id) {
+        categoryService.restoreCategory(id);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -1,12 +1,21 @@
 // src/routes/AdminRoutes.jsx
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import React, { useContext } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { UserContext } from '../contexts/UserContext.jsx';
 import Dashboard from '../pages/admin/Dashboard.jsx';
 import Auctions from '../pages/admin/Auctions.jsx';
 import AuctionDetail from '../pages/admin/AuctionDetail.jsx';
 import Categories from '../pages/admin/Categories.jsx';
 
 function AdminRoutes() {
+	const { user, loading } = useContext(UserContext);
+
+	if (loading) return null;
+
+	if (!user || !user.roles.includes('ADMIN')) {
+		return <Navigate to="/" />;
+	}
+
 	return (
 		<Routes>
 			<Route path="/dashboard" element={<Dashboard />} />
