@@ -5,6 +5,7 @@ import 'package:mobile_app/features/home/screens/home_screen.dart';
 import 'package:mobile_app/features/auction/screens/auction_detail.dart';
 import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
 import 'firebase_options.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,16 @@ class AuctionHubApp extends StatelessWidget {
           bodyMedium: TextStyle(color: Colors.black),
         ),
       ),
+      locale: const Locale('vi'), // Set the default locale to Vietnamese
+      supportedLocales: const [
+        Locale('vi'),
+        Locale('en'),
+      ],
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: const StartPage(),
     );
   }

@@ -1,39 +1,45 @@
+// lib/core/services/auth_service.dart
 import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://10.22.184.81:8080/user-service/auth';
+  static const String authBaseUrl = 'http://10.0.2.2:8080/user-service/auth';
 
-  static Future<Map<String, dynamic>?> login(String email, String password) async {
-    final url = Uri.parse('$baseUrl/login');
+  static Future<Map<String, dynamic>?> login(String email, String password, {bool rememberMe = false}) async {
+    final url = Uri.parse('$authBaseUrl/login');
 
     try {
-      final response = await http
-          .post(
+      final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      )
-          .timeout(const Duration(seconds: 20));
+        body: jsonEncode({'email': email, 'password': password}),
+      ).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
-        print("✅ Login successful: ${response.statusCode}");
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+
+        if (rememberMe) {
+          await prefs.setBool('remember_me', true);
+          await prefs.setString('jwt_token', data['token']);
+        } else {
+          await prefs.setBool('remember_me', false);
+          await prefs.remove('jwt_token'); // tránh lưu token khi không nhớ
+        }
+
+        return data;
       } else {
-        print("❌ Login failed: ${response.statusCode}");
-        print(response.body);
-        return null;
+        return {
+          'error': true,
+          'message': jsonDecode(response.body)['message'] ?? 'Login failed.',
+        };
       }
-    } on TimeoutException catch (_) {
-      print("⏱️ Login request timed out");
-      return null;
+    } on TimeoutException {
+      return {'error': true, 'message': 'Request timed out'};
     } catch (e) {
-      print("❌ Login error: $e");
-      return null;
+      return {'error': true, 'message': e.toString()};
     }
   }
 
@@ -42,13 +48,12 @@ class AuthService {
     required String password,
     required String firstName,
     required String lastName,
-    required String phoneNumber,
+    // required String phoneNumber,
   }) async {
-    final url = Uri.parse('$baseUrl/register');
+    final url = Uri.parse('$authBaseUrl/register');
 
     try {
-      final response = await http
-          .post(
+      final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -57,53 +62,49 @@ class AuthService {
           'password': password,
           'firstName': firstName,
           'lastName': lastName,
-          'phoneNumber': phoneNumber,
+          // 'phoneNumber': phoneNumber,
         }),
-      )
-          .timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("✅ Register successful: ${response.statusCode}");
         return jsonDecode(response.body);
       } else {
-        print("❌ Register failed: ${response.statusCode}");
-        print(response.body);
-        return null;
+        final body = jsonDecode(response.body);
+        return {
+          'error': true,
+          'message': body['message'] ?? 'Unknown registration error',
+        };
       }
-    } on TimeoutException catch (_) {
-      print("⏱️ Register request timed out");
-      return null;
+    } on TimeoutException {
+      return {'error': true, 'message': 'Request timed out'};
     } catch (e) {
-      print("❌ Register error: $e");
-      return null;
+      return {'error': true, 'message': e.toString()};
     }
   }
-  static Future<Map<String, dynamic>?> getCurrentUser(String token) async {
-    final url = Uri.parse('$baseUrl/me');
+
+  static Future<Map<String, dynamic>?> forgotPassword(String email) async {
+    final url = Uri.parse('$authBaseUrl/forgot-password');
 
     try {
-      final response = await http.get(
+      final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        print("✅ Get current user success");
         return jsonDecode(response.body);
       } else {
-        print("❌ Failed to get current user: ${response.statusCode}");
-        print(response.body);
-        return null;
+        final body = jsonDecode(response.body);
+        return {
+          'error': true,
+          'message': body['message'] ?? 'Failed to send reset link.',
+        };
       }
-    } on TimeoutException catch (_) {
-      print("⏱️ Get current user timed out");
-      return null;
+    } on TimeoutException {
+      return {'error': true, 'message': 'Request timed out'};
     } catch (e) {
-      print("❌ Get current user error: $e");
-      return null;
+      return {'error': true, 'message': e.toString()};
     }
   }
 }
