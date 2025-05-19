@@ -118,8 +118,25 @@ public class UserController {
         userService.saveUser(user);
         return ResponseEntity.ok("User CCCD denied and data cleared");
     }
-///  ///////////////////////
 
+
+    ///  Verify Phone Number
+    @PostMapping("/send-phone-otp")
+    public ResponseEntity<String> sendPhoneOtp(@RequestParam String phone) {
+        otpService.sendPhoneVerificationOtp(phone);
+        return ResponseEntity.ok("OTP sent to phone.");
+    }
+
+    @PostMapping("/verify-phone-otp")
+    public ResponseEntity<String> verifyPhoneOtp(@RequestParam String phone,
+                                                 @RequestParam String otp) {
+        boolean verified = otpService.verifyOtp(phone, otp, OtpType.PHONE_VERIFICATION);
+        return verified
+                ? ResponseEntity.ok("Phone verified.")
+                : ResponseEntity.badRequest().body("Invalid or expired OTP.");
+    }
+
+///
 
     @GetMapping("/me")
     public ResponseEntity<User> getCurrentUserProfile() {

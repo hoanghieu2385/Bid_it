@@ -157,6 +157,23 @@ public class UserService {
         userRepository.save(user);
     }
 
+
+    // Verify Phone Number
+    public boolean verifyUserPhoneNumber(String phoneNumber, String code) {
+        boolean isValid = otpService.verifyOtp(phoneNumber, code);
+        if (isValid) {
+            Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
+                user.setPhoneVerified(true);
+                userRepository.save(user);
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     // Get currently logged-in user's profile
     public User getCurrentUserProfile() {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();

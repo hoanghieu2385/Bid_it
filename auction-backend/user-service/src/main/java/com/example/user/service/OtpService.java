@@ -18,9 +18,10 @@ public class OtpService {
     private int otpExpirationMinutes;
 
     // Constructor manually created to replace @RequiredArgsConstructor
-    public OtpService(OtpRepository otpRepository, EmailService emailService) {
+    public OtpService(OtpRepository otpRepository, EmailService emailService, SmsService smsService) {
         this.otpRepository = otpRepository;
         this.emailService = emailService;
+        this.smsService = smsService;
     }
 
     public String generateOtp() {
@@ -61,15 +62,11 @@ public class OtpService {
         emailService.sendLoginOtp(email, otp);
     }
 
-    public boolean verifyOtp(String email, String otp, OtpType type) {
-        Otp otpEntity = otpRepository.findByEmailAndCodeAndTypeAndUsedFalse(email, otp, type)
+    public boolean verifyOtp(String contact, String otp, OtpType type) {
+        Otp otpEntity = otpRepository.findByContactAndCodeAndTypeAndUsedFalse(contact, otp, type)
                 .orElse(null);
 
-        if (otpEntity == null) {
-            return false;
-        }
-
-        if (LocalDateTime.now().isAfter(otpEntity.getExpiryDate())) {
+        if (otpEntity == null || LocalDateTime.now().isAfter(otpEntity.getExpiryDate())) {
             return false;
         }
 
@@ -77,4 +74,21 @@ public class OtpService {
         otpRepository.save(otpEntity);
         return true;
     }
+
+    public void sendPhoneVerificationOtp(String phoneNumber) {
+        String otp = generateOtp();
+        LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(otpExpirationMinutes);
+
+        Otp otpEntity = Otp.builder()
+                .contact(phoneNumber)
+                .code(otp)
+                .expiryDate(expiryDate)
+                .used(false)
+                .type(OtpType.PHONE_VERIFICATION)
+                .build();
+
+        otpRepository.save(otpEntity);
+        smsService.sendOtpSms(phoneNumber, otp);
+    }
+
 }

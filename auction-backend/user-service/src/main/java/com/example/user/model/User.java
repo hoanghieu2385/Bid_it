@@ -46,6 +46,9 @@ public class User {
     @Column(nullable = false, columnDefinition = "TINYINT DEFAULT 0")
     private Integer verifiedAccount = 0;
 
+    @Column(nullable = false)
+    private boolean phoneVerified = false;
+
     // CCCD END
     @Column(nullable = false, columnDefinition = "INT NOT NULL DEFAULT 0")
     private Integer score = 0;
