@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
-import 'package:mobile_app/core/services/auth_service.dart';
+import 'package:mobile_app/core/services/user_service.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
 import 'package:mobile_app/features/auction/screens/watchlist_screen.dart';
 import 'package:mobile_app/features/profile/screens/profile_screen.dart';
 import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../../core/services/user_service.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -28,15 +25,7 @@ class _UserPageState extends State<UserPage> {
   }
 
   Future<void> _loadUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
-
-    if (token == null) {
-      setState(() => _isLoading = false);
-      return;
-    }
-
-    final user = await UserService.getUserProfile(token);
+    final user = await UserService.getCurrentUser();
     setState(() {
       _userData = user;
       _isLoading = false;
@@ -51,7 +40,7 @@ class _UserPageState extends State<UserPage> {
       );
     }
 
-    if (_userData == null) {
+    if (_userData == null || _userData!['error'] == true) {
       return Scaffold(
         body: Center(
           child: Padding(
@@ -163,8 +152,7 @@ class _UserPageState extends State<UserPage> {
                   child: CustomButton(
                     text: 'Logout',
                     onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.remove('jwt_token');
+                      await UserService.logout();
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => const StartPage()),

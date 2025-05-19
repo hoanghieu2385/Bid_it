@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import { register as registerUser } from '../../services/user-api';
-// import '../../assets/styles/client/login.css';
 import '../../assets/styles/client/register.css';
 
 function Register() {
 	const [form, setForm] = useState({
 		email: '',
-		phoneNumber: '',
 		password: '',
 		confirmPassword: '',
 		firstName: '',

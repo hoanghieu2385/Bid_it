@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/styles/admin/Auctions.css";
-import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
+import Sidebar from "../../components/admin/Sidebar";
+import Topbar from "../../components/admin/Topbar";
 import { Search, ChevronDown, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react";
 
 const Auctions = () => {
