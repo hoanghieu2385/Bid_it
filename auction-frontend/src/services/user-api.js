@@ -50,7 +50,7 @@ export const resetPassword = async (token, email, newPassword) => {
 
 export const submitEkycRequest = async (formData) => {
 	const token = Cookies.get('jwt');
-	const response = await api.post(`${API_CONFIG.USER_API}/ekyc`, formData, {
+    const response = await api.put(`${API_CONFIG.USER_API}/update-cccd`, formData, {
 		headers: {
 			Authorization: `Bearer ${token}`,
 			'Content-Type': 'multipart/form-data',
