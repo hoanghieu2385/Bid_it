@@ -202,10 +202,11 @@
 .dropdown-menu {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    right: auto !important;
-    left: 0 !important;
+    right: 0;
+    left: auto;
     margin-top: 8px;
     min-width: 160px;
+    transform: translateX(0);
 }
 
 .dropdown-item {

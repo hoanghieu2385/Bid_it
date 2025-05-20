@@ -19,13 +19,9 @@ import UserProfile from '../pages/client/UserProfile.jsx';
 
 function ClientRoutes() {
 	const location = useLocation();
-	const { user, loading } = useContext(UserContext);
+	const { loading } = useContext(UserContext);
 
 	if (loading) return null;
-
-	if (user && user.roles.includes('ADMIN')) {
-		return <Navigate to="/admin/dashboard" />;
-	}
 
 	return (
 		<Routes location={location} key={location.pathname}>

@@ -1,5 +1,5 @@
 // src/components/common/Header.jsx
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaBars, FaTimes } from 'react-icons/fa';
 import logoImage from '../../assets/images/Logo2.png';
@@ -8,12 +8,27 @@ import { UserContext } from '../../contexts/UserContext.jsx';
 
 const Header = () => {
 	const [expanded, setExpanded] = useState(false);
+	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const { user, logoutUser } = useContext(UserContext);
+	const dropdownRef = useRef();
 
 	const handleLogout = () => {
 		logoutUser();
 		window.location.href = '/login';
 	};
+
+	// 👉 Close dropdown on outside click
+	useEffect(() => {
+		const handleClickOutside = (event) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+				setDropdownOpen(false);
+			}
+		};
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside);
+		};
+	}, []);
 
 	return (
 		<header className="client-header">
@@ -40,24 +55,16 @@ const Header = () => {
 					<div className={`collapse navbar-collapse ${expanded ? 'show' : ''}`} id="client-navbar-nav">
 						<ul className="client-header-nav navbar-nav mx-lg-auto mb-3 mb-lg-0">
 							<li className="nav-item">
-								<Link to="/" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
-									Home
-								</Link>
+								<Link to="/" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>Home</Link>
 							</li>
 							<li className="nav-item">
-								<Link to="/about" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
-									About Us
-								</Link>
+								<Link to="/about" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>About Us</Link>
 							</li>
 							<li className="nav-item">
-								<Link to="/auctions" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
-									Browse Auctions
-								</Link>
+								<Link to="/auctions" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>Browse Auctions</Link>
 							</li>
 							<li className="nav-item">
-								<Link to="/contact" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
-									Contact
-								</Link>
+								<Link to="/contact" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>Contact</Link>
 							</li>
 						</ul>
 
@@ -70,25 +77,30 @@ const Header = () => {
 							</div>
 
 							{user ? (
-								<div className="dropdown user-dropdown">
+								<div className="dropdown user-dropdown" ref={dropdownRef}>
 									<button
 										className="btn user-dropdown-toggle d-flex align-items-center"
 										type="button"
-										id="userDropdown"
-										data-bs-toggle="dropdown"
-										aria-expanded="false"
+										onClick={() => setDropdownOpen(!dropdownOpen)}
 									>
 										<div className="user-initial bg-primary text-white rounded-circle me-2">
 											{user.firstName?.charAt(0).toUpperCase()}
 										</div>
 										<span className="fw-medium">{user.firstName}</span>
 									</button>
-									<ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+									<ul className={`dropdown-menu dropdown-menu-end ${dropdownOpen ? 'show' : ''}`}>
 										<li>
-											<Link to="/profile" className="dropdown-item" onClick={() => setExpanded(false)}>
+											<Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
 												<i className="fas fa-user me-2"></i> Profile
 											</Link>
 										</li>
+										{user.roles?.includes('ADMIN') && (
+											<li>
+												<Link to="/admin/dashboard" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+													<i className="fas fa-tools me-2"></i> Admin Dashboard
+												</Link>
+											</li>
+										)}
 										<li><hr className="dropdown-divider" /></li>
 										<li>
 											<button className="dropdown-item text-danger" onClick={handleLogout}>
@@ -99,12 +111,8 @@ const Header = () => {
 								</div>
 							) : (
 								<>
-									<Link to="/login" className="client-btn-login btn d-none d-sm-inline-block" onClick={() => setExpanded(false)}>
-										Login
-									</Link>
-									<Link to="/register" className="client-btn-register btn" onClick={() => setExpanded(false)}>
-										Register
-									</Link>
+									<Link to="/login" className="client-btn-login btn d-none d-sm-inline-block" onClick={() => setExpanded(false)}>Login</Link>
+									<Link to="/register" className="client-btn-register btn" onClick={() => setExpanded(false)}>Register</Link>
 								</>
 							)}
 						</div>
