@@ -9,9 +9,21 @@ import {
   toggleUserLock,
   toggleUserVerification,
   updateUserRoles,
-  resetUserPassword
+  resetUserPassword,
 } from "../../services/admin-user-api";
-import { FaEdit, FaTrash, FaUnlock, FaLock, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaArrowLeft, FaUserShield, FaUser, FaKey } from "react-icons/fa";
+import {
+  FaEdit,
+  FaTrash,
+  FaUnlock,
+  FaLock,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaExclamationTriangle,
+  FaArrowLeft,
+  FaUserShield,
+  FaUser,
+  FaKey,
+} from "react-icons/fa";
 import "../../assets/styles/admin/UserDetail.css";
 
 const UserDetail = () => {
@@ -25,15 +37,26 @@ const UserDetail = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [formError, setFormError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [setConfirmAction] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   useEffect(() => {
-    fetchUserData();
+    console.log("UserID from useParams:", userId);
+    if (userId) {
+      fetchUserData();
+    }
   }, [userId]);
 
   const fetchUserData = async () => {
     try {
       setLoading(true);
+      console.log("Fetching user with ID:", userId);
+
+      if (!userId) {
+        setError("User ID không tồn tại, không thể tải thông tin người dùng");
+        setLoading(false);
+        return;
+      }
+
       const userData = await getUserById(userId);
       setUser(userData);
       setEditedUser({
@@ -41,7 +64,7 @@ const UserDetail = () => {
         email: userData.email,
         phoneNumber: userData.phoneNumber,
         fullName: userData.fullName,
-        address: userData.address
+        address: userData.address,
       });
     } catch (err) {
       console.error("Error fetching user details:", err);
@@ -67,7 +90,7 @@ const UserDetail = () => {
         email: user.email,
         phoneNumber: user.phoneNumber,
         fullName: user.fullName,
-        address: user.address
+        address: user.address,
       });
     }
     setEditMode(!editMode);
@@ -84,7 +107,9 @@ const UserDetail = () => {
       showSuccess("Thông tin người dùng đã được cập nhật thành công!");
     } catch (err) {
       console.error("Error updating user:", err);
-      setFormError("Không thể cập nhật thông tin người dùng. Vui lòng thử lại.");
+      setFormError(
+        "Không thể cập nhật thông tin người dùng. Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
     }
@@ -95,10 +120,18 @@ const UserDetail = () => {
       setLoading(true);
       const updatedUser = await toggleUserLock(userId, !user.locked);
       setUser(updatedUser);
-      showSuccess(`Tài khoản đã được ${updatedUser.locked ? 'khóa' : 'mở khóa'} thành công!`);
+      showSuccess(
+        `Tài khoản đã được ${
+          updatedUser.locked ? "khóa" : "mở khóa"
+        } thành công!`
+      );
     } catch (err) {
       console.error("Error toggling user lock status:", err);
-      setFormError(`Không thể ${user.locked ? 'mở khóa' : 'khóa'} tài khoản. Vui lòng thử lại.`);
+      setFormError(
+        `Không thể ${
+          user.locked ? "mở khóa" : "khóa"
+        } tài khoản. Vui lòng thử lại.`
+      );
     } finally {
       setLoading(false);
     }
@@ -109,10 +142,18 @@ const UserDetail = () => {
       setLoading(true);
       const updatedUser = await toggleUserVerification(userId, !user.verified);
       setUser(updatedUser);
-      showSuccess(`Tài khoản đã được ${updatedUser.verified ? 'xác thực' : 'hủy xác thực'} thành công!`);
+      showSuccess(
+        `Tài khoản đã được ${
+          updatedUser.verified ? "xác thực" : "hủy xác thực"
+        } thành công!`
+      );
     } catch (err) {
       console.error("Error toggling user verification status:", err);
-      setFormError(`Không thể ${user.verified ? 'hủy xác thực' : 'xác thực'} tài khoản. Vui lòng thử lại.`);
+      setFormError(
+        `Không thể ${
+          user.verified ? "hủy xác thực" : "xác thực"
+        } tài khoản. Vui lòng thử lại.`
+      );
     } finally {
       setLoading(false);
     }
@@ -124,7 +165,11 @@ const UserDetail = () => {
       const roles = isAdmin ? ["USER", "ADMIN"] : ["USER"];
       const updatedUser = await updateUserRoles(userId, roles);
       setUser(updatedUser);
-      showSuccess(`Vai trò người dùng đã được cập nhật thành ${isAdmin ? 'ADMIN' : 'USER'} thành công!`);
+      showSuccess(
+        `Vai trò người dùng đã được cập nhật thành ${
+          isAdmin ? "ADMIN" : "USER"
+        } thành công!`
+      );
     } catch (err) {
       console.error("Error updating user roles:", err);
       setFormError("Không thể cập nhật vai trò người dùng. Vui lòng thử lại.");
@@ -151,7 +196,9 @@ const UserDetail = () => {
     try {
       setIsDeleting(true);
       await deleteUser(userId);
-      navigate("/admin/users", { state: { message: "Đã xóa người dùng thành công!" } });
+      navigate("/admin/users", {
+        state: { message: "Đã xóa người dùng thành công!" },
+      });
     } catch (err) {
       console.error("Error deleting user:", err);
       setFormError("Không thể xóa người dùng. Vui lòng thử lại.");
@@ -170,24 +217,26 @@ const UserDetail = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    const options = { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    const options = {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     };
-    return new Intl.DateTimeFormat('vi-VN', options).format(date);
+    return new Intl.DateTimeFormat("vi-VN", options).format(date);
   };
 
   const formatMoney = (amount) => {
     if (!amount) return "₫ 0";
-    return new Intl.NumberFormat('vi-VN', { 
-      style: 'currency', 
-      currency: 'VND',
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount).replace('₫', '₫ ');
+      maximumFractionDigits: 0,
+    })
+      .format(amount)
+      .replace("₫", "₫ ");
   };
 
   const getScoreColor = (score) => {
@@ -197,33 +246,36 @@ const UserDetail = () => {
   };
 
   const isUserAdmin = () => {
-    return user?.roles?.some(role => role === "ADMIN");
+    return user?.roles?.some((role) => role === "ADMIN");
   };
 
   // UI render
   const renderConfirmationModal = () => {
     if (!confirmAction) return null;
 
-    let title, message, confirmText, confirmAction;
+    let title, message, confirmText;
+    let onConfirmAction = null;
 
     switch (confirmAction) {
       case "delete":
         title = "Xác nhận xóa người dùng";
         message = `Bạn có chắc muốn xóa tài khoản của người dùng '${user?.username}' không? Hành động này không thể hoàn tác.`;
         confirmText = "Xóa";
-        confirmAction = handleDeleteUser;
+        onConfirmAction = handleDeleteUser;
         break;
       case "reset-password":
         title = "Xác nhận đặt lại mật khẩu";
         message = `Gửi email đặt lại mật khẩu cho người dùng '${user?.username}'?`;
         confirmText = "Gửi";
-        confirmAction = handleResetPassword;
+        onConfirmAction = handleResetPassword;
         break;
       case "change-role":
-        title = `Xác nhận thay đổi vai trò`;
-        message = `Bạn có chắc muốn ${isUserAdmin() ? 'hạ quyền' : 'cấp quyền ADMIN'} cho người dùng '${user?.username}' không?`;
+        title = "Xác nhận thay đổi vai trò";
+        message = `Bạn có chắc muốn ${
+          isUserAdmin() ? "hạ quyền" : "cấp quyền ADMIN"
+        } cho người dùng '${user?.username}' không?`;
         confirmText = "Xác nhận";
-        confirmAction = () => handleRoleChange(!isUserAdmin());
+        onConfirmAction = () => handleRoleChange(!isUserAdmin());
         break;
       default:
         return null;
@@ -239,16 +291,16 @@ const UserDetail = () => {
             <p>{message}</p>
           </div>
           <div className="modal-footer">
-            <button 
-              className="modal-btn cancel-btn" 
+            <button
+              className="modal-btn cancel-btn"
               onClick={() => setConfirmAction(null)}
               disabled={isDeleting}
             >
               Hủy
             </button>
-            <button 
-              className="modal-btn confirm-btn" 
-              onClick={confirmAction}
+            <button
+              className="modal-btn confirm-btn"
+              onClick={onConfirmAction}
               disabled={isDeleting}
             >
               {isDeleting ? "Đang xử lý..." : confirmText}
@@ -263,7 +315,11 @@ const UserDetail = () => {
     return (
       <div id="wrapper">
         <Sidebar />
-        <div id="content-wrapper" className="d-flex flex-column" style={{ flex: 1 }}>
+        <div
+          id="content-wrapper"
+          className="d-flex flex-column"
+          style={{ flex: 1 }}
+        >
           <div id="content">
             <Topbar />
             <div className="container-fluid">
@@ -282,7 +338,11 @@ const UserDetail = () => {
     return (
       <div id="wrapper">
         <Sidebar />
-        <div id="content-wrapper" className="d-flex flex-column" style={{ flex: 1 }}>
+        <div
+          id="content-wrapper"
+          className="d-flex flex-column"
+          style={{ flex: 1 }}
+        >
           <div id="content">
             <Topbar />
             <div className="container-fluid">
@@ -304,15 +364,19 @@ const UserDetail = () => {
   return (
     <div id="wrapper">
       <Sidebar />
-      <div id="content-wrapper" className="d-flex flex-column" style={{ flex: 1 }}>
+      <div
+        id="content-wrapper"
+        className="d-flex flex-column"
+        style={{ flex: 1 }}
+      >
         <div id="content">
           <Topbar />
           <div className="container-fluid user-detail-container">
             {renderConfirmationModal()}
-            
+
             {/* Header with back button */}
             <div className="user-detail-header">
-              <button 
+              <button
                 className="back-button"
                 onClick={() => navigate("/admin/users")}
               >
@@ -322,7 +386,7 @@ const UserDetail = () => {
               <div className="user-actions">
                 {editMode ? (
                   <>
-                    <button 
+                    <button
                       className="action-btn save-btn"
                       form="user-form"
                       type="submit"
@@ -330,7 +394,7 @@ const UserDetail = () => {
                     >
                       {loading ? "Đang lưu..." : "Lưu thay đổi"}
                     </button>
-                    <button 
+                    <button
                       className="action-btn cancel-btn"
                       onClick={handleEditToggle}
                       disabled={loading}
@@ -340,13 +404,13 @@ const UserDetail = () => {
                   </>
                 ) : (
                   <>
-                    <button 
+                    <button
                       className="action-btn edit-btn"
                       onClick={handleEditToggle}
                     >
                       <FaEdit /> Chỉnh sửa
                     </button>
-                    <button 
+                    <button
                       className="action-btn delete-btn"
                       onClick={() => setConfirmAction("delete")}
                     >
@@ -363,7 +427,7 @@ const UserDetail = () => {
                 <FaCheckCircle /> {success}
               </div>
             )}
-            
+
             {/* Error message */}
             {formError && (
               <div className="alert-error">
@@ -377,7 +441,11 @@ const UserDetail = () => {
                 <div className="user-profile-header">
                   <div className="user-avatar-container">
                     {user?.avatar ? (
-                      <img src={user.avatar} alt={user.username} className="user-avatar-lg" />
+                      <img
+                        src={user.avatar}
+                        alt={user.username}
+                        className="user-avatar-lg"
+                      />
                     ) : (
                       <div className="user-avatar-placeholder-lg">
                         {user?.username?.charAt(0).toUpperCase() || "U"}
@@ -385,20 +453,22 @@ const UserDetail = () => {
                     )}
                   </div>
                   <div className="user-title-info">
-                    <h1 className="user-username">{user?.username || "Không có tên người dùng"}</h1>
+                    <h1 className="user-username">
+                      {user?.username || "Không có tên người dùng"}
+                    </h1>
                     <div className="user-badges">
-                      <span className={`status-badge ${user?.verified ? 'verified' : 'unverified'}`}>
+                      <span
+                        className={`status-badge ${
+                          user?.verified ? "verified" : "unverified"
+                        }`}
+                      >
                         {user?.verified ? "Đã xác thực" : "Chưa xác thực"}
                       </span>
                       {user?.locked && (
-                        <span className="status-badge locked">
-                          Đã khóa
-                        </span>
+                        <span className="status-badge locked">Đã khóa</span>
                       )}
                       {isUserAdmin() && (
-                        <span className="status-badge admin">
-                          Admin
-                        </span>
+                        <span className="status-badge admin">Admin</span>
                       )}
                     </div>
                     <p className="join-date">
@@ -408,7 +478,11 @@ const UserDetail = () => {
                 </div>
 
                 {/* User Form */}
-                <form id="user-form" className="user-form" onSubmit={handleSubmit}>
+                <form
+                  id="user-form"
+                  className="user-form"
+                  onSubmit={handleSubmit}
+                >
                   <div className="form-section">
                     <h2>Thông tin cá nhân</h2>
                     <div className="form-row">
@@ -424,7 +498,9 @@ const UserDetail = () => {
                             disabled={loading}
                           />
                         ) : (
-                          <p className="form-value">{user?.username || "Không có"}</p>
+                          <p className="form-value">
+                            {user?.username || "Không có"}
+                          </p>
                         )}
                       </div>
                       <div className="form-group">
@@ -439,7 +515,9 @@ const UserDetail = () => {
                             disabled={loading}
                           />
                         ) : (
-                          <p className="form-value">{user?.fullName || "Không có"}</p>
+                          <p className="form-value">
+                            {user?.fullName || "Không có"}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -456,7 +534,9 @@ const UserDetail = () => {
                             disabled={loading}
                           />
                         ) : (
-                          <p className="form-value">{user?.email || "Không có"}</p>
+                          <p className="form-value">
+                            {user?.email || "Không có"}
+                          </p>
                         )}
                       </div>
                       <div className="form-group">
@@ -471,7 +551,9 @@ const UserDetail = () => {
                             disabled={loading}
                           />
                         ) : (
-                          <p className="form-value">{user?.phoneNumber || "Không có"}</p>
+                          <p className="form-value">
+                            {user?.phoneNumber || "Không có"}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -488,7 +570,9 @@ const UserDetail = () => {
                             disabled={loading}
                           />
                         ) : (
-                          <p className="form-value">{user?.address || "Không có"}</p>
+                          <p className="form-value">
+                            {user?.address || "Không có"}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -501,13 +585,18 @@ const UserDetail = () => {
                   <div className="stats-grid">
                     <div className="stat-card">
                       <div className="stat-title">Điểm tín nhiệm</div>
-                      <div className="stat-value" style={{ color: getScoreColor(user?.points || 0) }}>
+                      <div
+                        className="stat-value"
+                        style={{ color: getScoreColor(user?.points || 0) }}
+                      >
                         {user?.points || 0} / 100
                       </div>
                     </div>
                     <div className="stat-card">
                       <div className="stat-title">Số đấu giá đã đăng</div>
-                      <div className="stat-value">{user?.totalAuctions || 0}</div>
+                      <div className="stat-value">
+                        {user?.totalAuctions || 0}
+                      </div>
                     </div>
                     <div className="stat-card">
                       <div className="stat-title">Lượt đấu giá</div>
@@ -519,11 +608,15 @@ const UserDetail = () => {
                     </div>
                     <div className="stat-card">
                       <div className="stat-title">Doanh thu từ đấu giá</div>
-                      <div className="stat-value">{formatMoney(user?.auctionEarnings || 0)}</div>
+                      <div className="stat-value">
+                        {formatMoney(user?.auctionEarnings || 0)}
+                      </div>
                     </div>
                     <div className="stat-card">
                       <div className="stat-title">Tổng tiền đã chi</div>
-                      <div className="stat-value">{formatMoney(user?.totalPaid || 0)}</div>
+                      <div className="stat-value">
+                        {formatMoney(user?.totalPaid || 0)}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -546,14 +639,15 @@ const UserDetail = () => {
                           )}
                         </h3>
                         <p>
-                          {user?.locked 
-                            ? "Người dùng hiện không thể đăng nhập hoặc sử dụng hệ thống." 
-                            : "Người dùng có thể đăng nhập và sử dụng hệ thống bình thường."
-                          }
+                          {user?.locked
+                            ? "Người dùng hiện không thể đăng nhập hoặc sử dụng hệ thống."
+                            : "Người dùng có thể đăng nhập và sử dụng hệ thống bình thường."}
                         </p>
                       </div>
-                      <button 
-                        className={`admin-action-btn ${user?.locked ? 'unlock-btn' : 'lock-btn'}`}
+                      <button
+                        className={`admin-action-btn ${
+                          user?.locked ? "unlock-btn" : "lock-btn"
+                        }`}
                         onClick={toggleLockUser}
                         disabled={loading}
                       >
@@ -575,14 +669,15 @@ const UserDetail = () => {
                           )}
                         </h3>
                         <p>
-                          {user?.verified 
-                            ? "Email của người dùng đã được xác thực." 
-                            : "Người dùng chưa xác thực email."
-                          }
+                          {user?.verified
+                            ? "Email của người dùng đã được xác thực."
+                            : "Người dùng chưa xác thực email."}
                         </p>
                       </div>
-                      <button 
-                        className={`admin-action-btn ${user?.verified ? 'unverify-btn' : 'verify-btn'}`}
+                      <button
+                        className={`admin-action-btn ${
+                          user?.verified ? "unverify-btn" : "verify-btn"
+                        }`}
                         onClick={toggleVerifyUser}
                         disabled={loading}
                       >
@@ -604,13 +699,12 @@ const UserDetail = () => {
                           )}
                         </h3>
                         <p>
-                          {isUserAdmin() 
-                            ? "Người dùng hiện có quyền quản trị hệ thống." 
-                            : "Người dùng không có quyền quản trị hệ thống."
-                          }
+                          {isUserAdmin()
+                            ? "Người dùng hiện có quyền quản trị hệ thống."
+                            : "Người dùng không có quyền quản trị hệ thống."}
                         </p>
                       </div>
-                      <button 
+                      <button
                         className="admin-action-btn role-btn"
                         onClick={() => setConfirmAction("change-role")}
                         disabled={loading}
@@ -624,11 +718,9 @@ const UserDetail = () => {
                         <h3>
                           <FaKey /> Đặt lại mật khẩu
                         </h3>
-                        <p>
-                          Gửi email đặt lại mật khẩu cho người dùng.
-                        </p>
+                        <p>Gửi email đặt lại mật khẩu cho người dùng.</p>
                       </div>
-                      <button 
+                      <button
                         className="admin-action-btn reset-password-btn"
                         onClick={() => setConfirmAction("reset-password")}
                         disabled={loading}

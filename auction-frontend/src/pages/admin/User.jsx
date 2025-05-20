@@ -100,6 +100,21 @@ const User = () => {
   };
 
   const handleViewUser = (userId) => {
+    console.log("Navigating to user ID:", userId); // Debug để xem userId
+    
+    // Kiểm tra userId
+    if (!userId) {
+      console.error("User ID is missing");
+      return;
+    }
+    
+    // Đảm bảo rằng userId là một giá trị hợp lệ (không phải undefined, null, NaN...)
+    if (userId === undefined || userId === null) {
+      console.error("Invalid user ID");
+      return;
+    }
+    
+    // Sử dụng đường dẫn chính xác trong định tuyến
     navigate(`/admin/user/${userId}`);
   };
 
@@ -364,7 +379,10 @@ const User = () => {
                             <td>
                               <button 
                                 className="action-btn view-btn"
-                                onClick={() => handleViewUser(user.id)}
+                                onClick={() => {
+                                  console.log("User object:", user); // Kiểm tra đối tượng user
+                                  handleViewUser(user.id);
+                                }}
                                 title="Xem chi tiết"
                               >
                                 <FaEye /> View
