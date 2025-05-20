@@ -25,7 +25,7 @@ function AdminRoutes() {
 			<Route path="/auction/:id" element={<AuctionDetail />} />
 			<Route path="/categories" element={<Categories />} />
 			<Route path="/users" element={<User />} />
-			<Route path="/user/:id" element={<UserDetail />} />
+      		<Route path="/user/:userId" element={<UserDetail />} />
 		</Routes>
 	);
 }

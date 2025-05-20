@@ -10,8 +10,17 @@ export const getAllUsers = async () => {
 
 // Lấy thông tin chi tiết của một người dùng theo ID
 export const getUserById = async (userId) => {
-  const response = await api.get(`${API_CONFIG.USER_API}/${userId}`);
-  return response.data;
+  try {
+    // Kiểm tra xem userId có tồn tại không
+    if (!userId) {
+      throw new Error('User ID is undefined');
+    }
+    const response = await api.get(`${API_CONFIG.USER_API}/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    throw error;
+  }
 };
 
 // Lấy thông tin người dùng hiện tại
