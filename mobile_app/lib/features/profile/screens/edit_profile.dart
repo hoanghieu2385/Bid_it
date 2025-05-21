@@ -54,7 +54,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       final p = await http.get(Uri.parse('https://provinces.open-api.vn/api/?depth=1'));
       if (p.statusCode == 200) {
-        provinces = jsonDecode(p.body);
+        provinces = jsonDecode(utf8.decode(p.bodyBytes));
       }
 
       if (parts.length >= 4) {
@@ -83,7 +83,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       final res = await http.get(Uri.parse('https://provinces.open-api.vn/api/p/$code?depth=2'));
       if (res.statusCode == 200) {
-        districts = jsonDecode(res.body)['districts'];
+        districts = jsonDecode(utf8.decode(res.bodyBytes))['districts'];
       }
     } catch (e) {
       print('Error loading districts: $e');
@@ -98,7 +98,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       final res = await http.get(Uri.parse('https://provinces.open-api.vn/api/d/$code?depth=2'));
       if (res.statusCode == 200) {
-        wards = jsonDecode(res.body)['wards'];
+        wards = jsonDecode(utf8.decode(res.bodyBytes))['wards'];
       }
     } catch (e) {
       print('Error loading wards: $e');
