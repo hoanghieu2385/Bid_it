@@ -3,6 +3,7 @@ package com.example.auction.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.example.auction.dto.UserDTO;
 
 public class AuctionResponseDTO {
 
@@ -28,6 +29,7 @@ public class AuctionResponseDTO {
     private LocalDateTime deletedAt;
     private List<MediaResponseDTO> media;
     private String thumbnailUrl;
+    private UserDTO user;
 
 
     // Private constructor for Builder
@@ -143,6 +145,14 @@ public class AuctionResponseDTO {
 
     public String getThumbnailUrl() {
         return thumbnailUrl;
+    }
+
+    public UserDTO getUser() {
+        return user;
+    }
+
+    public void setUser(UserDTO user) {
+        this.user = user;
     }
 
     // Builder class
