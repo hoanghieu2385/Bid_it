@@ -3,6 +3,7 @@ import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/services/user_service.dart';
 import 'package:mobile_app/features/home/screens/home_screen.dart';
 import 'package:mobile_app/features/profile/screens/edit_profile.dart';
+import 'package:mobile_app/features/profile/screens/user_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -111,25 +112,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   MaterialPageRoute(builder: (_) => const EditProfilePage()),
                 );
                 await _loadUser(); // Reload info after edit
-              },
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey.shade800,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(45),
-              ),
-              icon: const Icon(Icons.logout),
-              label: const Text("Logout"),
-              onPressed: () async {
-                await UserService.logout();
-                if (mounted) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HomePage()),
-                  );
-                }
               },
             ),
           ],

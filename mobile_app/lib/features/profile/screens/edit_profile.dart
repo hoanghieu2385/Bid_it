@@ -1,7 +1,12 @@
+// File: edit_profile_page.dart
+// Chức năng: Màn hình chỉnh sửa hồ sơ người dùng, bao gồm tên, số điện thoại, địa chỉ chi tiết,
+// và chọn tỉnh, quận, phường từ API provinces.open-api.vn. Có kiểm tra lỗi và loading state.
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_app/core/services/user_service.dart';
+import 'package:mobile_app/core/constants/app_colors.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -22,6 +27,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   List<dynamic> provinces = [], districts = [], wards = [];
   String? selectedProvince, selectedDistrict, selectedWard;
 
+  bool isLoadingDistricts = false;
+  bool isLoadingWards = false;
+
   @override
   void initState() {
     super.initState();
@@ -29,80 +37,116 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _loadUserAndProvinces() async {
-    final res = await UserService.getCurrentUser();
-    if (res == null || res['error'] == true) return;
+    try {
+      final res = await UserService.getCurrentUser();
+      if (res == null || res['error'] == true) return;
 
-    user = res;
-    firstName.text = res['firstName'] ?? '';
-    lastName.text = res['lastName'] ?? '';
-    phone.text = res['phoneNumber'] ?? '';
+      user = res;
+      firstName.text = res['firstName'] ?? '';
+      lastName.text = res['lastName'] ?? '';
+      phone.text = res['phoneNumber'] ?? '';
 
-    final address = res['address'] ?? '';
-    final parts = address.split(',').map((e) => e.trim()).toList();
-    if (parts.length >= 4) {
-      detail.text = parts[0];
-    }
+      final address = res['address'] ?? '';
+      final parts = address.split(',').map((e) => e.trim()).toList();
+      if (parts.length >= 4) {
+        detail.text = parts[0];
+      }
 
-    final p = await http.get(Uri.parse('https://provinces.open-api.vn/api/?depth=1'));
-    provinces = jsonDecode(p.body);
-    if (parts.length >= 4) {
-      final prov = provinces.firstWhere((e) => e['name'] == parts[3], orElse: () => null);
-      if (prov != null) {
-        selectedProvince = prov['code'].toString();
-        await _loadDistricts(selectedProvince!);
-        final dist = districts.firstWhere((e) => e['name'] == parts[2], orElse: () => null);
-        if (dist != null) {
+      final p = await http.get(Uri.parse('https://provinces.open-api.vn/api/?depth=1'));
+      if (p.statusCode == 200) {
+        provinces = jsonDecode(p.body);
+      }
+
+      if (parts.length >= 4) {
+        try {
+          final prov = provinces.firstWhere((e) => e['name'].toString().toLowerCase() == parts[3].toLowerCase());
+          selectedProvince = prov['code'].toString();
+          await _loadDistricts(selectedProvince!);
+
+          final dist = districts.firstWhere((e) => e['name'].toString().toLowerCase() == parts[2].toLowerCase());
           selectedDistrict = dist['code'].toString();
           await _loadWards(selectedDistrict!);
-          final ward = wards.firstWhere((e) => e['name'] == parts[1], orElse: () => null);
-          if (ward != null) {
-            selectedWard = ward['code'].toString();
-          }
-        }
-      }
-    }
 
-    setState(() {});
+          final ward = wards.firstWhere((e) => e['name'].toString().toLowerCase() == parts[1].toLowerCase());
+          selectedWard = ward['code'].toString();
+        } catch (_) {}
+      }
+
+      setState(() {});
+    } catch (e) {
+      print('Error loading user or provinces: $e');
+    }
   }
 
   Future<void> _loadDistricts(String code) async {
-    final res = await http.get(Uri.parse('https://provinces.open-api.vn/api/p/$code?depth=2'));
-    districts = jsonDecode(res.body)['districts'];
-    wards = [];
+    setState(() => isLoadingDistricts = true);
+    try {
+      final res = await http.get(Uri.parse('https://provinces.open-api.vn/api/p/$code?depth=2'));
+      if (res.statusCode == 200) {
+        districts = jsonDecode(res.body)['districts'];
+      }
+    } catch (e) {
+      print('Error loading districts: $e');
+    } finally {
+      wards = [];
+      setState(() => isLoadingDistricts = false);
+    }
   }
 
   Future<void> _loadWards(String code) async {
-    final res = await http.get(Uri.parse('https://provinces.open-api.vn/api/d/$code?depth=2'));
-    wards = jsonDecode(res.body)['wards'];
+    setState(() => isLoadingWards = true);
+    try {
+      final res = await http.get(Uri.parse('https://provinces.open-api.vn/api/d/$code?depth=2'));
+      if (res.statusCode == 200) {
+        wards = jsonDecode(res.body)['wards'];
+      }
+    } catch (e) {
+      print('Error loading wards: $e');
+    } finally {
+      setState(() => isLoadingWards = false);
+    }
   }
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final prov = provinces.firstWhere((e) => e['code'].toString() == selectedProvince, orElse: () => null);
-    final dist = districts.firstWhere((e) => e['code'].toString() == selectedDistrict, orElse: () => null);
-    final ward = wards.firstWhere((e) => e['code'].toString() == selectedWard, orElse: () => null);
+    Map? prov, dist, ward;
 
-    final fullAddress = '${detail.text}, ${ward?['name'] ?? ''}, ${dist?['name'] ?? ''}, ${prov?['name'] ?? ''}';
+    try {
+      prov = provinces.firstWhere((e) => e['code'].toString() == selectedProvince);
+    } catch (_) {}
+
+    try {
+      dist = districts.firstWhere((e) => e['code'].toString() == selectedDistrict);
+    } catch (_) {}
+
+    try {
+      ward = wards.firstWhere((e) => e['code'].toString() == selectedWard);
+    } catch (_) {}
+
+    if (prov == null || dist == null || ward == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a valid address')),
+      );
+      return;
+    }
+
+    final fullAddress = '${detail.text}, ${ward['name']}, ${dist['name']}, ${prov['name']}';
 
     final success = await UserService.updateUserProfile(user!['id'], {
-      'firstName': firstName.text,
-      'lastName': lastName.text,
-      'phoneNumber': phone.text,
+      'firstName': firstName.text.trim(),
+      'lastName': lastName.text.trim(),
+      'phoneNumber': phone.text.trim(),
       'address': fullAddress,
     });
 
-    if (success) {
-      if (!mounted) return;
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Update failed')),
-      );
-    }
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(success ? 'Profile updated successfully' : 'Update failed')),
+    );
+
+    if (success) Navigator.pop(context);
   }
 
   @override
@@ -122,7 +166,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               _inputField("First Name", firstName),
               _inputField("Last Name", lastName),
               _inputField("Phone Number", phone),
-              _dropdown("Province", selectedProvince, provinces, (v) async {
+              _dropdown("Province", selectedProvince, provinces, isLoadingDistricts, (v) async {
                 setState(() {
                   selectedProvince = v;
                   selectedDistrict = null;
@@ -130,14 +174,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 });
                 await _loadDistricts(v!);
               }),
-              _dropdown("District", selectedDistrict, districts, (v) async {
+              _dropdown("District", selectedDistrict, districts, isLoadingWards, (v) async {
                 setState(() {
                   selectedDistrict = v;
                   selectedWard = null;
                 });
                 await _loadWards(v!);
               }),
-              _dropdown("Ward", selectedWard, wards, (v) {
+              _dropdown("Ward", selectedWard, wards, false, (v) {
                 setState(() => selectedWard = v);
               }),
               _inputField("Detail Address", detail),
@@ -161,20 +205,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _dropdown(String label, String? selected, List options, Function(String?) onChanged) {
+  Widget _dropdown(String label, String? selected, List options, bool isLoading, Function(String?) onChanged) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: DropdownButtonFormField<String>(
-        value: selected,
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
-        items: options
-            .map((e) => DropdownMenuItem<String>(
-          value: e['code'].toString(),
-          child: Text(e['name']),
-        ))
-            .toList(),
-        onChanged: onChanged,
-        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButtonFormField<String>(
+            value: selected,
+            decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+            items: options.map((e) {
+              return DropdownMenuItem<String>(
+                value: e['code'].toString(),
+                child: Text(e['name']),
+              );
+            }).toList(),
+            onChanged: isLoading ? null : onChanged,
+            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+          ),
+          if (isLoading)
+            const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: LinearProgressIndicator(minHeight: 2),
+            )
+        ],
       ),
     );
   }
