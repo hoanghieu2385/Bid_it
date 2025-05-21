@@ -191,6 +191,14 @@ public class User {
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
+    public boolean isPhoneVerified() {
+        return phoneVerified;
+    }
+
+    public void setPhoneVerified(boolean phoneVerified) {
+        this.phoneVerified = phoneVerified;
+    }
+
 
     public String getAddress() {
         return address;

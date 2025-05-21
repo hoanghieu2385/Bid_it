@@ -3,6 +3,7 @@ package com.example.user.service;
 import com.example.user.Dtos.UpdateCCCDRequest;
 import com.example.user.Dtos.UserCCCDVerifyDto;
 import com.example.user.Dtos.UserUpdateRequest;
+import com.example.user.model.OtpType;
 import com.example.user.model.Role;
 import com.example.user.model.User;
 import com.example.user.repository.UserRepository;
@@ -23,11 +24,13 @@ import java.util.Set;
 public class UserService {
     private final UserRepository userRepository;
     private final CloudinaryService cloudinaryService;
+    private final OtpService otpService;
 
 
-    public UserService(UserRepository userRepository, CloudinaryService cloudinaryService) {
+    public UserService(UserRepository userRepository, CloudinaryService cloudinaryService, OtpService otpService) {
         this.userRepository = userRepository;
         this.cloudinaryService = cloudinaryService;
+        this.otpService = otpService;
     }
 
     
@@ -160,7 +163,7 @@ public class UserService {
 
     // Verify Phone Number
     public boolean verifyUserPhoneNumber(String phoneNumber, String code) {
-        boolean isValid = otpService.verifyOtp(phoneNumber, code);
+        boolean isValid = otpService.verifyOtp(phoneNumber, code, OtpType.PHONE_VERIFICATION);
         if (isValid) {
             Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
             if (optionalUser.isPresent()) {

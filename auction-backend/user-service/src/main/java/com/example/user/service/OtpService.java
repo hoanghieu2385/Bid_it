@@ -13,11 +13,11 @@ import java.util.Random;
 public class OtpService {
     private final OtpRepository otpRepository;
     private final EmailService emailService;
+    private final SmsService smsService;
 
     @Value("${otp.expiration.minutes}")
     private int otpExpirationMinutes;
 
-    // Constructor manually created to replace @RequiredArgsConstructor
     public OtpService(OtpRepository otpRepository, EmailService emailService, SmsService smsService) {
         this.otpRepository = otpRepository;
         this.emailService = emailService;
@@ -30,12 +30,13 @@ public class OtpService {
         return String.valueOf(number);
     }
 
+    // 📧 EMAIL VERIFICATION
     public void sendVerificationOtp(String email) {
         String otp = generateOtp();
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(otpExpirationMinutes);
 
         Otp otpEntity = Otp.builder()
-                .email(email)
+                .contact(email)
                 .code(otp)
                 .expiryDate(expiryDate)
                 .used(false)
@@ -46,12 +47,13 @@ public class OtpService {
         emailService.sendAccountVerificationEmail(email, otp);
     }
 
+    // 📧 LOGIN OTP (EMAIL)
     public void sendLoginOtp(String email) {
         String otp = generateOtp();
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(otpExpirationMinutes);
 
         Otp otpEntity = Otp.builder()
-                .email(email)
+                .contact(email)
                 .code(otp)
                 .expiryDate(expiryDate)
                 .used(false)
@@ -62,7 +64,14 @@ public class OtpService {
         emailService.sendLoginOtp(email, otp);
     }
 
+    // ✅ VERIFY OTP (EMAIL/LOGIN từ DB)
     public boolean verifyOtp(String contact, String otp, OtpType type) {
+        // Nếu là PHONE_VERIFICATION thì dùng Verify API, không dùng DB
+        if (type == OtpType.PHONE_VERIFICATION) {
+            return smsService.checkOtp(contact, otp); // 📱 Verify qua Twilio
+        }
+
+        // EMAIL hoặc LOGIN dùng DB
         Otp otpEntity = otpRepository.findByContactAndCodeAndTypeAndUsedFalse(contact, otp, type)
                 .orElse(null);
 
@@ -75,20 +84,8 @@ public class OtpService {
         return true;
     }
 
+    // 📱 PHONE: gửi OTP qua Twilio Verify API
     public void sendPhoneVerificationOtp(String phoneNumber) {
-        String otp = generateOtp();
-        LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(otpExpirationMinutes);
-
-        Otp otpEntity = Otp.builder()
-                .contact(phoneNumber)
-                .code(otp)
-                .expiryDate(expiryDate)
-                .used(false)
-                .type(OtpType.PHONE_VERIFICATION)
-                .build();
-
-        otpRepository.save(otpEntity);
-        smsService.sendOtpSms(phoneNumber, otp);
+        smsService.sendOtpSms(phoneNumber); // ✅ Không cần sinh OTP nữa
     }
-
 }

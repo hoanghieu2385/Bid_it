@@ -4,8 +4,10 @@ import com.example.user.Dtos.RoleUpdateRequest;
 import com.example.user.Dtos.UserCCCDVerifyDto;
 import com.example.user.Dtos.UserUpdateRequest;
 import com.example.user.Dtos.UpdateCCCDRequest;
+import com.example.user.model.OtpType;
 import com.example.user.model.User;
 import com.example.user.service.UserService;
+import com.example.user.service.OtpService;
 import com.example.user.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,9 +24,11 @@ import java.util.Optional;
 public class UserController {
 
     private final UserService userService;
+    private final OtpService otpService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, OtpService otpService) {
         this.userService = userService;
+        this.otpService = otpService;
     }
 
     @GetMapping
@@ -130,13 +134,14 @@ public class UserController {
     @PostMapping("/verify-phone-otp")
     public ResponseEntity<String> verifyPhoneOtp(@RequestParam String phone,
                                                  @RequestParam String otp) {
-        boolean verified = otpService.verifyOtp(phone, otp, OtpType.PHONE_VERIFICATION);
+        boolean verified = userService.verifyUserPhoneNumber(phone, otp);
         return verified
                 ? ResponseEntity.ok("Phone verified.")
                 : ResponseEntity.badRequest().body("Invalid or expired OTP.");
     }
 
-///
+
+    ///
 
     @GetMapping("/me")
     public ResponseEntity<User> getCurrentUserProfile() {
