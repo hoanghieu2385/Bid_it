@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface OtpRepository extends JpaRepository<Otp, Long> {
-    Optional<Otp> findByEmailAndCodeAndTypeAndUsedFalse(String email, String code, OtpType type);
+    Optional<Otp> findByContactAndCodeAndTypeAndUsedFalse(String contact, String code, OtpType type);
 }
