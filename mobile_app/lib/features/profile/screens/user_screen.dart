@@ -164,15 +164,6 @@ class _UserPageState extends State<UserPage> {
                     MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
                   ),
                 ),
-                _buildMenuItem(
-                  context: context,
-                  icon: Icons.favorite_border,
-                  title: 'Watchlist',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const WatchlistPage()),
-                  ),
-                ),
                 const SizedBox(height: 16.0),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
