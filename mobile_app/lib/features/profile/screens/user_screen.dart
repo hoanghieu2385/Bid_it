@@ -1,3 +1,6 @@
+// File: user_page.dart
+// Chức năng: Màn hình hồ sơ người dùng, hiển thị thông tin, và chuyển hướng đến các trang liên quan (hồ sơ, đấu giá, đổi mật khẩu,...)
+
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/services/user_service.dart';
@@ -5,6 +8,7 @@ import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
 import 'package:mobile_app/features/auction/screens/watchlist_screen.dart';
 import 'package:mobile_app/features/profile/screens/profile_screen.dart';
+import 'package:mobile_app/features/profile/screens/change_password.dart';
 import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
 
 class UserPage extends StatefulWidget {
@@ -129,6 +133,15 @@ class _UserPageState extends State<UserPage> {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const AuctionList()),
+                  ),
+                ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.lock_outline,
+                  title: 'Change Password',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
                   ),
                 ),
                 _buildMenuItem(
