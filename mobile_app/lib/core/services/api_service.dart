@@ -1,7 +1,7 @@
 // lib/core/services/api_service.dart
 class ApiService {
-  // static const String baseHost = 'http://10.0.2.2:8080';
-  static const String baseHost = 'http://10.22.184.71:8080';
+  static const String baseHost = 'http://10.0.2.2:8080';
+  // static const String baseHost = 'http://10.22.184.71:8080';
 
   // Các base URL cụ thể cho từng service
   static const String authBaseUrl = '$baseHost/user-service/auth';
