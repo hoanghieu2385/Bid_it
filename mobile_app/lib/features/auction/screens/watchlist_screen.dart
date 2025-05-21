@@ -1,5 +1,6 @@
-import 'package:mobile_app/core/constants/app_colors.dart';
-import 'package:mobile_app/features/auction/screens/auction_detail.dart';
+// File: watchlist_screen.dart
+// Chức năng: Hiển thị danh sách các phiên đấu giá mà người dùng theo dõi (Watchlist), với giao diện thẻ đẹp mắt.
+
 import 'package:flutter/material.dart';
 
 class WatchlistPage extends StatelessWidget {
@@ -7,99 +8,82 @@ class WatchlistPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> watchlistItems = [
+    // Dữ liệu mẫu
+    final List<Map<String, String>> watchlistItems = [
       {
-        'title': 'BMW AIGID A CLASS HATCH M26 MOTOR BIKE',
-        'seller': 'Christopher Anderson',
-        'imageUrl': 'https://via.placeholder.com/400',
-        'startingPrice': 500000.0,
-        'currentBid': 2000000.0,
-        'bids': 323,
-        'timeLeft': '02:15:48:50',
-        'bidHistory': [81000000.0, 82000000.0, 82500000.0],
+        'title': 'Apple Watch Series 9',
+        'status': 'Ongoing',
+        'endTime': '2025-06-01 18:00',
       },
       {
-        'title': 'Vintage Rolex Watch',
-        'seller': 'John Doe',
-        'imageUrl': 'https://via.placeholder.com/400',
-        'startingPrice': 1000000.0,
-        'currentBid': 3000000.0,
-        'bids': 150,
-        'timeLeft': '01:05:30:20',
-        'bidHistory': [28000000.0, 29000000.0, 30000000.0],
+        'title': 'Sony WH-1000XM5',
+        'status': 'Ended',
+        'endTime': '2025-05-15 21:30',
       },
     ];
 
     return Scaffold(
-      body: watchlistItems.isEmpty
-          ? const Center(
-        child: Text(
-          'No items in your watchlist',
-          style: TextStyle(
-            fontSize: 18,
-            color: AppColors.grey,
-            fontStyle: FontStyle.italic,
-          ),
-        ),
-      )
-          : ListView.builder(
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
-        itemCount: watchlistItems.length,
-        itemBuilder: (context, index) {
-          final item = watchlistItems[index];
-          return Card(
-            elevation: 2,
-            margin: const EdgeInsets.only(bottom: 16.0),
-            child: ListTile(
-              title: Text(
-                item['title'],
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.black,
-                ),
+        child: watchlistItems.isEmpty
+            ? const Center(
+          child: Text('No items in your watchlist yet.',
+              style: TextStyle(fontSize: 16)),
+        )
+            : ListView.builder(
+          itemCount: watchlistItems.length,
+          itemBuilder: (context, index) {
+            final item = watchlistItems[index];
+            final isEnded = item['status'] == 'Ended';
+
+            return Card(
+              elevation: 3,
+              margin: const EdgeInsets.only(bottom: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4.0),
-                  Text(
-                    'Current Bid: ${item['currentBid'].toStringAsFixed(0)}đ',
-                    style: const TextStyle(fontSize: 14, color: AppColors.grey),
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(12),
+                leading: CircleAvatar(
+                  radius: 28,
+                  backgroundColor: Colors.orange.withOpacity(0.15),
+                  child: const Icon(Icons.image, size: 30, color: Colors.orange),
+                ),
+                title: Text(
+                  item['title']!,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                  const SizedBox(height: 4.0),
-                  Row(
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.timer, color: Colors.orange, size: 16),
-                      const SizedBox(width: 4.0),
                       Text(
-                        item['timeLeft'],
-                        style: const TextStyle(fontSize: 14, color: Colors.orange),
+                        'Status: ${item['status']}',
+                        style: TextStyle(
+                          color: isEnded ? Colors.red : Colors.green,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Ends at: ${item['endTime']}',
+                        style: const TextStyle(fontSize: 13),
                       ),
                     ],
                   ),
-                ],
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  //Mở trang chi tiết đấu giá
+                },
               ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AuctionDetailPage(
-                      title: item['title'],
-                      seller: item['seller'],
-                      imageUrl: item['imageUrl'],
-                      startingPrice: item['startingPrice'],
-                      currentBid: item['currentBid'],
-                      bids: item['bids'],
-                      timeLeft: item['timeLeft'],
-                      bidHistory: List<double>.from(item['bidHistory']),
-                    ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

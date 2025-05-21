@@ -75,7 +75,7 @@ class _HomeContentState extends State<HomeContent> {
         isLoading = false;
       });
     } catch (e) {
-      print('❌ Error loading categories: \$e');
+      print('Error loading categories: \$e');
       setState(() => isLoading = false);
     }
   }
@@ -139,7 +139,6 @@ class _HomeContentState extends State<HomeContent> {
             ],
           ),
         ),
-        const AuctionList(),
       ]),
     );
   }

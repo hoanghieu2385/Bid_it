@@ -1,5 +1,5 @@
 // File: user_page.dart
-// Chức năng: Màn hình hồ sơ người dùng, hiển thị thông tin, và chuyển hướng đến các trang liên quan (hồ sơ, đấu giá, đổi mật khẩu,...)
+// Chức năng: Màn hình hồ sơ người dùng, hiển thị thông tin cá nhân và chuyển đến các màn liên quan như hồ sơ, lịch sử đấu giá, các phiên đã tham gia, đổi mật khẩu, v.v.
 
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
@@ -7,6 +7,8 @@ import 'package:mobile_app/core/services/user_service.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
 import 'package:mobile_app/features/auction/screens/watchlist_screen.dart';
+import 'package:mobile_app/features/auction/screens/bid_history.dart';
+import 'package:mobile_app/features/auction/screens/participated_auctions.dart';
 import 'package:mobile_app/features/profile/screens/profile_screen.dart';
 import 'package:mobile_app/features/profile/screens/change_password.dart';
 import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
@@ -132,7 +134,25 @@ class _UserPageState extends State<UserPage> {
                   title: 'My Auctions',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AuctionList()),
+                    MaterialPageRoute(builder: (_) => const MyAuctionsPage()),
+                  ),
+                ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.history,
+                  title: 'Bid History',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const BidHistoryPage()),
+                  ),
+                ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.how_to_vote,
+                  title: 'Participated Auctions',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ParticipatedAuctionsPage()),
                   ),
                 ),
                 _buildMenuItem(
@@ -152,12 +172,6 @@ class _UserPageState extends State<UserPage> {
                     context,
                     MaterialPageRoute(builder: (_) => const WatchlistPage()),
                   ),
-                ),
-                _buildMenuItem(
-                  context: context,
-                  icon: Icons.settings,
-                  title: 'Settings',
-                  onTap: () => print('Settings pressed'),
                 ),
                 const SizedBox(height: 16.0),
                 Padding(
@@ -191,11 +205,8 @@ class _UserPageState extends State<UserPage> {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: Colors.orange, size: 24),
-      title: Text(
-        title,
-        style: const TextStyle(fontSize: 16, color: AppColors.black),
-      ),
+      leading: Icon(icon, color: Colors.orange),
+      title: Text(title, style: const TextStyle(fontSize: 16)),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.grey),
       onTap: onTap,
     );
