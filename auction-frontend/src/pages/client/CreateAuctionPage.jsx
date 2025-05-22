@@ -131,7 +131,7 @@ const CreateAuctionPage = () => {
 		if (!value) return null;
 		return (
 			<div className="form-text mt-1">
-				Gợi ý:
+				Suggest:
 				{['000', '0000', '00000'].map((s, i) => {
 					const suggestion = `${value}${s}`;
 					return (
