@@ -4,6 +4,7 @@ import com.example.auction.dto.AuctionRequestDTO;
 import com.example.auction.dto.AuctionResponseDTO;
 import com.example.auction.dto.AuctionStatusUpdateDTO;
 import com.example.auction.dto.MediaResponseDTO;
+import com.example.auction.dto.UserDTO;
 import com.example.auction.exception.ResourceNotFoundException;
 import com.example.auction.model.Auction;
 import com.example.auction.model.AuctionStatus;
@@ -33,29 +34,11 @@ public class AuctionController {
     }
 
     @PostMapping
-    public ResponseEntity<AuctionResponseDTO> createAuction(@RequestBody @Valid AuctionRequestDTO auctionRequest) {
-
-        Auction auction = new Auction.Builder()
-                .title(auctionRequest.getTitle())
-                .description(auctionRequest.getDescription())
-                .sellerId(auctionRequest.getSellerId())
-                .categoryId(auctionRequest.getCategoryId())
-                .startTime(auctionRequest.getStartTime())
-                .endTime(auctionRequest.getEndTime())
-                .startingPrice(auctionRequest.getStartingPrice())
-                .incrementAmount(auctionRequest.getIncrementAmount())
-                .currentBid(auctionRequest.getCurrentBid())
-                .requiresDeposit(auctionRequest.getRequiresDeposit())
-                .securityDeposit(auctionRequest.getSecurityDeposit())
-                // If status is not provided, default to UPCOMING
-                .status(auctionRequest.getStatus() != null
-                        ? AuctionStatus.valueOf(auctionRequest.getStatus().toUpperCase())
-                        : AuctionStatus.UPCOMING)
-                .bidCount(auctionRequest.getBidCount() != null ? auctionRequest.getBidCount() : 0)
-                .build();
-
-        Auction savedAuction = auctionService.createAuction(auction);
-        AuctionResponseDTO response = mapToResponseDTO(savedAuction);
+    public ResponseEntity<AuctionResponseDTO> createAuction(
+            @Valid @RequestBody AuctionRequestDTO auctionRequestDTO,
+            @RequestParam("requesterId") Long requesterId
+    ) {
+        AuctionResponseDTO response = auctionService.createAuction(auctionRequestDTO, requesterId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -118,8 +101,10 @@ public class AuctionController {
     @PutMapping("/{id}")
     public ResponseEntity<AuctionResponseDTO> updateAuction(
             @PathVariable Long id,
-            @Valid @RequestBody AuctionRequestDTO auctionRequestDTO) {
-        return ResponseEntity.ok(auctionService.updateAuction(id, auctionRequestDTO));
+            @Valid @RequestBody AuctionRequestDTO auctionRequestDTO,
+            @RequestParam("requesterId") Long requesterId
+    ) {
+        return ResponseEntity.ok(auctionService.updateAuction(id, auctionRequestDTO, requesterId));
     }
 
     @DeleteMapping("/{id}")

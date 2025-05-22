@@ -27,15 +27,13 @@ public class AuctionService {
         this.userClient = userClient;
     }
 
-    public AuctionResponseDTO createAuction(AuctionRequestDTO request) {
-
-        if (request.getSellerId() == null) {
-            throw new IllegalArgumentException("Seller ID is required");
+    public AuctionResponseDTO createAuction(AuctionRequestDTO request, Long requesterId) {
+        if (requesterId == null) {
+            throw new IllegalArgumentException("Seller (requester) ID is required");
         }
 
-        // Validate seller
         try {
-            UserDTO seller = userClient.getUserById(request.getSellerId());
+            UserDTO seller = userClient.getUserById(requesterId);
             if (seller == null || !Boolean.TRUE.equals(seller.getVerified())) {
                 throw new IllegalArgumentException("Seller not verified or does not exist");
             }
@@ -46,20 +44,34 @@ public class AuctionService {
         Auction auction = new Auction();
         auction.setTitle(request.getTitle());
         auction.setDescription(request.getDescription());
-        auction.setStartingPrice(request.getStartingPrice());
-        auction.setIncrementAmount(request.getIncrementAmount());
+        auction.setSellerId(requesterId); // here’s the important change
+        auction.setCategoryId(request.getCategoryId());
         auction.setStartTime(request.getStartTime());
         auction.setEndTime(request.getEndTime());
-        auction.setCategoryId(request.getCategoryId());
-        auction.setSellerId(request.getSellerId());
+        auction.setStartingPrice(request.getStartingPrice());
+        auction.setIncrementAmount(request.getIncrementAmount());
+        auction.setCurrentBid(request.getCurrentBid());
         auction.setRequiresDeposit(request.getRequiresDeposit());
         auction.setSecurityDeposit(request.getSecurityDeposit());
+
+        // Optional: validate status string
+        if (request.getStatus() != null) {
+            try {
+                auction.setStatus(AuctionStatus.valueOf(request.getStatus().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Invalid auction status");
+            }
+        }
+
+        if (request.getBidCount() != null) {
+            auction.setBidCount(request.getBidCount());
+        }
 
         Auction saved = auctionRepository.save(auction);
         return mapToResponseDTO(saved);
     }
 
-    public AuctionResponseDTO updateAuction(Long id, AuctionRequestDTO request) {
+    public AuctionResponseDTO updateAuction(Long id, AuctionRequestDTO request, Long requesterId) {
         Auction auction = auctionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
 
@@ -68,13 +80,13 @@ public class AuctionService {
             throw new IllegalStateException("Cannot update auction that has already started.");
         }
 
-        if (request.getSellerId() == null) {
+        if (requesterId == null) {
             throw new IllegalArgumentException("Seller ID is required");
         }
 
         // Validate seller
         try {
-            UserDTO seller = userClient.getUserById(request.getSellerId());
+            UserDTO seller = userClient.getUserById(requesterId);
             if (seller == null || !Boolean.TRUE.equals(seller.getVerified())) {
                 throw new IllegalArgumentException("Seller not verified or does not exist");
             }
@@ -84,7 +96,7 @@ public class AuctionService {
 
         auction.setTitle(request.getTitle());
         auction.setDescription(request.getDescription());
-        auction.setSellerId(request.getSellerId());
+        auction.setSellerId(requesterId);
         auction.setCategoryId(request.getCategoryId());
         auction.setStartTime(request.getStartTime());
         auction.setEndTime(request.getEndTime());

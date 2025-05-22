@@ -179,6 +179,7 @@ public class AuctionResponseDTO {
         private LocalDateTime deletedAt;
         private List<MediaResponseDTO> media;
         private String thumbnailUrl;
+        private UserDTO user;
 
         public Builder id(Long id) {
             this.id = id;
@@ -287,6 +288,11 @@ public class AuctionResponseDTO {
 
         public Builder thumbnailUrl(String thumbnailUrl) {
             this.thumbnailUrl = thumbnailUrl;
+            return this;
+        }
+
+        public Builder user(UserDTO user) {
+            this.user = user;
             return this;
         }
 
