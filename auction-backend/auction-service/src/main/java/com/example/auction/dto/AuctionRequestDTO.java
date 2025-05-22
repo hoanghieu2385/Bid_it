@@ -19,9 +19,6 @@ public class AuctionRequestDTO {
 
     private String description;
 
-    @NotNull(message = "Seller ID is required")
-    private Long sellerId;
-
     @NotNull(message = "Category ID is required")
     private Long categoryId;
 
@@ -67,14 +64,6 @@ public class AuctionRequestDTO {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Long getSellerId() {
-        return sellerId;
-    }
-
-    public void setSellerId(Long sellerId) {
-        this.sellerId = sellerId;
     }
 
     public Long getCategoryId() {
@@ -160,10 +149,9 @@ public class AuctionRequestDTO {
     public AuctionRequestDTO() {
     }
 
-    public AuctionRequestDTO(String title, String description, Long sellerId, Long categoryId, LocalDateTime startTime, LocalDateTime endTime, BigDecimal startingPrice, BigDecimal incrementAmount, BigDecimal currentBid, Boolean requiresDeposit, BigDecimal securityDeposit, String status, Integer bidCount) {
+    public AuctionRequestDTO(String title, String description, Long categoryId, LocalDateTime startTime, LocalDateTime endTime, BigDecimal startingPrice, BigDecimal incrementAmount, BigDecimal currentBid, Boolean requiresDeposit, BigDecimal securityDeposit, String status, Integer bidCount) {
         this.title = title;
         this.description = description;
-        this.sellerId = sellerId;
         this.categoryId = categoryId;
         this.startTime = startTime;
         this.endTime = endTime;
