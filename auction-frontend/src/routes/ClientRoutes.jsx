@@ -11,7 +11,7 @@ import ResetPassword from '../pages/common/ResetPassword.jsx';
 import About from '../pages/client/About.jsx';
 import Contact from '../pages/client/Contact.jsx';
 import HowItWork from '../pages/client/HowItWork.jsx';
-import Auction from '../pages/client/Auction.jsx';
+import Auctions from '../pages/client/Auctions.jsx';
 import ViewDetail from '../pages/client/ViewDetail.jsx';
 import Blog from '../pages/client/Blog.jsx';
 import BlogPostDetail from '../pages/client/BlogPostDetail.jsx';
@@ -37,7 +37,7 @@ function ClientRoutes() {
 				<Route path="/about" element={<About />} />
 				<Route path="/contact" element={<Contact />} />
 				<Route path="/how-it-works" element={<HowItWork />} />
-				<Route path="/auctions" element={<Auction />} />
+				<Route path="/auctions" element={<Auctions />} />
 				<Route path="/auctions/viewdetail" element={<ViewDetail />} />
 				<Route path="/blog" element={<Blog />} />
 				<Route path="/blog/:id" element={<BlogPostDetail />} />

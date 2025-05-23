@@ -2,7 +2,13 @@
 import api from './api';
 import Cookies from 'js-cookie';
 
-// Tạo đấu giá mới
+export const getAllAuctions = async () => {
+	const response = await api.get('/auction-service/api/auctions');
+	return response.data;
+};
+
+
+// Create new auction
 export const createAuction = async (formData, requesterId) => {
 	const token = Cookies.get('jwt');
 	const response = await api.post(`/auction-service/api/auctions?requesterId=${requesterId}`, formData, {
@@ -13,7 +19,7 @@ export const createAuction = async (formData, requesterId) => {
 	return response.data;
 };
 
-// Upload nhiều hình ảnh
+// Upload multiple images for auction
 export const uploadAuctionImages = async (auctionId, imageFiles) => {
 	const form = new FormData();
 	imageFiles.forEach((file) => form.append('files', file));
@@ -32,6 +38,7 @@ export const uploadAuctionImages = async (auctionId, imageFiles) => {
 	return response.data;
 };
 
+// Get all auctions by seller
 export const getAuctionsBySeller = async (sellerId) => {
 	const token = Cookies.get('jwt');
 	const response = await api.get(`/auction-service/api/auctions/seller/${sellerId}`, {
@@ -42,6 +49,7 @@ export const getAuctionsBySeller = async (sellerId) => {
 	return response.data;
 };
 
+// Get auction by ID
 export const getAuctionById = async (id) => {
 	const token = Cookies.get('jwt');
 	const response = await api.get(`/auction-service/api/auctions/${id}`, {
