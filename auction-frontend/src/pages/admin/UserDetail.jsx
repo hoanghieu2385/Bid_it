@@ -33,14 +33,19 @@ const UserDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const [editedUser, setEditedUser] = useState({});
+  const [editedUser, setEditedUser] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+    address: ""
+  });
   const [isDeleting, setIsDeleting] = useState(false);
   const [formError, setFormError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
 
   useEffect(() => {
-    console.log("UserID from useParams:", userId);
     if (userId) {
       fetchUserData();
     }
@@ -59,12 +64,14 @@ const UserDetail = () => {
 
       const userData = await getUserById(userId);
       setUser(userData);
+      
+      // Cập nhật form dữ liệu để phù hợp với model User của Spring Boot
       setEditedUser({
-        username: userData.username,
-        email: userData.email,
-        phoneNumber: userData.phoneNumber,
-        fullName: userData.fullName,
-        address: userData.address,
+        firstName: userData.firstName || "",
+        lastName: userData.lastName || "",
+        email: userData.email || "",
+        phoneNumber: userData.phoneNumber || "",
+        address: userData.address || ""
       });
     } catch (err) {
       console.error("Error fetching user details:", err);
@@ -82,18 +89,21 @@ const UserDetail = () => {
     }));
   };
 
+  // Thay đổi hàm handleEditToggle
   const handleEditToggle = () => {
+    console.log("Trước khi thay đổi editMode:", editMode);
     if (editMode) {
-      // Cancel edit, reset form data
+      // Hủy chỉnh sửa, reset form về dữ liệu ban đầu
       setEditedUser({
-        username: user.username,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        fullName: user.fullName,
-        address: user.address,
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phoneNumber: user.phoneNumber || "",
+        address: user.address || ""
       });
     }
     setEditMode(!editMode);
+    console.log("Sau khi thay đổi editMode:", !editMode);
     setFormError(null);
   };
 
@@ -108,7 +118,7 @@ const UserDetail = () => {
     } catch (err) {
       console.error("Error updating user:", err);
       setFormError(
-        "Không thể cập nhật thông tin người dùng. Vui lòng thử lại."
+        err.response?.data || "Không thể cập nhật thông tin người dùng. Vui lòng thử lại."
       );
     } finally {
       setLoading(false);
@@ -162,19 +172,28 @@ const UserDetail = () => {
   const handleRoleChange = async (isAdmin) => {
     try {
       setLoading(true);
-      const roles = isAdmin ? ["USER", "ADMIN"] : ["USER"];
-      const updatedUser = await updateUserRoles(userId, roles);
+      // Chuyển đổi sang định dạng Spring Security roles
+      const roles = new Set(user.roles || []);
+      
+      if (isAdmin) {
+        roles.add("ADMIN");
+      } else {
+        roles.delete("ADMIN");
+        // Đảm bảo luôn có ít nhất role USER
+        roles.add("USER");
+      }
+      
+      const updatedUser = await updateUserRoles(userId, Array.from(roles));
       setUser(updatedUser);
       showSuccess(
-        `Vai trò người dùng đã được cập nhật thành ${
-          isAdmin ? "ADMIN" : "USER"
-        } thành công!`
+        `Vai trò người dùng đã được cập nhật thành công!`
       );
     } catch (err) {
       console.error("Error updating user roles:", err);
       setFormError("Không thể cập nhật vai trò người dùng. Vui lòng thử lại.");
     } finally {
       setLoading(false);
+      setConfirmAction(null);
     }
   };
 
@@ -246,7 +265,27 @@ const UserDetail = () => {
   };
 
   const isUserAdmin = () => {
-    return user?.roles?.some((role) => role === "ADMIN");
+    return user?.roles?.includes("ADMIN");
+  };
+
+  // Hiển thị tên đầy đủ người dùng
+  const getFullName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    } else if (user?.firstName) {
+      return user.firstName;
+    } else if (user?.lastName) {
+      return user.lastName;
+    }
+    return "Không có tên";
+  };
+
+  // Hiển thị chữ cái đầu tiên của tên để làm avatar (nếu không có avatar)
+  const getInitial = () => {
+    if (user?.firstName) return user.firstName.charAt(0).toUpperCase();
+    if (user?.lastName) return user.lastName.charAt(0).toUpperCase();
+    if (user?.email) return user.email.charAt(0).toUpperCase();
+    return "U";
   };
 
   // UI render
@@ -259,13 +298,13 @@ const UserDetail = () => {
     switch (confirmAction) {
       case "delete":
         title = "Xác nhận xóa người dùng";
-        message = `Bạn có chắc muốn xóa tài khoản của người dùng '${user?.username}' không? Hành động này không thể hoàn tác.`;
+        message = `Bạn có chắc muốn xóa tài khoản của người dùng '${user?.email || ""}' không? Hành động này không thể hoàn tác.`;
         confirmText = "Xóa";
         onConfirmAction = handleDeleteUser;
         break;
       case "reset-password":
         title = "Xác nhận đặt lại mật khẩu";
-        message = `Gửi email đặt lại mật khẩu cho người dùng '${user?.username}'?`;
+        message = `Gửi email đặt lại mật khẩu cho người dùng '${user?.email || ""}'?`;
         confirmText = "Gửi";
         onConfirmAction = handleResetPassword;
         break;
@@ -273,7 +312,7 @@ const UserDetail = () => {
         title = "Xác nhận thay đổi vai trò";
         message = `Bạn có chắc muốn ${
           isUserAdmin() ? "hạ quyền" : "cấp quyền ADMIN"
-        } cho người dùng '${user?.username}' không?`;
+        } cho người dùng '${user?.email || ""}' không?`;
         confirmText = "Xác nhận";
         onConfirmAction = () => handleRoleChange(!isUserAdmin());
         break;
@@ -388,8 +427,7 @@ const UserDetail = () => {
                   <>
                     <button
                       className="action-btn save-btn"
-                      form="user-form"
-                      type="submit"
+                      onClick={handleSubmit}
                       disabled={loading}
                     >
                       {loading ? "Đang lưu..." : "Lưu thay đổi"}
@@ -443,18 +481,18 @@ const UserDetail = () => {
                     {user?.avatar ? (
                       <img
                         src={user.avatar}
-                        alt={user.username}
+                        alt={getFullName()}
                         className="user-avatar-lg"
                       />
                     ) : (
                       <div className="user-avatar-placeholder-lg">
-                        {user?.username?.charAt(0).toUpperCase() || "U"}
+                        {getInitial()}
                       </div>
                     )}
                   </div>
                   <div className="user-title-info">
                     <h1 className="user-username">
-                      {user?.username || "Không có tên người dùng"}
+                      {getFullName()}
                     </h1>
                     <div className="user-badges">
                       <span
@@ -481,42 +519,47 @@ const UserDetail = () => {
                 <form
                   id="user-form"
                   className="user-form"
-                  onSubmit={handleSubmit}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmit(e);
+                  }}
                 >
                   <div className="form-section">
                     <h2>Thông tin cá nhân</h2>
                     <div className="form-row">
                       <div className="form-group">
-                        <label htmlFor="username">Tên người dùng</label>
+                        <label htmlFor="firstName">Tên</label>
                         {editMode ? (
                           <input
                             type="text"
-                            id="username"
-                            name="username"
-                            value={editedUser.username || ""}
+                            id="firstName"
+                            name="firstName"
+                            value={editedUser.firstName || ""}
                             onChange={handleInputChange}
                             disabled={loading}
+                            className="edit-input"
                           />
                         ) : (
                           <p className="form-value">
-                            {user?.username || "Không có"}
+                            {user?.firstName || "Không có"}
                           </p>
                         )}
                       </div>
                       <div className="form-group">
-                        <label htmlFor="fullName">Họ và tên</label>
+                        <label htmlFor="lastName">Họ</label>
                         {editMode ? (
                           <input
                             type="text"
-                            id="fullName"
-                            name="fullName"
-                            value={editedUser.fullName || ""}
+                            id="lastName"
+                            name="lastName"
+                            value={editedUser.lastName || ""}
                             onChange={handleInputChange}
                             disabled={loading}
+                            className="edit-input"
                           />
                         ) : (
                           <p className="form-value">
-                            {user?.fullName || "Không có"}
+                            {user?.lastName || "Không có"}
                           </p>
                         )}
                       </div>
@@ -532,6 +575,7 @@ const UserDetail = () => {
                             value={editedUser.email || ""}
                             onChange={handleInputChange}
                             disabled={loading}
+                            className="edit-input"
                           />
                         ) : (
                           <p className="form-value">
@@ -549,6 +593,7 @@ const UserDetail = () => {
                             value={editedUser.phoneNumber || ""}
                             onChange={handleInputChange}
                             disabled={loading}
+                            className="edit-input"
                           />
                         ) : (
                           <p className="form-value">
@@ -568,6 +613,7 @@ const UserDetail = () => {
                             onChange={handleInputChange}
                             rows="3"
                             disabled={loading}
+                            className="edit-input"
                           />
                         ) : (
                           <p className="form-value">
@@ -579,7 +625,7 @@ const UserDetail = () => {
                   </div>
                 </form>
 
-                {/* User Stats and Activity */}
+                {/* User Stats and Activity - Sử dụng dữ liệu từ mô hình User trong Spring Boot */}
                 <div className="form-section">
                   <h2>Thống kê sử dụng</h2>
                   <div className="stats-grid">
