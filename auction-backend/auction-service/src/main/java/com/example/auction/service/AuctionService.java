@@ -8,15 +8,17 @@ import com.example.auction.exception.ResourceNotFoundException;
 import com.example.auction.model.Auction;
 import com.example.auction.model.AuctionStatus;
 import com.example.auction.repository.AuctionRepository;
+import com.example.auction.service.IAuctionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @Service
-public class AuctionService {
+public class AuctionService implements IAuctionService{
 
     private final AuctionRepository auctionRepository;
     private final UserClient userClient;
@@ -161,6 +163,14 @@ public class AuctionService {
 
     public List<Auction> findAuctionsByStatus(AuctionStatus status) {
         return auctionRepository.findByStatus(status);
+    }
+
+    @Override
+    public List<AuctionResponseDTO> getAuctionsBySellerId(Long sellerId) {
+        List<Auction> auctions = auctionRepository.findBySellerId(sellerId);
+        return auctions.stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
     }
 
     public void deleteAuction(Long id, Long requesterId) {
