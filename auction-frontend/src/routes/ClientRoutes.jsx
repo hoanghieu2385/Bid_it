@@ -11,11 +11,13 @@ import ResetPassword from '../pages/common/ResetPassword.jsx';
 import About from '../pages/client/About.jsx';
 import Contact from '../pages/client/Contact.jsx';
 import HowItWork from '../pages/client/HowItWork.jsx';
-import Auction from '../pages/client/Auction.jsx';
+import Auctions from '../pages/client/Auctions.jsx';
 import ViewDetail from '../pages/client/ViewDetail.jsx';
 import Blog from '../pages/client/Blog.jsx';
 import BlogPostDetail from '../pages/client/BlogPostDetail.jsx';
 import UserProfile from '../pages/client/UserProfile.jsx';
+import CreateAuctionPage from '../pages/client/auction/CreateAuctionPage.jsx';
+import AuctionDetailPage from '../pages/client/auction/AuctionDetailPage.jsx';
 
 function ClientRoutes() {
 	const location = useLocation();
@@ -35,10 +37,13 @@ function ClientRoutes() {
 				<Route path="/about" element={<About />} />
 				<Route path="/contact" element={<Contact />} />
 				<Route path="/how-it-works" element={<HowItWork />} />
-				<Route path="/auctions" element={<Auction />} />
+				<Route path="/auctions" element={<Auctions />} />
 				<Route path="/auctions/viewdetail" element={<ViewDetail />} />
 				<Route path="/blog" element={<Blog />} />
 				<Route path="/blog/:id" element={<BlogPostDetail />} />
+				<Route path="/auctions/create" element={<CreateAuctionPage />} />
+				<Route path="/auctions/:id" element={<AuctionDetailPage />} />
+
 			</Route>
 		</Routes>
 	);
