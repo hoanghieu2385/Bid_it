@@ -55,16 +55,24 @@ const Header = () => {
 					<div className={`collapse navbar-collapse ${expanded ? 'show' : ''}`} id="client-navbar-nav">
 						<ul className="client-header-nav navbar-nav mx-lg-auto mb-3 mb-lg-0">
 							<li className="nav-item">
-								<Link to="/" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>Home</Link>
+								<Link to="/" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
+									Home
+								</Link>
 							</li>
 							<li className="nav-item">
-								<Link to="/about" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>About Us</Link>
+								<Link to="/about" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
+									About Us
+								</Link>
 							</li>
 							<li className="nav-item">
-								<Link to="/auctions" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>Browse Auctions</Link>
+								<Link to="/auctions" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
+									Browse Auctions
+								</Link>
 							</li>
 							<li className="nav-item">
-								<Link to="/contact" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>Contact</Link>
+								<Link to="/contact" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
+									Contact
+								</Link>
 							</li>
 						</ul>
 
@@ -89,11 +97,6 @@ const Header = () => {
 										<span className="fw-medium">{user.firstName}</span>
 									</button>
 									<ul className={`dropdown-menu dropdown-menu-end ${dropdownOpen ? 'show' : ''}`}>
-										<li>
-											<Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
-												<i className="fas fa-user me-2"></i> Profile
-											</Link>
-										</li>
 										{user.roles?.includes('ADMIN') && (
 											<li>
 												<Link to="/admin/dashboard" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
@@ -101,7 +104,20 @@ const Header = () => {
 												</Link>
 											</li>
 										)}
-										<li><hr className="dropdown-divider" /></li>
+										<li>
+											<Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+												<i className="fas fa-user me-2"></i> Profile
+											</Link>
+										</li>
+										<li>
+											<Link to="/auctions/create" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+												<i className="fas fa-plus-circle me-2"></i> Create Auction
+											</Link>
+										</li>
+
+										<li>
+											<hr className="dropdown-divider" />
+										</li>
 										<li>
 											<button className="dropdown-item text-danger" onClick={handleLogout}>
 												<i className="fas fa-sign-out-alt me-2"></i> Logout
@@ -111,8 +127,16 @@ const Header = () => {
 								</div>
 							) : (
 								<>
-									<Link to="/login" className="client-btn-login btn d-none d-sm-inline-block" onClick={() => setExpanded(false)}>Login</Link>
-									<Link to="/register" className="client-btn-register btn" onClick={() => setExpanded(false)}>Register</Link>
+									<Link
+										to="/login"
+										className="client-btn-login btn d-none d-sm-inline-block"
+										onClick={() => setExpanded(false)}
+									>
+										Login
+									</Link>
+									<Link to="/register" className="client-btn-register btn" onClick={() => setExpanded(false)}>
+										Register
+									</Link>
 								</>
 							)}
 						</div>

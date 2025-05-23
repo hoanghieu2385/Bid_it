@@ -6,7 +6,9 @@ import ProfileInfo from '../../components/client/profile/ProfileInfo';
 import EKYCVerification from '../../components/client/profile/EKYCVerification';
 import AuctionHistory from '../../components/client/profile/AuctionHistory';
 import ChangePassword from '../../components/client/profile/ChangePassword';
-import { FaUser, FaHistory, FaLock } from 'react-icons/fa';
+import MyAuctions from '../../components/client/profile/MyAuctions';
+import ParticipatedAuctions from '../../components/client/profile/ParticipatedAuctions';
+import { FaUser, FaHistory, FaLock, FaGavel, FaClipboardList } from 'react-icons/fa';
 import '../../assets/styles/client/user-profile.css';
 
 const UserProfile = () => {
@@ -51,6 +53,18 @@ const UserProfile = () => {
 								<FaHistory /> Auction History
 							</button>
 							<button
+								className={`sidebar-tab list-group-item ${activeTab === 'my-auctions' ? 'active' : ''}`}
+								onClick={() => setActiveTab('my-auctions')}
+							>
+								<FaGavel /> My Auctions
+							</button>
+							<button
+								className={`sidebar-tab list-group-item ${activeTab === 'participated' ? 'active' : ''}`}
+								onClick={() => setActiveTab('participated')}
+							>
+								<FaClipboardList /> Participated
+							</button>
+							<button
 								className={`sidebar-tab list-group-item ${activeTab === 'password' ? 'active' : ''}`}
 								onClick={() => setActiveTab('password')}
 							>
@@ -65,6 +79,8 @@ const UserProfile = () => {
 							{activeTab === 'info' && <ProfileInfo />}
 							{activeTab === 'ekyc' && <EKYCVerification />}
 							{activeTab === 'history' && <AuctionHistory />}
+							{activeTab === 'my-auctions' && <MyAuctions />}
+							{activeTab === 'participated' && <ParticipatedAuctions />}
 							{activeTab === 'password' && <ChangePassword />}
 						</div>
 					</div>

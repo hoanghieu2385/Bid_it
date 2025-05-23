@@ -1,41 +1,38 @@
-auction-frontend/
-├── public/                     # File tĩnh
-│   ├── index.html             # File HTML chính cho Vite
-│   ├── favicon.ico            # Icon trang web
-│   └── manifest.json          # Cấu hình PWA (nếu có)
-├── src/                       # Nguồn code chính
-│   ├── assets/                # Tài nguyên tĩnh (ảnh, font, CSS)
-│   │   ├── images/            # Hình ảnh
-│   │   ├── fonts/             # Font chữ
-│   │   └── styles/            # CSS tùy chỉnh
-│   │       ├── global.css     # CSS toàn cục
-│   │       ├── client/        # CSS cho client
-│   │       └── admin/         # CSS cho admin
-│   ├── components/            # Các thành phần tái sử dụng
-│   │   ├── common/            # Thành phần dùng chung cho client và admin
-│   │   ├── client/            # Thành phần chỉ dùng cho client
-│   │   └── admin/             # Thành phần chỉ dùng cho admin
-│   ├── layouts/               # Layout riêng cho client và admin
-│   │   ├── clientLayout.jsx
-│   │   └── adminLayout.jsx
-│   ├── pages/                 # Các trang chính của ứng dụng
-│   │   ├── client/            # Chứa các trang cho client
-│   │   └── admin/             # Chứa các trang cho admin
-│   ├── services/              # Logic gọi API
-│   │   ├── api.js             # Cấu hình base API
-│   │   ├── clientApi.js       # Cấu hình client API
-│   │   ├── user-api.js        # Cấu hình admin API
-│   ├── hooks/                 # Custom hooks
-│   │   ├── useAuth.js         # Hook quản lý xác thực
-│   │   └── useRealTime.js     # Hook quản lý realtime bidding
-│   ├── utils/                 # Hàm tiện ích
-│   ├── routes/                # Cấu hình route riêng cho client và admin
-│   │   ├── ClientRoutes.jsx   # Route cho client
-│   │   └── AdminRoutes.jsx    # Route cho admin
-│   ├── App.jsx                # File chính khởi tạo ứng dụng
-│   ├── main.js                # Điểm vào ứng dụng
-│   └── index.css              # CSS toàn cục (import Bootstrap)
-├── vite.config.js             # Cấu hình Vite
-├── package.json               # Cấu hình dependencies và scripts
-├── Dockerfile                 # File để containerize (tùy chọn)
-└── README.md                  # Hướng dẫn cài đặt và chạy
+src/
+├── assets/                     # Static assets like images, fonts, custom stylesheets
+│   ├── images/                 # Image resources (e.g., logos, icons)
+│   ├── styles/                 # Global and scoped CSS
+│   └── react.svg               # Sample SVG asset
+│
+├── components/                # Reusable UI components (not tied to routing)
+│   ├── admin/                 # Admin-specific UI components
+│   ├── client/                # Client-specific UI components
+│   │   ├── home/              # UI components used on the Home page
+│   │   ├── profile/           # Components related to user profile
+│   └── common/                # Shared UI components used by both client and admin
+│
+├── contexts/                  # React context providers (e.g., Auth, Theme)
+│
+├── hooks/                     # Custom React hooks
+│
+├── layout/                    # Layout wrappers for client/admin pages (header, sidebar, etc.)
+│
+├── pages/                     # Main route-based page components
+│   ├── admin/                 # All admin-side pages
+│   ├── client/                # All client-side pages
+│   │   ├── auction/           # Auction-related pages (create, detail, edit)
+│   └── common/                # Pages shared between admin and client (if any)
+│
+├── routes/                    # Route configuration for client/admin
+│   ├── ClientRoutes.jsx       # React Router routes for client side
+│   └── AdminRoutes.jsx        # React Router routes for admin side
+│
+├── services/                  # API service modules to interact with backend
+│
+├── templates/                 # Static HTML templates (e.g., email or verification)
+│
+├── utils/                     # Helper functions and utilities
+│
+├── App.jsx                    # Main React App component
+├── main.js                    # Entry point for Vite + React
+└── index.css                  # Global CSS (including Bootstrap import)
