@@ -21,16 +21,29 @@ const User = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  // Function để tạo tên đầy đủ từ firstName và lastName
+  const getFullName = (user) => {
+    const firstName = user.firstName || "";
+    const lastName = user.lastName || "";
+    
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    } else if (firstName) {
+      return firstName;
+    } else if (lastName) {
+      return lastName;
+    } else {
+      return "Unknown User";
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
     
-    // Hiển thị thông báo thành công nếu có từ trang UserDetail
     if (location.state?.message) {
       setSuccess(location.state.message);
-      // Clear success message after 3 seconds
       setTimeout(() => {
         setSuccess(null);
-        // Clear location state
         navigate(location.pathname, { replace: true });
       }, 3000);
     }
@@ -44,6 +57,14 @@ const User = () => {
     try {
       setLoading(true);
       const data = await getAllUsers();
+      
+      // Debug: Kiểm tra dữ liệu trả về
+      console.log("API Response:", data);
+      if (data.length > 0) {
+        console.log("First user:", data[0]);
+        console.log("Available fields:", Object.keys(data[0]));
+      }
+      
       setUsers(data);
       setFilteredUsers(data);
     } catch (err) {
@@ -57,11 +78,12 @@ const User = () => {
   const filterAndSortUsers = () => {
     let result = [...users];
 
-    // Search by name, email or phone
+    // Search by firstName, lastName, email or phone
     if (searchTerm) {
       result = result.filter(
         (user) =>
-          user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.phoneNumber?.includes(searchTerm)
       );
@@ -92,7 +114,7 @@ const User = () => {
     }
 
     setFilteredUsers(result);
-    setCurrentPage(1); // Reset to first page when filtering
+    setCurrentPage(1);
   };
 
   const handleSearch = (e) => {
@@ -100,21 +122,18 @@ const User = () => {
   };
 
   const handleViewUser = (userId) => {
-    console.log("Navigating to user ID:", userId); // Debug để xem userId
+    console.log("Navigating to user ID:", userId);
     
-    // Kiểm tra userId
     if (!userId) {
       console.error("User ID is missing");
       return;
     }
     
-    // Đảm bảo rằng userId là một giá trị hợp lệ (không phải undefined, null, NaN...)
     if (userId === undefined || userId === null) {
       console.error("Invalid user ID");
       return;
     }
     
-    // Sử dụng đường dẫn chính xác trong định tuyến
     navigate(`/admin/user/${userId}`);
   };
 
@@ -171,17 +190,13 @@ const User = () => {
 
   return (
     <div id="wrapper">
-      {/* Sidebar */}
       <Sidebar />
-      {/* Main Content */}
       <div id="content-wrapper" className="d-flex flex-column" style={{ flex: 1 }}>
         <div id="content">
           <Topbar />
           
-          {/* Begin Page Content */}
           <div className="container-fluid user-management-container">
             
-            {/* Success Alert */}
             {success && (
               <div className="alert alert-success" style={{ 
                 marginBottom: '20px',
@@ -198,7 +213,6 @@ const User = () => {
               </div>
             )}
 
-            {/* Filters and Search */}
             <div className="filters-container">
               <div className="search-container">
                 <FaSearch className="search-icon" />
@@ -264,7 +278,6 @@ const User = () => {
               </div>
             </div>
 
-            {/* User Table */}
             <div className="table-card">
               {loading ? (
                 <div className="loading-container">
@@ -320,17 +333,19 @@ const User = () => {
                                   {user.avatar ? (
                                     <img
                                       src={user.avatar}
-                                      alt={user.username}
+                                      alt={getFullName(user)}
                                       className="avatar-img"
                                     />
                                   ) : (
                                     <div className="avatar-placeholder">
-                                      {user.username?.charAt(0).toUpperCase()}
+                                      {user.firstName?.charAt(0).toUpperCase() || 
+                                       user.lastName?.charAt(0).toUpperCase() || 
+                                       'U'}
                                     </div>
                                   )}
                                 </div>
                                 <div className="user-details">
-                                  <div className="user-name">{user.username || "Unknown User"}</div>
+                                  <div className="user-name">{getFullName(user)}</div>
                                   <div className="user-email">{user.email || "No email"}</div>
                                   <div className="user-status">
                                     <span className={`status-badge ${user.verified ? 'verified' : 'unverified'}`}>
@@ -380,7 +395,7 @@ const User = () => {
                               <button 
                                 className="action-btn view-btn"
                                 onClick={() => {
-                                  console.log("User object:", user); // Kiểm tra đối tượng user
+                                  console.log("User object:", user);
                                   handleViewUser(user.id);
                                 }}
                                 title="Xem chi tiết"
@@ -396,7 +411,6 @@ const User = () => {
                 </div>
               )}
               
-              {/* Pagination */}
               {filteredUsers.length > 0 && (
                 <div className="pagination-container">
                   <div className="rows-per-page">
