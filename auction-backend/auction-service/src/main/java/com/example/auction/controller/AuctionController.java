@@ -89,6 +89,12 @@ public class AuctionController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/seller/{sellerId}")
+    public ResponseEntity<List<AuctionResponseDTO>> getAuctionsBySellerId(@PathVariable Long sellerId) {
+        List<AuctionResponseDTO> response = auctionService.getAuctionsBySellerId(sellerId);
+        return ResponseEntity.ok(response);
+    }
+
     @PutMapping("/{id}/status")
     public ResponseEntity<AuctionResponseDTO> updateAuctionStatus(
             @PathVariable Long id,
