@@ -122,7 +122,7 @@ const CreateAuctionPage = () => {
 			}
 
 			alert('Auction created!');
-			navigate('/profile');
+			navigate('/profile?tab=my-auctions');
 		} catch (err) {
 			console.error(err);
 			alert('Failed to create auction');
