@@ -43,6 +43,24 @@ public class UserController {
         return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/seller/{id}")
+    public ResponseEntity<?> getSellerById(@PathVariable Long id) {
+        Optional<User> userOpt = userService.getSellerById(id);
+        if (userOpt.isEmpty()) return ResponseEntity.notFound().build();
+
+        User user = userOpt.get();
+
+        // Only expose necessary info
+        var response = new Object() {
+            public final Long id = user.getId();
+            public final String fullName = user.getFirstName() + " " + user.getLastName();
+            public final String address = user.getAddress();
+            public final int score = user.getScore();
+        };
+
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<User> createUser(@RequestBody User user) {
