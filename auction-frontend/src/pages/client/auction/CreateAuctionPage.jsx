@@ -7,27 +7,8 @@ import { Tooltip } from 'bootstrap';
 import { UserContext } from '../../../contexts/UserContext';
 import { getAllCategories } from '../../../services/category-api';
 import { createAuction, uploadAuctionImages } from '../../../services/auction-api';
-
-const formatNumber = (value) => {
-	if (!value) return '';
-	return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-};
-
-const unformatNumber = (value) => {
-	return value.replace(/\./g, '');
-};
-
-const CustomNumberInput = ({ field, form, ...props }) => {
-	const handleChange = (e) => {
-		const raw = unformatNumber(e.target.value);
-		if (!/^\d*$/.test(raw)) return;
-		form.setFieldValue(field.name, raw);
-	};
-
-	return (
-		<input {...props} type="text" value={formatNumber(field.value)} onChange={handleChange} className="form-control" />
-	);
-};
+import AuctionTimeAndPrice from '../../../components/client/auction/AuctionTimeAndPrice';
+import AuctionImageUpload from '../../../components/client/auction/AuctionImageUpload';
 
 const CreateAuctionPage = () => {
 	const navigate = useNavigate();
@@ -83,22 +64,6 @@ const CreateAuctionPage = () => {
 		}),
 	});
 
-	const handleImageChange = (e) => {
-		const files = Array.from(e.target.files);
-		setImages(files);
-		setPreviews(files.map((file) => URL.createObjectURL(file)));
-	};
-
-	const handleRemoveImage = (index) => {
-		const newImages = [...images];
-		const newPreviews = [...previews];
-		newImages.splice(index, 1);
-		URL.revokeObjectURL(newPreviews[index]);
-		newPreviews.splice(index, 1);
-		setImages(newImages);
-		setPreviews(newPreviews);
-	};
-
 	const handleSubmit = async (values, { setSubmitting }) => {
 		try {
 			const payload = {
@@ -109,16 +74,13 @@ const CreateAuctionPage = () => {
 				currentBid: Number(values.startingPrice),
 				status: 'UPCOMING',
 				bidCount: 0,
-				imageUrls: [], // placeholder
+				imageUrls: [],
 			};
 
-			// Tạo auction trước
 			const auction = await createAuction(payload, user.id);
 
-			// Sau đó upload ảnh nếu có
 			if (images.length > 0) {
-				const imageUrls = await uploadAuctionImages(auction.id, images);
-				console.log('Uploaded images:', imageUrls);
+				await uploadAuctionImages(auction.id, images);
 			}
 
 			alert('Auction created!');
@@ -131,28 +93,6 @@ const CreateAuctionPage = () => {
 		}
 	};
 
-	const renderSuggestions = (value, setFieldValue, fieldName) => {
-		if (!value) return null;
-		return (
-			<div className="form-text mt-1">
-				Suggest:
-				{['0', '00', '000'].map((s, i) => {
-					const suggestion = `${value}${s}`;
-					return (
-						<span
-							key={i}
-							className="badge bg-light text-dark border ms-2"
-							style={{ cursor: 'pointer' }}
-							onClick={() => setFieldValue(fieldName, suggestion)}
-						>
-							{Number(suggestion).toLocaleString('vi-VN')}
-						</span>
-					);
-				})}
-			</div>
-		);
-	};
-
 	return (
 		<div className="container py-4">
 			<h2 className="mb-4">Create Auction</h2>
@@ -160,27 +100,13 @@ const CreateAuctionPage = () => {
 				{({ values, setFieldValue, isSubmitting }) => (
 					<Form>
 						<div className="mb-3">
-							<label className="form-label">
-								Title
-								<i
-									className="fas fa-circle-info text-secondary ms-1"
-									data-bs-toggle="tooltip"
-									title="A short, descriptive title"
-								/>
-							</label>
+							<label className="form-label">Title</label>
 							<Field type="text" name="title" className="form-control" />
 							<ErrorMessage name="title" component="div" className="text-danger" />
 						</div>
 
 						<div className="mb-3">
-							<label className="form-label">
-								Description
-								<i
-									className="fas fa-circle-info text-secondary ms-1"
-									data-bs-toggle="tooltip"
-									title="Detailed description of the item"
-								/>
-							</label>
+							<label className="form-label">Description</label>
 							<Field as="textarea" name="description" className="form-control" />
 							<ErrorMessage name="description" component="div" className="text-danger" />
 						</div>
@@ -198,33 +124,7 @@ const CreateAuctionPage = () => {
 							<ErrorMessage name="categoryId" component="div" className="text-danger" />
 						</div>
 
-						<div className="row mb-3">
-							<div className="col">
-								<label className="form-label">Start Time</label>
-								<Field type="datetime-local" name="startTime" className="form-control" />
-								<ErrorMessage name="startTime" component="div" className="text-danger" />
-							</div>
-							<div className="col">
-								<label className="form-label">End Time</label>
-								<Field type="datetime-local" name="endTime" className="form-control" />
-								<ErrorMessage name="endTime" component="div" className="text-danger" />
-							</div>
-						</div>
-
-						<div className="row mb-3">
-							<div className="col">
-								<label className="form-label">Starting Price (VNĐ)</label>
-								<Field name="startingPrice" component={CustomNumberInput} />
-								<ErrorMessage name="startingPrice" component="div" className="text-danger" />
-								{renderSuggestions(values.startingPrice, setFieldValue, 'startingPrice')}
-							</div>
-							<div className="col">
-								<label className="form-label">Increment Amount (VNĐ)</label>
-								<Field name="incrementAmount" component={CustomNumberInput} />
-								<ErrorMessage name="incrementAmount" component="div" className="text-danger" />
-								{renderSuggestions(values.incrementAmount, setFieldValue, 'incrementAmount')}
-							</div>
-						</div>
+						<AuctionTimeAndPrice formik={{ values, setFieldValue }} />
 
 						<div className="form-check mb-3">
 							<Field type="checkbox" name="requiresDeposit" className="form-check-input" id="requiresDeposit" />
@@ -236,34 +136,32 @@ const CreateAuctionPage = () => {
 						{values.requiresDeposit && (
 							<div className="mb-3">
 								<label className="form-label">Deposit Amount</label>
-								<Field name="securityDeposit" component={CustomNumberInput} />
+								<Field name="securityDeposit" component={({ field, form }) => {
+									const handleChange = (e) => {
+										const raw = e.target.value.replace(/\./g, '');
+										if (!/^\d*$/.test(raw)) return;
+										form.setFieldValue(field.name, raw);
+									};
+									return (
+										<input
+											{...field}
+											type="text"
+											value={field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+											onChange={handleChange}
+											className="form-control"
+										/>
+									);
+								}} />
 								<ErrorMessage name="securityDeposit" component="div" className="text-danger" />
-								{renderSuggestions(values.securityDeposit, setFieldValue, 'securityDeposit')}
 							</div>
 						)}
 
-						<div className="mb-3">
-							<label className="form-label">Upload Images</label>
-							<input type="file" multiple onChange={handleImageChange} className="form-control" />
-							<div className="d-flex flex-wrap gap-2 mt-2">
-								{previews.map((src, idx) => (
-									<div key={idx} className="position-relative">
-										<img
-											src={src}
-											alt={`preview-${idx}`}
-											width="100"
-											height="100"
-											style={{ objectFit: 'cover', borderRadius: '8px' }}
-										/>
-										<button
-											type="button"
-											className="btn-close position-absolute top-0 end-0"
-											onClick={() => handleRemoveImage(idx)}
-										></button>
-									</div>
-								))}
-							</div>
-						</div>
+						<AuctionImageUpload
+							images={images}
+							setImages={setImages}
+							previews={previews}
+							setPreviews={setPreviews}
+						/>
 
 						<button type="submit" className="btn btn-primary" disabled={isSubmitting}>
 							{isSubmitting ? 'Creating...' : 'Create Auction'}
