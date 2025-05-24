@@ -65,6 +65,10 @@ const CreateAuctionPage = () => {
 	});
 
 	const handleSubmit = async (values, { setSubmitting }) => {
+		if (!window.confirm('Are you sure you want to create this auction?')) {
+			setSubmitting(false);
+			return;
+		}
 		try {
 			const payload = {
 				...values,
@@ -94,81 +98,103 @@ const CreateAuctionPage = () => {
 	};
 
 	return (
-		<div className="container py-4">
-			<h2 className="mb-4">Create Auction</h2>
-			<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
-				{({ values, setFieldValue, isSubmitting }) => (
-					<Form>
-						<div className="mb-3">
-							<label className="form-label">Title</label>
-							<Field type="text" name="title" className="form-control" />
-							<ErrorMessage name="title" component="div" className="text-danger" />
-						</div>
+		<div className="container py-5">
+			<div className="row justify-content-center">
+				<div className="col-lg-10">
+					<div className="bg-white p-4 rounded-4 shadow border">
+						<h3 className="text-center mb-4">Create a New Auction</h3>
+						<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
+							{({ values, setFieldValue, isSubmitting }) => (
+								<Form className="">
+									<div className="row g-3">
+										<div className="col-12">
+											<label className="form-label">Title</label>
+											<Field
+												type="text"
+												name="title"
+												className="form-control"
+												placeholder="e.g. Samsung Galaxy S24 Ultra"
+											/>
+											<ErrorMessage name="title" component="div" className="text-danger small" />
+										</div>
 
-						<div className="mb-3">
-							<label className="form-label">Description</label>
-							<Field as="textarea" name="description" className="form-control" />
-							<ErrorMessage name="description" component="div" className="text-danger" />
-						</div>
+										<div className="col-12">
+											<label className="form-label">Description</label>
+											<Field as="textarea" name="description" className="form-control" rows={6} />
+											<ErrorMessage name="description" component="div" className="text-danger small" />
+										</div>
 
-						<div className="mb-3">
-							<label className="form-label">Category</label>
-							<Field as="select" name="categoryId" className="form-select">
-								<option value="">-- Select --</option>
-								{categories.map((cat) => (
-									<option key={cat.id} value={cat.id}>
-										{cat.name}
-									</option>
-								))}
-							</Field>
-							<ErrorMessage name="categoryId" component="div" className="text-danger" />
-						</div>
+										<div className="col-12">
+											<label className="form-label">Category</label>
+											<Field as="select" name="categoryId" className="form-select">
+												<option value="">-- Select Category --</option>
+												{categories.map((cat) => (
+													<option key={cat.id} value={cat.id}>
+														{cat.name}
+													</option>
+												))}
+											</Field>
+											<ErrorMessage name="categoryId" component="div" className="text-danger small" />
+										</div>
+									</div>
 
-						<AuctionTimeAndPrice formik={{ values, setFieldValue }} />
+									<hr className="my-4" />
 
-						<div className="form-check mb-3">
-							<Field type="checkbox" name="requiresDeposit" className="form-check-input" id="requiresDeposit" />
-							<label htmlFor="requiresDeposit" className="form-check-label">
-								Requires Deposit?
-							</label>
-						</div>
+									<AuctionTimeAndPrice formik={{ values, setFieldValue }} />
 
-						{values.requiresDeposit && (
-							<div className="mb-3">
-								<label className="form-label">Deposit Amount</label>
-								<Field name="securityDeposit" component={({ field, form }) => {
-									const handleChange = (e) => {
-										const raw = e.target.value.replace(/\./g, '');
-										if (!/^\d*$/.test(raw)) return;
-										form.setFieldValue(field.name, raw);
-									};
-									return (
-										<input
-											{...field}
-											type="text"
-											value={field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
-											onChange={handleChange}
-											className="form-control"
-										/>
-									);
-								}} />
-								<ErrorMessage name="securityDeposit" component="div" className="text-danger" />
-							</div>
-						)}
+									<div className="form-check form-switch mt-3">
+										<Field type="checkbox" name="requiresDeposit" className="form-check-input" id="requiresDeposit" />
+										<label htmlFor="requiresDeposit" className="form-check-label">
+											Requires Deposit?
+										</label>
+									</div>
 
-						<AuctionImageUpload
-							images={images}
-							setImages={setImages}
-							previews={previews}
-							setPreviews={setPreviews}
-						/>
+									{values.requiresDeposit && (
+										<div className="mt-2">
+											<label className="form-label">Deposit Amount</label>
+											<Field
+												name="securityDeposit"
+												component={({ field, form }) => {
+													const handleChange = (e) => {
+														const raw = e.target.value.replace(/\./g, '');
+														if (!/^\d*$/.test(raw)) return;
+														form.setFieldValue(field.name, raw);
+													};
+													return (
+														<input
+															{...field}
+															type="text"
+															value={field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+															onChange={handleChange}
+															className="form-control"
+														/>
+													);
+												}}
+											/>
+											<ErrorMessage name="securityDeposit" component="div" className="text-danger small" />
+										</div>
+									)}
 
-						<button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-							{isSubmitting ? 'Creating...' : 'Create Auction'}
-						</button>
-					</Form>
-				)}
-			</Formik>
+									<hr className="my-4" />
+
+									<AuctionImageUpload
+										images={images}
+										setImages={setImages}
+										previews={previews}
+										setPreviews={setPreviews}
+									/>
+
+									<div className="text-center mt-4">
+										<button type="submit" className="btn btn-dark px-5 py-2 rounded-pill" disabled={isSubmitting}>
+											{isSubmitting ? 'Creating...' : 'Create Auction'}
+										</button>
+									</div>
+								</Form>
+							)}
+						</Formik>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 };
