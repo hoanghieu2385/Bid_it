@@ -64,6 +64,10 @@ public class UserService {
         return Optional.empty();
     }
 
+    public Optional<User> getSellerById(Long id) {
+        return userRepository.findById(id);
+    }
+
     public User createUser(User user) {
         // Only admins can create users
         if (!isAdmin()) {
