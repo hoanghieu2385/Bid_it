@@ -6,12 +6,14 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "otps")
 public class Otp {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Thay thế email bằng contact (có thể là email hoặc số điện thoại)
     @Column(nullable = false)
-    private String email;
+    private String contact;
 
     @Column(nullable = false)
     private String code;
@@ -29,10 +31,10 @@ public class Otp {
     public Otp() {
     }
 
-    // Constructor with parameters
-    public Otp(Long id, String email, String code, LocalDateTime expiryDate, Boolean used, OtpType type) {
+    // Full constructor
+    public Otp(Long id, String contact, String code, LocalDateTime expiryDate, Boolean used, OtpType type) {
         this.id = id;
-        this.email = email;
+        this.contact = contact;
         this.code = code;
         this.expiryDate = expiryDate;
         this.used = used;
@@ -48,12 +50,12 @@ public class Otp {
         this.id = id;
     }
 
-    public String getEmail() {
-        return email;
+    public String getContact() {
+        return contact;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setContact(String contact) {
+        this.contact = contact;
     }
 
     public String getCode() {
@@ -88,15 +90,15 @@ public class Otp {
         this.type = type;
     }
 
-    // Optional: Builder method if needed
+    // Builder static method
     public static OtpBuilder builder() {
         return new OtpBuilder();
     }
 
-    // OtpBuilder class to mimic builder pattern
+    // Custom builder class
     public static class OtpBuilder {
         private Long id;
-        private String email;
+        private String contact;
         private String code;
         private LocalDateTime expiryDate;
         private Boolean used = false;
@@ -107,8 +109,8 @@ public class Otp {
             return this;
         }
 
-        public OtpBuilder email(String email) {
-            this.email = email;
+        public OtpBuilder contact(String contact) {
+            this.contact = contact;
             return this;
         }
 
@@ -133,7 +135,7 @@ public class Otp {
         }
 
         public Otp build() {
-            return new Otp(id, email, code, expiryDate, used, type);
+            return new Otp(id, contact, code, expiryDate, used, type);
         }
     }
 }

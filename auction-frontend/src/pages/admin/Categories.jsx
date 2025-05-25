@@ -37,7 +37,7 @@ const Categories = () => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(10);
 
   // Form state for add/edit
   const [formData, setFormData] = useState({
@@ -466,15 +466,7 @@ const Categories = () => {
                           <td className="ps-3">
                             <div className="d-flex align-items-center">
                               <div className="category-icon me-3">
-                                <img
-                                  src={cat.icon}
-                                  alt={cat.name}
-                                  width={32}
-                                  height={32}
-                                  onError={(e) => {
-                                    e.target.src = "";
-                                  }}
-                                />
+                                <i className={`bi ${cat.icon} fs-4 text-primary me-2`}></i>
                               </div>
                               <div>
                                 <div className="fw-medium">{cat.name}</div>

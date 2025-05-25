@@ -23,7 +23,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
-  bool _rememberMe = false;
+  bool _rememberMe = true;
   bool _isLoading = false;
 
   @override

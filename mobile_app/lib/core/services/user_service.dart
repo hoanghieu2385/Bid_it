@@ -30,11 +30,11 @@ class UserService {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return jsonDecode(utf8.decode(response.bodyBytes));
       } else {
         return {
           'error': true,
-          'message': jsonDecode(response.body)['message'] ?? 'Failed to get user info',
+          'message': jsonDecode(utf8.decode(response.bodyBytes))['message'] ?? 'Failed to get user info',
         };
       }
     } on TimeoutException {

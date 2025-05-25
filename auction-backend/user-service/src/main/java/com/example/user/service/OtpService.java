@@ -13,14 +13,15 @@ import java.util.Random;
 public class OtpService {
     private final OtpRepository otpRepository;
     private final EmailService emailService;
+    private final SmsService smsService;
 
     @Value("${otp.expiration.minutes}")
     private int otpExpirationMinutes;
 
-    // Constructor manually created to replace @RequiredArgsConstructor
-    public OtpService(OtpRepository otpRepository, EmailService emailService) {
+    public OtpService(OtpRepository otpRepository, EmailService emailService, SmsService smsService) {
         this.otpRepository = otpRepository;
         this.emailService = emailService;
+        this.smsService = smsService;
     }
 
     public String generateOtp() {
@@ -29,12 +30,13 @@ public class OtpService {
         return String.valueOf(number);
     }
 
+    // 📧 EMAIL VERIFICATION
     public void sendVerificationOtp(String email) {
         String otp = generateOtp();
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(otpExpirationMinutes);
 
         Otp otpEntity = Otp.builder()
-                .email(email)
+                .contact(email)
                 .code(otp)
                 .expiryDate(expiryDate)
                 .used(false)
@@ -45,12 +47,13 @@ public class OtpService {
         emailService.sendAccountVerificationEmail(email, otp);
     }
 
+    // 📧 LOGIN OTP (EMAIL)
     public void sendLoginOtp(String email) {
         String otp = generateOtp();
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(otpExpirationMinutes);
 
         Otp otpEntity = Otp.builder()
-                .email(email)
+                .contact(email)
                 .code(otp)
                 .expiryDate(expiryDate)
                 .used(false)
@@ -61,20 +64,28 @@ public class OtpService {
         emailService.sendLoginOtp(email, otp);
     }
 
-    public boolean verifyOtp(String email, String otp, OtpType type) {
-        Otp otpEntity = otpRepository.findByEmailAndCodeAndTypeAndUsedFalse(email, otp, type)
-                .orElse(null);
-
-        if (otpEntity == null) {
-            return false;
+    // ✅ VERIFY OTP (EMAIL/LOGIN từ DB)
+    public boolean verifyOtp(String contact, String otp, OtpType type) {
+        // Nếu là PHONE_VERIFICATION thì dùng Verify API, không dùng DB
+        if (type == OtpType.PHONE_VERIFICATION) {
+            return smsService.checkOtp(contact, otp); // 📱 Verify qua Twilio
         }
 
-        if (LocalDateTime.now().isAfter(otpEntity.getExpiryDate())) {
+        // EMAIL hoặc LOGIN dùng DB
+        Otp otpEntity = otpRepository.findByContactAndCodeAndTypeAndUsedFalse(contact, otp, type)
+                .orElse(null);
+
+        if (otpEntity == null || LocalDateTime.now().isAfter(otpEntity.getExpiryDate())) {
             return false;
         }
 
         otpEntity.setUsed(true);
         otpRepository.save(otpEntity);
         return true;
+    }
+
+    // 📱 PHONE: gửi OTP qua Twilio Verify API
+    public void sendPhoneVerificationOtp(String phoneNumber) {
+        smsService.sendOtpSms(phoneNumber); // ✅ Không cần sinh OTP nữa
     }
 }

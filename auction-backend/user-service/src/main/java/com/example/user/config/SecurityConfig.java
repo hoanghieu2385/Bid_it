@@ -54,8 +54,11 @@ public class SecurityConfig {
                                 "/auth/login-with-otp",
                                 "/auth/forgot-password",
                                 "/auth/reset-password",
-                                "/auth/change-password"
+                                "/auth/change-password",
+                                "/api/users/verify-phone-otp",
+                                "/api/users/send-phone-otp"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/seller/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(

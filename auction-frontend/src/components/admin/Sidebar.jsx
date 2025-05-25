@@ -159,8 +159,16 @@ const Sidebar = () => {
             <hr className="sidebar-divider d-none d-md-block" />
 
             <li className="nav-item">
-                <Link className="nav-link" to="/users">
+                <Link className="nav-link" to="/admin/users">
                     <span>Users</span>
+                </Link>
+            </li>
+
+            <hr className="sidebar-divider d-none d-md-block" />
+
+            <li className="nav-item">
+                <Link className="nav-link" to="/admin/security">
+                    <span>Security</span>
                 </Link>
             </li>
 
