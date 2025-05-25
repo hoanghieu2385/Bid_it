@@ -11,7 +11,7 @@ class CustomBottomNav extends StatelessWidget {
   const CustomBottomNav({
     super.key,
     required this.currentIndex,
-    required this.onTap,
+    required this.onTap, required String title,
   });
 
   @override

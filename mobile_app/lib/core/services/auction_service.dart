@@ -1,18 +1,17 @@
 // File: auction_service.dart
-// Chức năng: Gọi API liên quan đến phiên đấu giá, bao gồm lấy danh mục, tạo mới, và lọc theo sellerId.
+// Description: Handles API calls related to auctions, including fetching categories, creating auctions,
+// getting all auctions, and filtering auctions by seller ID (my auctions).
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:mobile_app/core/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/auction_model.dart';
 import 'package:mobile_app/core/services/api_service.dart';
 import 'package:mobile_app/core/services/user_service.dart';
-import '../models/auction_model.dart';
 
 class AuctionService {
   static const String baseAuctionUrl = ApiService.auctionBaseUrl;
   static const String categoryUrl = ApiService.categoryBaseUrl;
-  static const String userInfoUrl = ApiService.authBaseUrl;
 
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -48,7 +47,7 @@ class AuctionService {
 
     final user = await UserService.getCurrentUser();
     if (user == null || user['error'] == true) {
-      print("Không lấy được user hoặc phiên hết hạn");
+      print("Failed to retrieve user or session expired");
       return false;
     }
 
@@ -88,6 +87,36 @@ class AuctionService {
     } catch (e) {
       print('[AuctionService] Error: $e');
       rethrow;
+    }
+  }
+
+  static Future<List<Auction>> getMyAuctions() async {
+    final token = await _getToken();
+    final user = await UserService.getCurrentUser();
+
+    if (token == null || user == null || user['id'] == null) {
+      throw Exception('Missing token or user info');
+    }
+
+    final sellerId = user['id'];
+    final url = Uri.parse('$baseAuctionUrl/auctions/seller/$sellerId');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Auction.fromJson(json)).toList();
+      } else {
+        print('[AuctionService] getMyAuctions failed: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('[AuctionService] getMyAuctions error: $e');
+      return [];
     }
   }
 }
