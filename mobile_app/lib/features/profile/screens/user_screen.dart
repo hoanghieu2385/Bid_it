@@ -6,7 +6,7 @@ import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/services/user_service.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
-import 'package:mobile_app/features/auction/screens/watchlist_screen.dart';
+import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
 import 'package:mobile_app/features/auction/screens/bid_history.dart';
 import 'package:mobile_app/features/auction/screens/participated_auctions.dart';
 import 'package:mobile_app/features/profile/screens/profile_screen.dart';

@@ -1,5 +1,5 @@
 // File: lib/core/widgets/custom_bottom_nav.dart
-// Chức năng: BottomNavigationBar tái sử dụng được trong toàn ứng dụng
+// Chức năng: BottomNavigationBar tái sử dụng được trong toàn ứng dụng, đã thêm Watchlist
 
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
@@ -11,7 +11,7 @@ class CustomBottomNav extends StatelessWidget {
   const CustomBottomNav({
     super.key,
     required this.currentIndex,
-    required this.onTap, required String title,
+    required this.onTap,
   });
 
   @override

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
-import 'api_service.dart';
+import 'package:mobile_app/core/services/api_service.dart';
 
 class UserService {
   static const String _baseUrl = ApiService.userBaseUrl;

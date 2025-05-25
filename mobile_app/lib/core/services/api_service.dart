@@ -7,6 +7,7 @@ class ApiService {
   static const String authBaseUrl = '$baseHost/user-service/auth';
   static const String userBaseUrl = '$baseHost/user-service/api/users';
   static const String categoryBaseUrl = '$baseHost/category-service/categories';
+  static const String auctionBaseUrl = '$baseHost/auction-service/api';
   // static const String auctionBaseUrl = '$baseHost/auction-service/api/auctions';
   // static const String paymentBaseUrl = '$baseHost/payment-service/api';
   // static const String notificationWsUrl = 'ws://10.0.2.2:8080/notification-service/ws';

@@ -1,3 +1,6 @@
+// File: login_page.dart
+// Chức năng: Màn hình đăng nhập với giao diện SnackBar được cải tiến và ngôn ngữ tiếng Anh.
+
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/utils/navigation.dart';
@@ -45,24 +48,40 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (result != null && result['error'] != true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login successful')),
-        );
-        await Future.delayed(const Duration(milliseconds: 600));
-
+        _showSnackbar("Welcome back! You have signed in successfully.");
+        await Future.delayed(const Duration(milliseconds: 700));
         navigateTo(context, const HomePage());
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result?['message'] ?? 'Invalid email or password')),
-        );
+        _showSnackbar(result?['message'] ?? "Invalid email or password.");
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+    } catch (_) {
+      _showSnackbar("Unable to connect. Please check your internet connection.");
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        behavior: SnackBarBehavior.floating,
+        elevation: 6,
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
   }
 
   @override
