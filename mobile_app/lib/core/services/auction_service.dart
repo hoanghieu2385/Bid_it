@@ -60,7 +60,7 @@ class AuctionService {
 
     auctionData['sellerId'] = sellerId;
 
-    final url = Uri.parse('$baseAuctionUrl/auctions');
+    final url = Uri.parse('$baseAuctionUrl/auctions?requesterId=$sellerId');
     final res = await http.post(
       url,
       headers: {
