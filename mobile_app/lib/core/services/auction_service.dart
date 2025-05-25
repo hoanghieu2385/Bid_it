@@ -1,12 +1,13 @@
 // File: auction_service.dart
-// Chức năng: Gọi API liên quan đến phiên đấu giá, bao gồm lấy danh mục, tạo mới, lọc theo sellerId (my auctions) và toàn bộ danh sách.
+// Description: Handles API calls related to auctions, including fetching categories, creating auctions,
+// getting all auctions, and filtering auctions by seller ID (my auctions).
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auction_model.dart';
-import 'api_service.dart';
-import 'user_service.dart';
+import 'package:mobile_app/core/services/api_service.dart';
+import 'package:mobile_app/core/services/user_service.dart';
 
 class AuctionService {
   static const String baseAuctionUrl = ApiService.auctionBaseUrl;
@@ -46,7 +47,7 @@ class AuctionService {
 
     final user = await UserService.getCurrentUser();
     if (user == null || user['error'] == true) {
-      print("Không lấy được user hoặc phiên hết hạn");
+      print("Failed to retrieve user or session expired");
       return false;
     }
 

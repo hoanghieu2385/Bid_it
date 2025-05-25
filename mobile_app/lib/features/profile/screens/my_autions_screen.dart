@@ -1,10 +1,12 @@
 // File: my_auctions_page.dart
-// Chức năng: Hiển thị danh sách các phiên đấu giá do người dùng tạo ra, có nút quay lại về UserPage.
+// Description: Displays a list of auctions created by the current user, with a back button to return to the UserPage.
 
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
 import 'package:mobile_app/core/services/auction_service.dart';
 import 'package:mobile_app/features/profile/screens/user_screen.dart';
+
+import '../../home/screens/home_screen.dart';
 
 class MyAuctionsPage extends StatefulWidget {
   const MyAuctionsPage({super.key});
@@ -32,7 +34,7 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
           onPressed: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const UserPage()),
+              MaterialPageRoute(builder: (context) => const HomePage()),
             );
           },
         ),
@@ -52,13 +54,13 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Lỗi khi tải dữ liệu: ${snapshot.error}'));
+            return Center(child: Text('Failed to load data: ${snapshot.error}'));
           }
 
           final myAuctions = snapshot.data ?? [];
 
           if (myAuctions.isEmpty) {
-            return const Center(child: Text('Bạn chưa tạo phiên đấu giá nào.'));
+            return const Center(child: Text('You have not created any auctions yet.'));
           }
 
           return ListView.builder(
@@ -85,7 +87,7 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                   ),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
-                    // Tùy chọn: mở trang chi tiết phiên đấu giá
+                    // Optional: navigate to auction detail page
                   },
                 ),
               );
