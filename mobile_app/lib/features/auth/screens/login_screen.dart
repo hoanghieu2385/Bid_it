@@ -1,10 +1,13 @@
+// File: login_page.dart
+// Chức năng: Màn hình đăng nhập với giao diện SnackBar được cải tiến và ngôn ngữ tiếng Anh.
+
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/utils/navigation.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/register_screen.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
+import 'package:mobile_app/features/auth/screens/forgot_password_screen.dart';
 import 'package:mobile_app/core/services/auth_service.dart';
 import '../../home/screens/home_screen.dart';
 
@@ -20,7 +23,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
-  bool _rememberMe = false;
+  bool _rememberMe = true;
   bool _isLoading = false;
 
   @override
@@ -41,27 +44,45 @@ class _LoginPageState extends State<LoginPage> {
       final result = await AuthService.login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
+        rememberMe: _rememberMe,
       );
 
-      if (result != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login successful')),
-        );
+      if (result != null && result['error'] != true) {
+        _showSnackbar("Welcome back! You have signed in successfully.");
+        await Future.delayed(const Duration(milliseconds: 700));
         navigateTo(context, const HomePage());
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid email or password')),
-        );
+        _showSnackbar(result?['message'] ?? "Invalid email or password.");
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+    } catch (_) {
+      _showSnackbar("Unable to connect. Please check your internet connection.");
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        behavior: SnackBarBehavior.floating,
+        elevation: 6,
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +144,6 @@ class _LoginPageState extends State<LoginPage> {
                     obscureText: !_isPasswordVisible,
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Please enter your password';
-                      if (value.length < 6) return 'Password must be at least 6 characters';
                       return null;
                     },
                   ),
@@ -163,9 +183,9 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () => navigateTo(context, const ForgotPasswordScreen()),
                         child: const Text(
-                          'Forget password?',
+                          'Forgot password?',
                           style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
                         ),
                       ),

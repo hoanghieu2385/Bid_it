@@ -1,8 +1,10 @@
+// lib/features/auth/screens/register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/login_screen.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
+import 'package:mobile_app/features/auth/screens/forgot_password_screen.dart';
 import 'package:mobile_app/core/services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -37,13 +39,24 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  void _showSnackBar(String message, {bool success = false}) {
+    final backgroundColor = success ? Colors.green : Colors.red;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      ),
+    );
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (!_isTermsAccepted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please agree to the terms and conditions')),
-      );
+      _showSnackBar('You must agree to the terms and conditions');
       return;
     }
 
@@ -55,28 +68,22 @@ class _RegisterPageState extends State<RegisterPage> {
         password: _passwordController.text.trim(),
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        phoneNumber: _phoneNumberController.text.trim(),
-
       );
 
-      if (result != null) {
+      if (result != null && result['error'] != true) {
         if (!mounted) return;
+        _showSnackBar('Registration successful! Please verify your email.', success: true);
+        await Future.delayed(const Duration(seconds: 2));
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const LoginPage()),
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful. Please log in.')),
-        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration failed.')),
-        );
+        String errorMsg = result?['message'] ?? 'Registration failed.';
+        _showSnackBar(errorMsg);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      _showSnackBar('Error: ${e.toString()}');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -122,8 +129,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             filled: true,
                             fillColor: Colors.white,
                           ),
-                          validator: (value) =>
-                          value == null || value.isEmpty ? 'Enter first name' : null,
+                          validator: (value) => value == null || value.isEmpty ? 'Enter first name' : null,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -136,8 +142,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             filled: true,
                             fillColor: Colors.white,
                           ),
-                          validator: (value) =>
-                          value == null || value.isEmpty ? 'Enter last name' : null,
+                          validator: (value) => value == null || value.isEmpty ? 'Enter last name' : null,
                         ),
                       ),
                     ],
@@ -160,22 +165,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
-                    controller: _phoneNumberController,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone Number',
-                      border: OutlineInputBorder(),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Enter phone number';
-                      if (!RegExp(r'^[0-9]{9,11}$').hasMatch(value)) return 'Invalid phone number';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
                     decoration: InputDecoration(
@@ -184,10 +173,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       filled: true,
                       fillColor: Colors.white,
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.grey,
-                        ),
+                        icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
                         onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                       ),
                     ),
@@ -207,12 +193,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       filled: true,
                       fillColor: Colors.white,
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.grey,
-                        ),
-                        onPressed: () =>
-                            setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
+                        icon: Icon(_isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
+                        onPressed: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
                       ),
                     ),
                     validator: (value) {
@@ -226,8 +208,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     children: [
                       Checkbox(
                         value: _isTermsAccepted,
-                        onChanged: (value) =>
-                            setState(() => _isTermsAccepted = value ?? false),
+                        onChanged: (value) => setState(() => _isTermsAccepted = value ?? false),
                       ),
                       const Text('I agree to the ', style: TextStyle(color: AppColors.black)),
                       GestureDetector(
@@ -265,6 +246,16 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                      ),
+                      child: const Text('Forgot Password?', style: TextStyle(color: Colors.orange)),
+                    ),
+                  )
                 ],
               ),
             ),

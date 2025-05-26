@@ -71,10 +71,10 @@ const ChangePassword = () => {
 			setLoading(true);
 			const user = await getCurrentUser();
 			await changePassword(user.email, form.currentPassword, form.newPassword);
-			setMessage('✅ Password changed successfully!');
+			setMessage('Password changed successfully!');
 			setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
 		} catch {
-			setMessage('❌ Failed to change password. Please check your current password.');
+			setMessage('Failed to change password. Please check your current password.');
 		} finally {
 			setLoading(false);
 		}

@@ -6,6 +6,9 @@ import Dashboard from '../pages/admin/Dashboard.jsx';
 import Auctions from '../pages/admin/Auctions.jsx';
 import AuctionDetail from '../pages/admin/AuctionDetail.jsx';
 import Categories from '../pages/admin/Categories.jsx';
+import User from '../pages/admin/User.jsx';
+import UserDetail from '../pages/admin/UserDetail.jsx';
+import Security from '../pages/admin/Security.jsx';
 
 function AdminRoutes() {
 	const { user, loading } = useContext(UserContext);
@@ -22,6 +25,9 @@ function AdminRoutes() {
 			<Route path="/auctions" element={<Auctions />} />
 			<Route path="/auction/:id" element={<AuctionDetail />} />
 			<Route path="/categories" element={<Categories />} />
+			<Route path="/users" element={<User />} />
+      		<Route path="/user/:userId" element={<UserDetail />} />
+			<Route path="/security" element={<Security />} />
 		</Routes>
 	);
 }

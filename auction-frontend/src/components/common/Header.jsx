@@ -1,5 +1,5 @@
 // src/components/common/Header.jsx
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaBars, FaTimes } from 'react-icons/fa';
 import logoImage from '../../assets/images/Logo2.png';
@@ -8,12 +8,27 @@ import { UserContext } from '../../contexts/UserContext.jsx';
 
 const Header = () => {
 	const [expanded, setExpanded] = useState(false);
+	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const { user, logoutUser } = useContext(UserContext);
+	const dropdownRef = useRef();
 
 	const handleLogout = () => {
 		logoutUser();
 		window.location.href = '/login';
 	};
+
+	// 👉 Close dropdown on outside click
+	useEffect(() => {
+		const handleClickOutside = (event) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+				setDropdownOpen(false);
+			}
+		};
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside);
+		};
+	}, []);
 
 	return (
 		<header className="client-header">
@@ -70,26 +85,39 @@ const Header = () => {
 							</div>
 
 							{user ? (
-								<div className="dropdown user-dropdown">
+								<div className="dropdown user-dropdown" ref={dropdownRef}>
 									<button
 										className="btn user-dropdown-toggle d-flex align-items-center"
 										type="button"
-										id="userDropdown"
-										data-bs-toggle="dropdown"
-										aria-expanded="false"
+										onClick={() => setDropdownOpen(!dropdownOpen)}
 									>
 										<div className="user-initial bg-primary text-white rounded-circle me-2">
 											{user.firstName?.charAt(0).toUpperCase()}
 										</div>
 										<span className="fw-medium">{user.firstName}</span>
 									</button>
-									<ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+									<ul className={`dropdown-menu dropdown-menu-end ${dropdownOpen ? 'show' : ''}`}>
+										{user.roles?.includes('ADMIN') && (
+											<li>
+												<Link to="/admin/dashboard" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+													<i className="fas fa-tools me-2"></i> Admin Dashboard
+												</Link>
+											</li>
+										)}
 										<li>
-											<Link to="/profile" className="dropdown-item" onClick={() => setExpanded(false)}>
+											<Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
 												<i className="fas fa-user me-2"></i> Profile
 											</Link>
 										</li>
-										<li><hr className="dropdown-divider" /></li>
+										<li>
+											<Link to="/auctions/create" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+												<i className="fas fa-plus-circle me-2"></i> Create Auction
+											</Link>
+										</li>
+
+										<li>
+											<hr className="dropdown-divider" />
+										</li>
 										<li>
 											<button className="dropdown-item text-danger" onClick={handleLogout}>
 												<i className="fas fa-sign-out-alt me-2"></i> Logout
@@ -99,7 +127,11 @@ const Header = () => {
 								</div>
 							) : (
 								<>
-									<Link to="/login" className="client-btn-login btn d-none d-sm-inline-block" onClick={() => setExpanded(false)}>
+									<Link
+										to="/login"
+										className="client-btn-login btn d-none d-sm-inline-block"
+										onClick={() => setExpanded(false)}
+									>
 										Login
 									</Link>
 									<Link to="/register" className="client-btn-register btn" onClick={() => setExpanded(false)}>

@@ -236,3 +236,20 @@ svg {
 nav ul li button span.absolute {
   background-color: #ff6b6b;
 }
+/* === Logout link style === */
+.logout-link {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1.5rem;
+  color: #e74a3b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.logout-link:hover {
+  background-color: #f8d7da;
+  color: #c82333;
+  text-decoration: none;
+}

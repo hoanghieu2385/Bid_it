@@ -37,7 +37,7 @@ function Login() {
 				loginUser(userData);
 				setMessage('Login successful!');
 				if (userData.roles.includes('ADMIN')) {
-					navigate('/admin');
+					navigate('/admin/dashboard');
 				} else {
 					navigate('/');
 				}
