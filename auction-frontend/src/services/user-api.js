@@ -80,31 +80,6 @@ export const getSellerById = async (sellerId) => {
   const response = await api.get(`${API_CONFIG.USER_API}/seller/${sellerId}`);
   return response.data;
 };
-export const getVerifyRequests = async () => {
-    const token = Cookies.get('jwt');
-    const response = await api.get('/api/users/verify-requests', {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-    return response.data;
-};
 
-export const approveUserCCCD = async (userId) => {
-    const token = Cookies.get('jwt');
-    return api.post(`/api/users/${userId}/verify/approve`, {}, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-};
 
-export const denyUserCCCD = async (userId) => {
-    const token = Cookies.get('jwt');
-    return api.post(`/api/users/${userId}/verify/deny`, {}, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-};
 

@@ -29,7 +29,7 @@ function AdminRoutes() {
 			<Route path="/users" element={<User />} />
       		<Route path="/user/:userId" element={<UserDetail />} />
 			<Route path="/security" element={<Security />} />
-			<Route path="/admin/verify-requests" element={<VerifyRequests />} />
+			<Route path="/verify-requests" element={<VerifyRequests />} />
 
 		</Routes>
 	);

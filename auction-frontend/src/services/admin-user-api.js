@@ -1,6 +1,8 @@
 // src/services/admin-user-api.js - Phiên bản đơn giản hóa
 import api from './api';
 import API_CONFIG from './apiConfig';
+import Cookies from "js-cookie";
+import axios from "axios";
 
 // Lấy danh sách tất cả người dùng (Admin only)
 export const getAllUsers = async () => {
@@ -69,4 +71,32 @@ export const resetUserPassword = async (userId) => {
   // throw new Error('Backend chưa có endpoint POST /api/users/{id}/reset-password');
   const response = await api.post(`${API_CONFIG.USER_API}/${userId}/reset-password`);
   return response.data;
+};
+
+export const getVerifyRequests = async () => {
+  const token = Cookies.get('jwt');
+  const response = await axios.get('http://localhost:8082/api/users/verify-requests', {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return response.data;
+};
+
+export const denyUserCCCD = async (userId) => {
+  const token = Cookies.get('jwt');
+  return axios.post(`http://localhost:8082/api/users/${userId}/verify/deny`, {}, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+};
+
+export const approveUserCCCD = async (userId) => {
+  const token = Cookies.get('jwt');
+  return axios.post(`http://localhost:8082/api/users/${userId}/verify/approve`, {}, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
 };
