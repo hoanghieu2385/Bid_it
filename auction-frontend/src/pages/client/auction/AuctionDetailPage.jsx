@@ -1,7 +1,7 @@
 // src/pages/client/auction/AuctionDetailPage.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getAuctionById, getAllAuctions } from '../../../services/auction-api';
+import { getAllAuctions } from '../../../services/auction-api';
 import { getSellerById } from '../../../services/user-api';
 // import '../../../assets/styles/client/auction-detail.css'; // chưa có
 
@@ -21,7 +21,7 @@ const AuctionDetailPage = () => {
 
 		const fetchAuction = async () => {
 			try {
-				const data = await getAuctionById(id);
+				const data = await getSellerById(id);
 				setAuction(data);
 				startCountdown(data.endTime);
 				fetchSeller(data.sellerId);

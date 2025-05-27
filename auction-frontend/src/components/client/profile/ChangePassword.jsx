@@ -82,7 +82,7 @@ const ChangePassword = () => {
 
 	return (
 		<div className="change-password-container">
-			<h5 className="change-password-title">Change Your Password</h5>
+			<h5 className="change-password-title text-primary fw-bold">Change Your Password</h5>
 
 			{['currentPassword', 'newPassword', 'confirmPassword'].map((field) => {
 				const labelMap = {
@@ -114,7 +114,7 @@ const ChangePassword = () => {
 			})}
 
 			<button className="btn-submit-password" onClick={handleSubmit} disabled={loading}>
-				{loading ? 'Updating...' : 'Update Password'}
+				{loading ? 'Updating...' : 'Update'}
 			</button>
 
 			{message && <div className={`mt-3 fw-bold ${message.startsWith('✅') ? 'text-success' : 'text-danger'}`}>{message}</div>}

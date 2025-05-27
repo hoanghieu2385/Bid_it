@@ -96,7 +96,7 @@ const Categories = () => {
 						{categories.map((category) => (
 							<div key={category.id} className="categories-item-wrapper">
 								<Link
-									to={`/category?name=${encodeURIComponent(category.name)}`}
+									to={`/auctions?categoryId=${category.id}`}
 									className="categories-item d-flex flex-column align-items-center text-decoration-none"
 								>
 									<div className="categories-item-icon mb-2 text-secondary d-flex align-items-center justify-content-center">
