@@ -1,9 +1,12 @@
 // src/components/client/profile/ProfileInfo.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import useToastMessage from '../../../hooks/useToastMessage';
 import { getCurrentUser, updateUserProfile } from '../../../services/user-api';
 
 const ProfileInfo = () => {
+	const { showSuccess, showError } = useToastMessage();
+
 	const [user, setUser] = useState(null);
 	const [editMode, setEditMode] = useState(false);
 	const [provinces, setProvinces] = useState([]);
@@ -133,7 +136,7 @@ const ProfileInfo = () => {
 		});
 
 		if (!provinceValid || !districtValid || !wardValid || !detailValid) {
-			alert('Please complete all address fields before saving.');
+			showError('Please complete all address fields before saving.');
 			return;
 		}
 
@@ -149,11 +152,11 @@ const ProfileInfo = () => {
 				address: fullAddress,
 			});
 			setForm({ ...form, address: fullAddress });
-			alert('Profile updated successfully');
+			showSuccess('Profile updated successfully!');
 			setEditMode(false);
 		} catch (error) {
 			console.error('Update failed:', error);
-			alert('Failed to update profile');
+			showError('Failed to update profile. Please try again later.');
 		}
 	};
 
@@ -175,7 +178,7 @@ const ProfileInfo = () => {
 						className="form-control"
 						name="firstName"
 						value={form.firstName}
-					 onChange={handleChange}
+						onChange={handleChange}
 						disabled={!editMode}
 					/>
 				</div>
