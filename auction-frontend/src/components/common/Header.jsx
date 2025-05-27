@@ -1,8 +1,8 @@
-// src/components/common/Header.jsx
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaBars, FaTimes } from 'react-icons/fa';
 import logoImage from '../../assets/images/Logo2.png';
+import defaultAvatar from '../../assets/images/default-avatar.png';
 import '../../assets/styles/client/header.css';
 import { UserContext } from '../../contexts/UserContext.jsx';
 
@@ -17,7 +17,7 @@ const Header = () => {
 		window.location.href = '/login';
 	};
 
-	// 👉 Close dropdown on outside click
+	// Close dropdown on outside click
 	useEffect(() => {
 		const handleClickOutside = (event) => {
 			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -77,6 +77,7 @@ const Header = () => {
 						</ul>
 
 						<div className="client-header-actions d-flex align-items-center gap-3">
+							{/* Search (only on desktop) */}
 							<div className="input-group w-auto d-none d-lg-flex">
 								<span className="input-group-text bg-white border-end-0">
 									<FaSearch className="text-muted" />
@@ -91,9 +92,17 @@ const Header = () => {
 										type="button"
 										onClick={() => setDropdownOpen(!dropdownOpen)}
 									>
-										<div className="user-initial bg-primary text-white rounded-circle me-2">
-											{user.firstName?.charAt(0).toUpperCase()}
-										</div>
+										<img
+											src={user.avatarUrl || defaultAvatar}
+											alt="Avatar"
+											className="rounded-circle me-2"
+											style={{
+												width: '36px',
+												height: '36px',
+												objectFit: 'cover',
+												border: '2px solid #dee2e6',
+											}}
+										/>
 										<span className="fw-medium">{user.firstName}</span>
 									</button>
 									<ul className={`dropdown-menu dropdown-menu-end ${dropdownOpen ? 'show' : ''}`}>
@@ -114,10 +123,7 @@ const Header = () => {
 												<i className="fas fa-plus-circle me-2"></i> Create Auction
 											</Link>
 										</li>
-
-										<li>
-											<hr className="dropdown-divider" />
-										</li>
+										<li><hr className="dropdown-divider" /></li>
 										<li>
 											<button className="dropdown-item text-danger" onClick={handleLogout}>
 												<i className="fas fa-sign-out-alt me-2"></i> Logout
