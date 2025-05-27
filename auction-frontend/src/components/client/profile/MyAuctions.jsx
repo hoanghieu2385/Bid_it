@@ -1,8 +1,9 @@
-// File: src/components/client/profile/MyAuctions.jsx
+// src/components/client/profile/MyAuctions.jsx
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getAuctionsBySeller } from '../../../services/auction-api';
 import { UserContext } from '../../../contexts/UserContext';
+import useToastMessage from '../../../hooks/useToastMessage';
 
 const DISPLAY_STATUSES = ['UPCOMING', 'OPENED', 'CLOSED', 'SOLD', 'FAILED', 'COMPLETED'];
 const ITEMS_PER_PAGE = 6;
@@ -21,9 +22,10 @@ const getStatusBadgeClass = (status) => {
 
 const MyAuctions = () => {
 	const { user } = useContext(UserContext);
+	const { showError } = useToastMessage();
+
 	const [auctions, setAuctions] = useState([]);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState(null);
 	const [filterStatus, setFilterStatus] = useState('');
 	const [currentPage, setCurrentPage] = useState(1);
 	const hasFetchedRef = useRef(false);
@@ -41,14 +43,14 @@ const MyAuctions = () => {
 				setAuctions(filtered);
 			} catch (err) {
 				console.error('MyAuctions fetch error:', err);
-				setError('Failed to load your auctions.');
+				showError('Failed to load your auctions.');
 			} finally {
 				setLoading(false);
 			}
 		};
 
 		fetchData();
-	}, [user?.id]);
+	}, [user?.id, showError]);
 
 	const filteredAuctions = filterStatus
 		? auctions.filter((a) => a.status === filterStatus)
@@ -63,8 +65,8 @@ const MyAuctions = () => {
 	const handlePageChange = (page) => setCurrentPage(page);
 
 	if (loading) return <div>Loading your auctions...</div>;
-	if (error) return <div className="text-danger">{error}</div>;
-	if (filteredAuctions.length === 0) return <div>You have not created any auctions yet.</div>;
+	if (!loading && auctions.length === 0)
+		return <div>You have not created any auctions yet.</div>;
 
 	return (
 		<div>
