@@ -477,7 +477,9 @@ const Auctions = () => {
                 {loading ? (
                   <tr>
                     <td colSpan="8" className="loading-row">
-                      <div className="loading-spinner">Loading...</div>
+                      <div className="centered-loading">
+                        <span>Loading auctions, please wait...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : currentAuctions.length === 0 ? (
