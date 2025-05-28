@@ -1,4 +1,4 @@
-// src/contexts/UserContext.jsx
+// File: src/contexts/UserContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
 import { getCurrentUser } from '../services/user-api';
 
@@ -18,7 +18,12 @@ export const UserProvider = ({ children }) => {
 
 			try {
 				const userData = await getCurrentUser();
-				setUser(userData);
+				// Set user data only if it has changed
+				setUser((prevUser) => {
+					if (JSON.stringify(prevUser) === JSON.stringify(userData)) return prevUser;
+					return userData;
+				});
+
 			} catch (error) {
 				console.error('[UserContext] Error fetching user:', error?.response?.status);
 				localStorage.removeItem('jwt');

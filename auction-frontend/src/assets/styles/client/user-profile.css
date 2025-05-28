@@ -1,42 +1,155 @@
 /* src/assets/styles/client/user-profile.css */
 
+/* ============ Wrapper ============ */
 .user-profile-wrapper {
-    min-height: 100vh; /* Ensure enough height for pages with short content */
+    min-height: 100vh;
+    background: linear-gradient(to bottom right, #eef2f7, #f9f9fb);
+    padding: 40px 20px;
 }
 
+/* ============ Container ============ */
+.user-profile-container {
+    background-color: transparent;
+}
+
+/* ============ Sidebar ============ */
 .user-profile-sidebar {
-    border-right: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 16px;
+    padding: 24px 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    transition: transform 0.3s ease;
 }
 
+.user-profile-sidebar:hover {
+    transform: translateY(-2px);
+}
+
+/* Avatar */
+.user-profile-sidebar img {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #dee2e6;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    margin-bottom: 12px;
+    transition: all 0.3s ease-in-out;
+}
+
+.user-profile-sidebar h5 {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #343a40;
+    margin-bottom: 0;
+}
+
+.user-profile-sidebar p {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 16px;
+}
+
+/* Sidebar Tabs */
 .user-profile-sidebar .list-group-item {
     border: none;
-    border-radius: 0;
+    border-radius: 8px;
     font-weight: 500;
-    color: #555;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    color: #495057;
+    background-color: transparent;
+    transition: all 0.2s ease-in-out;
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 10px;
-}
-
-.user-profile-sidebar .list-group-item.active {
-    background-color: #007bff;
-    color: white;
+    padding: 10px 16px;
 }
 
 .user-profile-sidebar .list-group-item:hover {
-    background-color: #f1f1f1;
+    background: #e9efff;
+    color: #2e59d9;
 }
 
+.user-profile-sidebar .list-group-item.active {
+    background: linear-gradient(135deg, #4e73df, #224abe);
+    color: white;
+    box-shadow: 0 4px 12px rgba(78, 115, 223, 0.3);
+}
+
+/* ============ Content ============ */
 .user-profile-content .card {
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    border-radius: 8px;
+    background-color: white;
     border: none;
+    border-radius: 16px;
+    padding: 32px 24px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+    animation: fadeIn 0.3s ease-in-out;
+    min-height: 480px;
 }
 
 .user-profile-section-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 1rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #343a40;
+    margin-bottom: 24px;
+}
+
+/* ============ Animation ============ */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============ Responsive ============ */
+
+/* Tablet & below */
+@media (max-width: 991.98px) {
+    .user-profile-sidebar {
+        margin-bottom: 20px;
+    }
+
+    .user-profile-sidebar .list-group-item {
+        justify-content: center;
+    }
+
+    .user-profile-sidebar img {
+        width: 80px;
+        height: 80px;
+    }
+
+    .user-profile-sidebar h5 {
+        font-size: 1rem;
+    }
+
+    .user-profile-sidebar p {
+        font-size: 0.8rem;
+    }
+}
+
+/* Mobile */
+@media (max-width: 767.98px) {
+    .user-profile-sidebar {
+        padding: 20px 12px;
+    }
+
+    .user-profile-sidebar .list-group-item {
+        padding: 10px;
+        font-size: 0.95rem;
+    }
+
+    .user-profile-content .card {
+        padding: 24px 16px;
+    }
+
+    .user-profile-section-title {
+        font-size: 1.2rem;
+        text-align: center;
+    }
 }

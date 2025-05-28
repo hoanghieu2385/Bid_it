@@ -1,4 +1,5 @@
 // src/components/client/UserProfile.jsx
+
 import React, { useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserContext } from '../../contexts/UserContext.jsx';
@@ -9,18 +10,15 @@ import MyAuctions from '../../components/client/profile/MyAuctions';
 import ParticipatedAuctions from '../../components/client/profile/ParticipatedAuctions';
 import { FaUser, FaHistory, FaLock, FaGavel, FaClipboardList } from 'react-icons/fa';
 import '../../assets/styles/client/user-profile.css';
+import defaultAvatar from '../../assets/images/default-avatar.png';
 
 const UserProfile = () => {
-	// context
 	const { user, loading } = useContext(UserContext);
-
-	// router
 	const navigate = useNavigate();
 	const location = useLocation();
 	const queryParams = new URLSearchParams(location.search);
 	const currentTab = queryParams.get('tab') || 'info';
 
-	// chuyển tab và cập nhật URL
 	const changeTab = (tabName) => {
 		queryParams.set('tab', tabName);
 		navigate({ search: queryParams.toString() });
@@ -40,31 +38,43 @@ const UserProfile = () => {
 		<div className="user-profile-wrapper py-4">
 			<div className="container user-profile-container">
 				<div className="row">
-					{/* Sidebar */}
+					{/* Sidebar with Avatar */}
 					<div className="col-md-3 mb-4">
-						<div className="user-profile-sidebar list-group shadow-sm">
-							<button className={`sidebar-tab list-group-item ${currentTab === 'info' ? 'active' : ''}`} onClick={() => changeTab('info')}>
-								<FaUser /> Profile Info
-							</button>
-							<button className={`sidebar-tab list-group-item ${currentTab === 'ekyc' ? 'active' : ''}`} onClick={() => changeTab('ekyc')}>
-								<i className="fa-solid fa-id-card me-2" style={{ color: '#d1d3e2' }} />
-								eKYC Verification
-							</button>
-							<button className={`sidebar-tab list-group-item ${currentTab === 'my-auctions' ? 'active' : ''}`} onClick={() => changeTab('my-auctions')}>
-								<FaGavel /> My Auctions
-							</button>
-							<button className={`sidebar-tab list-group-item ${currentTab === 'participated' ? 'active' : ''}`} onClick={() => changeTab('participated')}>
-								<FaClipboardList /> Participated
-							</button>
-							<button className={`sidebar-tab list-group-item ${currentTab === 'password' ? 'active' : ''}`} onClick={() => changeTab('password')}>
-								<FaLock /> Change Password
-							</button>
+						<div className="user-profile-sidebar shadow-sm p-3 rounded bg-white">
+							<div className="text-center mb-3">
+								<img
+									src={defaultAvatar}
+									alt="Avatar"
+									className="rounded-circle mb-2"
+									style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+								/>
+								<h5 className="fw-bold">{user?.firstName || 'User'}</h5>
+								<p className="text-muted small mb-0">{user?.email}</p>
+							</div>
+							<div className="list-group mt-3">
+								<button className={`sidebar-tab list-group-item ${currentTab === 'info' ? 'active' : ''}`} onClick={() => changeTab('info')}>
+									<FaUser className="me-2" /> Profile Info
+								</button>
+								<button className={`sidebar-tab list-group-item ${currentTab === 'ekyc' ? 'active' : ''}`} onClick={() => changeTab('ekyc')}>
+									<i className="fa-solid fa-id-card me-2" style={{ color: '#d1d3e2' }} />
+									eKYC Verification
+								</button>
+								<button className={`sidebar-tab list-group-item ${currentTab === 'my-auctions' ? 'active' : ''}`} onClick={() => changeTab('my-auctions')}>
+									<FaGavel className="me-2" /> My Auctions
+								</button>
+								<button className={`sidebar-tab list-group-item ${currentTab === 'participated' ? 'active' : ''}`} onClick={() => changeTab('participated')}>
+									<FaClipboardList className="me-2" /> Participated
+								</button>
+								<button className={`sidebar-tab list-group-item ${currentTab === 'password' ? 'active' : ''}`} onClick={() => changeTab('password')}>
+									<FaLock className="me-2" /> Change Password
+								</button>
+							</div>
 						</div>
 					</div>
 
 					{/* Main Content */}
 					<div className="col-md-9">
-						<div className="user-profile-content">
+						<div className="card shadow-sm p-4">
 							{currentTab === 'info' && <ProfileInfo />}
 							{currentTab === 'ekyc' && <EKYCVerification />}
 							{currentTab === 'my-auctions' && <MyAuctions />}

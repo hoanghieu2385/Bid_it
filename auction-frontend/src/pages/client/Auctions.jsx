@@ -1,6 +1,5 @@
-// src/pages/client/Auctions.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import "../../assets/styles/client/Auction.css";
 import {
   FaSearch,
@@ -9,7 +8,7 @@ import {
   FaHeart,
   FaRegHeart,
 } from "react-icons/fa";
-import { getAllAuctions } from "../../services/auction-api.js";
+import { getAllAuctions, getAuctionsByCategory } from "../../services/auction-api.js";
 
 const Auctions = () => {
   const itemsPerPage = 12;
@@ -19,6 +18,8 @@ const Auctions = () => {
   const [likedItems, setLikedItems] = useState({});
   const [auctions, setAuctions] = useState([]);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const categoryId = searchParams.get("categoryId");
 
   useEffect(() => {
     document.title = "Browse Auctions | Bid it";
@@ -27,14 +28,16 @@ const Auctions = () => {
   useEffect(() => {
     const fetchAuctions = async () => {
       try {
-        const data = await getAllAuctions();
+        const data = categoryId
+          ? await getAuctionsByCategory(categoryId)
+          : await getAllAuctions();
         setAuctions(data);
       } catch (err) {
         console.error("Lỗi khi tải danh sách đấu giá:", err);
       }
     };
     fetchAuctions();
-  }, []);
+  }, [categoryId]);
 
   const handleLikeClick = (index, event) => {
     event.preventDefault();
@@ -57,7 +60,6 @@ const Auctions = () => {
         const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
         newTimeLeft[index] = { days, hours, minutes, seconds };
       } else {
         newTimeLeft[index] = { days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -82,11 +84,7 @@ const Auctions = () => {
   };
 
   const handleFilterClick = (filter) => {
-    if (activeFilter === filter) {
-      setActiveFilter("");
-    } else {
-      setActiveFilter(filter);
-    }
+    setActiveFilter((prev) => (prev === filter ? "" : filter));
   };
 
   const getFilterClass = (filter) => {
@@ -100,9 +98,7 @@ const Auctions = () => {
   const totalPages = Math.ceil(auctions.length / itemsPerPage);
 
   const getPageNumbers = () => {
-    const pageNumbers = [];
-    pageNumbers.push(1);
-
+    const pageNumbers = [1];
     if (currentPage > 3) pageNumbers.push("...");
     for (
       let i = Math.max(2, currentPage - 1);
@@ -113,11 +109,8 @@ const Auctions = () => {
     }
     if (currentPage < totalPages - 2) pageNumbers.push("...");
     if (totalPages > 1) pageNumbers.push(totalPages);
-
     return pageNumbers;
   };
-
-  const pageNumbers = getPageNumbers();
 
   const formatDateToDisplay = (dateString) => {
     const date = new Date(dateString);
@@ -126,7 +119,6 @@ const Auctions = () => {
     const year = date.getFullYear();
     const hours = date.getHours().toString().padStart(2, "0");
     const minutes = date.getMinutes().toString().padStart(2, "0");
-
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
@@ -139,26 +131,14 @@ const Auctions = () => {
       <div className="auction-search-filter-container">
         <div className="auction-search">
           <input type="text" placeholder="Search Here" className="search-input" />
-          <div className="search-icon">
-            <FaSearch />
-          </div>
+          <div className="search-icon"><FaSearch /></div>
         </div>
         <div className="auction-filter">
-          <button className={getFilterClass("new")} onClick={() => handleFilterClick("new")}>
-            Newly Listed
-          </button>
-          <button className={getFilterClass("ending")} onClick={() => handleFilterClick("ending")}>
-            Ending Soon
-          </button>
-          <button className={getFilterClass("bids")} onClick={() => handleFilterClick("bids")}>
-            Most Bids
-          </button>
-          <button className={getFilterClass("watches")} onClick={() => handleFilterClick("watches")}>
-            Most Watches
-          </button>
-          <button className={getFilterClass("past")} onClick={() => handleFilterClick("past")}>
-            Past Result
-          </button>
+          <button className={getFilterClass("new")} onClick={() => handleFilterClick("new")}>Newly Listed</button>
+          <button className={getFilterClass("ending")} onClick={() => handleFilterClick("ending")}>Ending Soon</button>
+          <button className={getFilterClass("bids")} onClick={() => handleFilterClick("bids")}>Most Bids</button>
+          <button className={getFilterClass("watches")} onClick={() => handleFilterClick("watches")}>Most Watches</button>
+          <button className={getFilterClass("past")} onClick={() => handleFilterClick("past")}>Past Result</button>
         </div>
       </div>
 
@@ -171,26 +151,15 @@ const Auctions = () => {
                 alt={auction.title}
                 className="auction-img"
               />
-
               <div className="auction-timer">
                 {timeLeft[index] && (
                   <div className="auction-countdown">
-                    <div className="countdown-unit">
-                      <div className="countdown-value">{timeLeft[index].days}</div>
-                      <div className="countdown-label">Days</div>
-                    </div>
-                    <div className="countdown-unit">
-                      <div className="countdown-value">{timeLeft[index].hours}</div>
-                      <div className="countdown-label">Hours</div>
-                    </div>
-                    <div className="countdown-unit">
-                      <div className="countdown-value">{timeLeft[index].minutes}</div>
-                      <div className="countdown-label">Mins</div>
-                    </div>
-                    <div className="countdown-unit">
-                      <div className="countdown-value">{timeLeft[index].seconds}</div>
-                      <div className="countdown-label">Secs</div>
-                    </div>
+                    {["days", "hours", "minutes", "seconds"].map((unit) => (
+                      <div className="countdown-unit" key={unit}>
+                        <div className="countdown-value">{timeLeft[index][unit]}</div>
+                        <div className="countdown-label">{unit.charAt(0).toUpperCase() + unit.slice(1)}</div>
+                      </div>
+                    ))}
                   </div>
                 )}
                 <div className="auction-end-time text-center mt-2">
@@ -201,42 +170,21 @@ const Auctions = () => {
 
             <div className="auction-category-icon">
               {auction.category === "Đồng hồ" ? (
-                <span className="category-tag">
-                  <FaRegClock /> Watches
-                </span>
+                <span className="category-tag"><FaRegClock /> Watches</span>
               ) : (
-                <span className="category-tag">
-                  <FaRegEye /> Jewelry
-                </span>
+                <span className="category-tag"><FaRegEye /> Jewelry</span>
               )}
             </div>
 
             <div className="auction-info">
               <h2 className="auction-item-title">{auction.title}</h2>
-
               <div className="auction-price-details">
-                <div className="price-row">
-                  <span className="price-label">Starting Price:</span>
-                  <span className="price-value">
-                    {auction.startingPrice?.toLocaleString("vi-VN")} đ
-                  </span>
-                </div>
-                <div className="price-row">
-                  <span className="price-label">Current Bid:</span>
-                  <span className="price-value">
-                    {(auction.currentBid || auction.startingPrice)?.toLocaleString("vi-VN")} đ
-                  </span>
-                </div>
-                <div className="price-row">
-                  <span className="price-label">Bid Count:</span>
-                  <span className="price-value">{auction.bidCount} bids</span>
-                </div>
+                <div className="price-row"><span className="price-label">Starting Price:</span><span className="price-value">{auction.startingPrice?.toLocaleString("vi-VN")} đ</span></div>
+                <div className="price-row"><span className="price-label">Current Bid:</span><span className="price-value">{(auction.currentBid || auction.startingPrice)?.toLocaleString("vi-VN")} đ</span></div>
+                <div className="price-row"><span className="price-label">Bid Count:</span><span className="price-value">{auction.bidCount} bids</span></div>
               </div>
-
               <div className="action-buttons">
-                <button className="view-details-btn" onClick={() => navigate(`/auctions/${auction.id}`)}>
-                  View
-                </button>
+                <button className="view-details-btn" onClick={() => navigate(`/auctions/${auction.id}`)}>View</button>
                 <button className="watch-btn" onClick={(e) => handleLikeClick(index, e)}>
                   {likedItems[index] ? <FaHeart style={{ color: "red" }} /> : <FaRegHeart />}
                 </button>
@@ -247,27 +195,15 @@ const Auctions = () => {
       </div>
 
       <div className="pagination-container">
-        <button className="pagination-btn" disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>
-          Prev
-        </button>
-
-        {pageNumbers.map((page, index) =>
+        <button className="pagination-btn" disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>Prev</button>
+        {getPageNumbers().map((page, index) =>
           page === "..." ? (
             <span key={`ellipsis-${index}`} className="page-number">...</span>
           ) : (
-            <button
-              key={`page-${page}`}
-              className={`pagination-btn ${currentPage === page ? "active" : ""}`}
-              onClick={() => handlePageChange(page)}
-            >
-              {page}
-            </button>
+            <button key={`page-${page}`} className={`pagination-btn ${currentPage === page ? "active" : ""}`} onClick={() => handlePageChange(page)}>{page}</button>
           )
         )}
-
-        <button className="pagination-btn" disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>
-          Next
-        </button>
+        <button className="pagination-btn" disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>Next</button>
       </div>
     </div>
   );

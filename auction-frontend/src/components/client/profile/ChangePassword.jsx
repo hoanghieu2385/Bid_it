@@ -2,9 +2,12 @@
 import React, { useState } from 'react';
 import { changePassword, getCurrentUser } from '../../../services/user-api';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import useToastMessage from '../../../hooks/useToastMessage';
 import '../../../assets/styles/client/profile/change-password.css';
 
 const ChangePassword = () => {
+	const { showSuccess, showError } = useToastMessage();
+
 	const [form, setForm] = useState({
 		currentPassword: '',
 		newPassword: '',
@@ -17,7 +20,6 @@ const ChangePassword = () => {
 	});
 	const [loading, setLoading] = useState(false);
 	const [errors, setErrors] = useState({});
-	const [message, setMessage] = useState('');
 
 	const validate = () => {
 		const newErrors = {};
@@ -31,7 +33,6 @@ const ChangePassword = () => {
 	const handleChange = (e) => {
 		const { name, value } = e.target;
 		setForm((prev) => ({ ...prev, [name]: value }));
-		setMessage('');
 
 		const newErrors = { ...errors };
 
@@ -71,10 +72,10 @@ const ChangePassword = () => {
 			setLoading(true);
 			const user = await getCurrentUser();
 			await changePassword(user.email, form.currentPassword, form.newPassword);
-			setMessage('Password changed successfully!');
+			showSuccess('Password changed successfully!');
 			setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
 		} catch {
-			setMessage('Failed to change password. Please check your current password.');
+			showError('Failed to change password. Please check your current password.');
 		} finally {
 			setLoading(false);
 		}
@@ -82,7 +83,7 @@ const ChangePassword = () => {
 
 	return (
 		<div className="change-password-container">
-			<h5 className="change-password-title">Change Your Password</h5>
+			<h5 className="change-password-title text-primary fw-bold">Change Your Password</h5>
 
 			{['currentPassword', 'newPassword', 'confirmPassword'].map((field) => {
 				const labelMap = {
@@ -114,10 +115,8 @@ const ChangePassword = () => {
 			})}
 
 			<button className="btn-submit-password" onClick={handleSubmit} disabled={loading}>
-				{loading ? 'Updating...' : 'Update Password'}
+				{loading ? 'Updating...' : 'Update'}
 			</button>
-
-			{message && <div className={`mt-3 fw-bold ${message.startsWith('✅') ? 'text-success' : 'text-danger'}`}>{message}</div>}
 		</div>
 	);
 };
