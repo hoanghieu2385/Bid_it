@@ -32,6 +32,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.white,
+        automaticallyImplyLeading: false,
         elevation: 0.5,
         title: const Text(
           'Search',
@@ -41,7 +42,6 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
             fontSize: 22,
           ),
         ),
-        iconTheme: const IconThemeData(color: Colors.black),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48.0),
           child: Container(
