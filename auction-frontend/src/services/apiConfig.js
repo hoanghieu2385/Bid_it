@@ -5,6 +5,7 @@ const API_CONFIG = {
     ORDER_SERVICE: '/order',
     PRODUCT_SERVICE: '/product',
     CATEGORY_SERVICE: '/category-service/categories',
+    AUCTION_SERVICE: '/auction-service/api/auctions',
 };
 
 export default API_CONFIG;

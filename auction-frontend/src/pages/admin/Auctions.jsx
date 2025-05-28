@@ -4,267 +4,321 @@ import "../../assets/styles/admin/Auctions.css";
 import Sidebar from "../../components/admin/Sidebar";
 import Topbar from "../../components/admin/Topbar";
 import { Search, ChevronDown, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react";
+import adminAuctionAPI from "../../services/admin-auction-api";
 
 const Auctions = () => {
   // State cho dữ liệu đấu giá
   const [auctions, setAuctions] = useState([]);
+  const [filteredAuctions, setFilteredAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentCategory, setCurrentCategory] = useState("All Categories");
   const [currentStatus, setCurrentStatus] = useState("All Statuses");
   const [sortOrder, setSortOrder] = useState("Newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
   
   // State cho các thẻ thống kê
-  const [stats] = useState({
-    all: 13,
-    active: 11,
+  const [stats, setStats] = useState({
+    all: 0,
+    active: 0,
     draft: 0,
     delivered: 0,
-    pending: 1,
-    completed: 1
+    pending: 0,
+    completed: 0
   });
 
-  // Mock data cho danh sách đấu giá - sẽ được thay thế bằng API calls
-  useEffect(() => {
-    // Giả lập việc gọi API
-    const fetchAuctions = () => {
-      setTimeout(() => {
-        const mockData = [
-          {
-            id: 1,
-            title: "Patek Philippe Complications Chronograph (5170G001)",
-            seller: "Tran Hung",
-            sellerEmail: "tranhung@example.com",
-            sellerVerified: true,
-            startDate: "23 Jul 2024 - 09:45",
-            endDate: "23 Jul 2024 - 22:45",
-            startingPrice: "50,000,000 đ",
-            currentBid: "51,000,000 đ",
-            totalBids: 3,
-            status: "Completed",
-            image: "/auction-images/watch-patek.jpg",
-            category: "Luxury Watches",
-            createdAt: "23 Jul 2024 - 08:45",
-            updatedAt: "23 Jul 2024 - 08:45"
-          },
-          {
-            id: 2,
-            title: "BMW A100 A Class Hatch M20 Motor Bike",
-            seller: "Christopher Anderson",
-            sellerEmail: "christopher.anderson@example.com",
-            sellerVerified: true,
-            startDate: "22 Jul 2024 - 02:01",
-            endDate: "26 Jul 2024 - 02:01",
-            startingPrice: "60,000,000 đ",
-            currentBid: "60,500,000 đ",
-            totalBids: 1,
-            status: "Opened",
-            image: "/auction-images/bmw-motorbike.jpg",
-            category: "Luxury Motorcycles",
-            createdAt: "22 Jul 2024 - 02:01",
-            updatedAt: "22 Jul 2024 - 02:01"
-          },
-          {
-            id: 3,
-            title: "Watchlader Special Lighter 2.2 For Sailing Offer",
-            seller: "Christopher Anderson",
-            sellerEmail: "christopher.anderson@example.com",
-            sellerVerified: true,
-            startDate: "21 Jul 2024 - 02:01",
-            endDate: "26 Jul 2024 - 02:01",
-            startingPrice: "50,000 đ",
-            currentBid: "0 đ",
-            totalBids: 0,
-            status: "Opened",
-            image: "/auction-images/lighter.jpg",
-            category: "Jewelry",
-            createdAt: "21 Jul 2024 - 02:01",
-            updatedAt: "21 Jul 2024 - 02:01"
-          },
-          {
-            id: 4,
-            title: "Minisun Korean Gold Specie Watch 20.6",
-            seller: "Christopher Anderson",
-            sellerEmail: "christopher.anderson@example.com",
-            sellerVerified: true,
-            startDate: "20 Jul 2024 - 02:01",
-            endDate: "25 Jul 2024 - 02:01",
-            startingPrice: "2,500,000 đ",
-            currentBid: "0 đ",
-            totalBids: 0,
-            status: "Opened",
-            image: "/auction-images/watch-korean.jpg",
-            category: "Watches",
-            createdAt: "20 Jul 2024 - 02:01",
-            updatedAt: "20 Jul 2024 - 02:01"
-          },
-          {
-            id: 5,
-            title: "Water resist All Variants Available For Sale",
-            seller: "Christopher Anderson",
-            sellerEmail: "christopher.anderson@example.com",
-            sellerVerified: true,
-            startDate: "19 Jul 2024 - 02:01",
-            endDate: "27 Jul 2024 - 02:01",
-            startingPrice: "4,500,000 đ",
-            currentBid: "0 đ",
-            totalBids: 0,
-            status: "Opened",
-            image: "/auction-images/water-resist.jpg",
-            category: "Jewelry",
-            createdAt: "19 Jul 2024 - 02:01",
-            updatedAt: "19 Jul 2024 - 02:01"
-          },
-          {
-            id: 6,
-            title: "Pure leather All Variants Available For Sale",
-            seller: "Christopher Anderson",
-            sellerEmail: "christopher.anderson@example.com",
-            sellerVerified: true,
-            startDate: "18 Jul 2024 - 02:01",
-            endDate: "25 Jul 2024 - 02:01",
-            startingPrice: "700,000 đ",
-            currentBid: "0 đ",
-            totalBids: 0,
-            status: "Opened",
-            image: "/auction-images/leather.jpg",
-            category: "Fashion",
-            createdAt: "18 Jul 2024 - 02:01",
-            updatedAt: "18 Jul 2024 - 02:01"
-          },
-          {
-            id: 7,
-            title: "Blue ray filter All Variants Available For Sale",
-            seller: "Christopher Anderson",
-            sellerEmail: "christopher.anderson@example.com",
-            sellerVerified: true,
-            startDate: "17 Jul 2024 - 02:01",
-            endDate: "25 Jul 2024 - 02:01",
-            startingPrice: "950,000 đ",
-            currentBid: "0 đ",
-            totalBids: 0,
-            status: "Opened",
-            image: "/auction-images/blueray-filter.jpg",
-            category: "Optics",
-            createdAt: "17 Jul 2024 - 02:01",
-            updatedAt: "17 Jul 2024 - 02:01"
-          },
-          {
-            id: 8,
-            title: "iPhone 11 Pro Max All Variants Available For Sale",
-            seller: "Christopher Anderson",
-            sellerEmail: "christopher.anderson@example.com",
-            sellerVerified: true,
-            startDate: "16 Jul 2024 - 02:01",
-            endDate: "26 Jul 2024 - 02:01",
-            startingPrice: "14,000,000 đ",
-            currentBid: "0 đ",
-            totalBids: 0,
-            status: "Opened",
-            image: "/auction-images/iphone-11.jpg",
-            category: "Electronics",
-            createdAt: "16 Jul 2024 - 02:01",
-            updatedAt: "16 Jul 2024 - 02:01"
-          },
-          {
-            id: 9,
-            title: "Hard HV-G01 USB Black Double Game Pad With Virtual",
-            seller: "Christopher Anderson",
-            sellerEmail: "christopher.anderson@example.com",
-            sellerVerified: true,
-            startDate: "15 Jul 2024 - 02:01",
-            endDate: "25 Jul 2024 - 02:01",
-            startingPrice: "120,000 đ",
-            currentBid: "0 đ",
-            totalBids: 0,
-            status: "Opened",
-            image: "/auction-images/gamepad.jpg",
-            category: "Electronics",
-            createdAt: "15 Jul 2024 - 02:01",
-            updatedAt: "15 Jul 2024 - 02:01"
-          },
-          {
-            id: 10,
-            title: "Toyota A100 A Class Hatchback Sale (2017 - 2021)",
-            seller: "Christopher Anderson",
-            sellerEmail: "christopher.anderson@example.com",
-            sellerVerified: true,
-            startDate: "14 Jul 2024 - 02:01",
-            endDate: "28 Jul 2024 - 02:01",
-            startingPrice: "960,000,000 đ",
-            currentBid: "0 đ",
-            totalBids: 0,
-            status: "Opened",
-            image: "/auction-images/toyota-hatchback.jpg",
-            category: "Automobiles",
-            createdAt: "14 Jul 2024 - 02:01",
-            updatedAt: "14 Jul 2024 - 02:01"
-          }
-        ];
-        
-        setAuctions(mockData);
-        setTotalItems(mockData.length);
-        setLoading(false);
-      }, 800);
-    };
+  // State để theo dõi ảnh lỗi - tránh load lại nhiều lần
+  const [failedImages, setFailedImages] = useState(new Set());
 
-    fetchAuctions();
+  // Load dữ liệu ban đầu
+  useEffect(() => {
+    loadInitialData();
   }, []);
+
+  // Apply filters khi có thay đổi
+  useEffect(() => {
+    applyFiltersAndSort();
+  }, [auctions, searchQuery, currentCategory, currentStatus, sortOrder]);
+
+  // Load dữ liệu ban đầu
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Load auctions và stats đồng thời
+      const [auctionsData, statsData] = await Promise.all([
+        adminAuctionAPI.getAllAuctions(),
+        adminAuctionAPI.getAuctionStats()
+      ]);
+      
+      setAuctions(auctionsData);
+      setStats(statsData);
+    } catch (err) {
+      console.error('Error loading initial data:', err);
+      setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Apply filters và sorting
+  const applyFiltersAndSort = async () => {
+    try {
+      const filters = {
+        searchQuery: searchQuery.trim(),
+        category: currentCategory,
+        status: currentStatus,
+        sortBy: sortOrder,
+        page: currentPage,
+        size: itemsPerPage
+      };
+
+      const filteredData = await adminAuctionAPI.searchAuctions(filters);
+      setFilteredAuctions(filteredData);
+    } catch (err) {
+      console.error('Error applying filters:', err);
+      setFilteredAuctions([]);
+    }
+  };
+
+  // Hàm lấy tên seller - SỬA ĐỔI CHÍNH TẠI ĐÂY
+  const getSellerName = (auction) => {
+    // Debug để xem cấu trúc dữ liệu
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Auction seller data:', {
+        sellerId: auction.sellerId,
+        user: auction.user,
+        userKeys: auction.user ? Object.keys(auction.user) : 'No user object'
+      });
+    }
+
+    // Thử các cách khác nhau để lấy tên
+    if (auction.user) {
+      // Trường hợp 1: firstName + lastName
+      if (auction.user.firstName || auction.user.lastName) {
+        const firstName = auction.user.firstName || '';
+        const lastName = auction.user.lastName || '';
+        const fullName = `${firstName} ${lastName}`.trim();
+        if (fullName) return fullName;
+      }
+
+      // Trường hợp 2: fullName
+      if (auction.user.fullName) {
+        return auction.user.fullName;
+      }
+
+      // Trường hợp 3: name
+      if (auction.user.name) {
+        return auction.user.name;
+      }
+
+      // Trường hợp 4: displayName hoặc username
+      if (auction.user.displayName) {
+        return auction.user.displayName;
+      }
+
+      if (auction.user.username) {
+        return auction.user.username;
+      }
+
+      // Trường hợp 5: email (nếu không có tên)
+      if (auction.user.email) {
+        return auction.user.email.split('@')[0]; // Lấy phần trước @ của email
+      }
+    }
+
+    // Fallback cuối cùng
+    return `Seller #${auction.sellerId}`;
+  };
+
+  // Hàm lấy email seller
+  const getSellerEmail = (auction) => {
+    return auction.user?.email || '';
+  };
+
+  // Hàm kiểm tra seller verified
+  const isSellerVerified = (auction) => {
+    return auction.user?.verified === true;
+  };
+
+  // Hàm kiểm tra và trả về URL ảnh hợp lệ
+  const getValidImageUrl = (auction) => {
+    // Kiểm tra các nguồn ảnh theo thứ tự ưu tiên
+    const imageUrls = [
+      auction.thumbnailUrl,
+      auction.media?.[0]?.url,
+      auction.imageUrl
+    ].filter(Boolean); // Loại bỏ các giá trị null/undefined/empty
+
+    // Nếu không có ảnh hợp lệ, trả về ảnh mặc định
+    if (imageUrls.length === 0) {
+      return '';
+    }
+
+    // Tìm URL đầu tiên chưa từng lỗi
+    for (const url of imageUrls) {
+      if (!failedImages.has(url)) {
+        return url;
+      }
+    }
+
+    // Nếu tất cả đều lỗi, trả về ảnh mặc định
+    return '';
+  };
+
+  // Hàm xử lý khi ảnh bị lỗi
+  const handleImageError = (e, auctionId, imageUrl) => {
+    // Thêm URL lỗi vào danh sách
+    setFailedImages(prev => new Set([...prev, imageUrl]));
+    
+    // Chỉ đổi sang ảnh mặc định nếu chưa phải là ảnh mặc định
+    if (e.target.src !== '/default-auction-image.jpg') {
+      e.target.src = '/default-auction-image.jpg';
+    }
+  };
 
   // Hàm xử lý tìm kiếm
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    // Trong thực tế, bạn có thể muốn debounce trước khi thực hiện tìm kiếm
-    // hoặc gọi API tìm kiếm từ backend
+    setCurrentPage(1); // Reset về trang đầu khi search
   };
 
-  // Hàm lọc auctions dựa theo trạng thái
-  const filterByStatus = (status) => {
-    console.log(`Filtering by status: ${status}`);
-    setCurrentStatus(status);
-    // Trong thực tế, bạn sẽ gọi API để lấy dữ liệu theo trạng thái
+  // Hàm lọc auctions dựa theo trạng thái từ stats cards
+  const filterByStatus = async (status) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      let statusFilter;
+      switch (status) {
+        case "All":
+          statusFilter = "All Statuses";
+          break;
+        case "Active":
+          statusFilter = "Opened";
+          break;
+        case "Draft":
+          statusFilter = "Draft";
+          break;
+        case "Delivered":
+          statusFilter = "Delivered";
+          break;
+        case "Pending":
+          statusFilter = "Pending";
+          break;
+        case "Completed":
+          statusFilter = "Completed";
+          break;
+        default:
+          statusFilter = "All Statuses";
+      }
+      
+      setCurrentStatus(statusFilter);
+      setCurrentPage(1);
+      
+      if (status === "All") {
+        const allAuctions = await adminAuctionAPI.getAllAuctions();
+        setFilteredAuctions(allAuctions);
+      } else {
+        const filteredData = await adminAuctionAPI.searchAuctionsByStatus(statusFilter);
+        setFilteredAuctions(filteredData);
+      }
+    } catch (err) {
+      console.error('Error filtering by status:', err);
+      setError('Không thể lọc theo trạng thái. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Hàm xử lý khi thay đổi danh mục
   const handleCategoryChange = (e) => {
     setCurrentCategory(e.target.value);
-    // Trong thực tế, bạn sẽ gọi API để lấy dữ liệu theo danh mục
+    setCurrentPage(1);
   };
 
   // Hàm xử lý khi thay đổi trạng thái
   const handleStatusChange = (e) => {
     setCurrentStatus(e.target.value);
-    // Trong thực tế, bạn sẽ gọi API để lấy dữ liệu theo trạng thái
+    setCurrentPage(1);
   };
 
   // Hàm xử lý khi thay đổi thứ tự sắp xếp
   const handleSortChange = (e) => {
     setSortOrder(e.target.value);
-    // Trong thực tế, bạn sẽ gọi API để lấy dữ liệu theo thứ tự sắp xếp
+    setCurrentPage(1);
   };
 
   // Hàm xử lý khi thay đổi trang
   const handlePageChange = (page) => {
-    setCurrentPage(page);
-    // Trong thực tế, bạn sẽ gọi API để lấy dữ liệu của trang đó
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
-  // Tính số trang dựa trên tổng số mục và số mục trên mỗi trang
+  // Format currency
+  const formatCurrency = (amount) => {
+    if (!amount) return "0 đ";
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('vi-VN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  // Get status display name
+  const getStatusDisplayName = (status) => {
+    const statusMap = {
+      'OPENED': 'Active',
+      'COMPLETED': 'Completed', 
+      'PENDING': 'Pending',
+      'DRAFT': 'Draft',
+      'DELIVERED': 'Delivered'
+    };
+    return statusMap[status] || status;
+  };
+
+  // Get status CSS class
+  const getStatusClass = (status) => {
+    const statusClassMap = {
+      'OPENED': 'active',
+      'COMPLETED': 'completed',
+      'PENDING': 'pending', 
+      'DRAFT': 'draft',
+      'DELIVERED': 'delivered'
+    };
+    return statusClassMap[status] || status.toLowerCase();
+  };
+
+  // Pagination calculations
+  const totalItems = filteredAuctions.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentAuctions = filteredAuctions.slice(startIndex, endIndex);
 
   return (
     <div id="wrapper">
       {/* Sidebar */}
       <Sidebar />
+      
       {/* Main Content */}
-      <div
-        id="content-wrapper"
-        className="d-flex flex-column"
-        style={{ flex: 1 }}
-      >
+      <div id="content-wrapper" className="d-flex flex-column" style={{ flex: 1 }}>
         <Topbar />
         
         {/* Container content */}
@@ -275,6 +329,19 @@ const Auctions = () => {
               <h1>Auctions List</h1>
             </div>
           </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              {error}
+              <button 
+                className="btn btn-sm btn-outline-danger ml-2"
+                onClick={loadInitialData}
+              >
+                Thử lại
+              </button>
+            </div>
+          )}
 
           {/* Cards section */}
           <div className="stats-cards">
@@ -384,98 +451,140 @@ const Auctions = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="8" className="loading-row">Loading auctions...</td>
+                    <td colSpan="8" className="loading-row">
+                      <div className="loading-spinner">Đang tải...</div>
+                    </td>
                   </tr>
-                ) : auctions.length === 0 ? (
+                ) : currentAuctions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="no-data-row">No auctions found</td>
+                    <td colSpan="8" className="no-data-row">
+                      {error ? 'Có lỗi xảy ra khi tải dữ liệu' : 'Không tìm thấy đấu giá nào'}
+                    </td>
                   </tr>
                 ) : (
-                  auctions.map((auction) => (
-                    <tr key={auction.id}>
-                      <td className="auction-title-cell">
-                      <Link to={`/admin/auction/${auction.id}`} className="auction-image">
-                        <img src={auction.image} alt={auction.title} />
-                      </Link>
-                        <div className="auction-info">
-                        <Link to={`/admin/auction/${auction.id}`} className="auction-title">
-                          {auction.title}
-                        </Link>
-                          <div className="auction-category">
-                            ID #{auction.id} | Category: {auction.category}
+                  currentAuctions.map((auction) => {
+                    const imageUrl = getValidImageUrl(auction);
+                    
+                    return (
+                      <tr key={auction.id}>
+                        <td className="auction-title-cell">
+                          <Link to={`/admin/auction/${auction.id}`} className="auction-image">
+                            <img 
+                              src={imageUrl}
+                              alt={auction.title}
+                              onError={(e) => handleImageError(e, auction.id, imageUrl)}
+                              loading="lazy" 
+                            />
+                          </Link>
+                          <div className="auction-info">
+                            <Link to={`/admin/auction/${auction.id}`} className="auction-title">
+                              {auction.title}
+                            </Link>
+                            <div className="auction-category">
+                              ID #{auction.id} | Category ID: {auction.categoryId}
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="seller-cell">
-                        <div className="seller-name">{auction.seller}</div>
-                        {auction.sellerVerified && <div className="seller-verified">Verified</div>}
-                        <div className="seller-email">{auction.sellerEmail}</div>
-                      </td>
-                      <td className="dates-cell">
-                        <div>Start: {auction.startDate}</div>
-                        <div>End: {auction.endDate}</div>
-                      </td>
-                      <td className="price-cell">
-                        <div className="price">{auction.startingPrice}</div>
-                        <div className="price-detail">Original Starting</div>
-                      </td>
-                      <td className="bid-cell">
-                        <div className="bid">{auction.currentBid}</div>
-                        <div className="bid-count">{auction.totalBids} bids</div>
-                      </td>
-                      <td className={`status-cell ${auction.status.toLowerCase()}`}>
-                        <span className="status-badge">{auction.status}</span>
-                      </td>
-                      <td className="created-at-cell">
-                        <div>{auction.createdAt}</div>
-                        <div className="time-detail">Updated: {auction.updatedAt}</div>
-                      </td>
-                      <td className="action-cell">
-                        <button className="action-button">
-                          <MoreVertical size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        {/* SELLER CELL - ĐÃ CẬP NHẬT */}
+                        <td className="seller-cell">
+                          <div className="seller-name" title={getSellerName(auction)}>
+                            {getSellerName(auction)}
+                          </div>
+                          {isSellerVerified(auction) && (
+                            <div className="seller-verified">✓ Verified</div>
+                          )}
+                          {getSellerEmail(auction) && (
+                            <div className="seller-email" title={getSellerEmail(auction)}>
+                              {getSellerEmail(auction)}
+                            </div>
+                          )}
+                          <div className="seller-id" style={{fontSize: '11px', color: '#888'}}>
+                            Seller ID: {auction.sellerId}
+                          </div>
+                        </td>
+                        <td className="dates-cell">
+                          <div>Start: {formatDate(auction.startTime)}</div>
+                          <div>End: {formatDate(auction.endTime)}</div>
+                        </td>
+                        <td className="price-cell">
+                          <div className="price">{formatCurrency(auction.startingPrice)}</div>
+                          <div className="price-detail">Original Starting</div>
+                        </td>
+                        <td className="bid-cell">
+                          <div className="bid">{formatCurrency(auction.currentBid || auction.startingPrice)}</div>
+                          <div className="bid-count">{auction.bidCount || 0} bids</div>
+                        </td>
+                        <td className={`status-cell ${getStatusClass(auction.status)}`}>
+                          <span className="status-badge">{getStatusDisplayName(auction.status)}</span>
+                        </td>
+                        <td className="created-at-cell">
+                          <div>{formatDate(auction.createdAt)}</div>
+                          <div className="time-detail">Updated: {formatDate(auction.updatedAt)}</div>
+                        </td>
+                        <td className="action-cell">
+                          <button className="action-button">
+                            <MoreVertical size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
-          <div className="pagination">
-            <div className="pagination-info">
-              Showing <span>{auctions.length}</span> of <span>{totalItems}</span> entries
-            </div>
-            <div className="pagination-controls">
-              <button 
-                className={`pagination-button ${currentPage === 1 ? 'disabled' : ''}`}
-                onClick={() => handlePageChange(1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              
-              {/* Tạo các nút số trang */}
-              {Array.from({ length: totalPages }, (_, index) => (
+          {!loading && currentAuctions.length > 0 && (
+            <div className="pagination">
+              <div className="pagination-info">
+                Showing{' '}
+                <span>{Math.min(endIndex, totalItems)}</span> of{' '}
+                <span>{totalItems}</span> entries
+              </div>
+              <div className="pagination-controls">
                 <button 
-                  key={index + 1}
-                  className={`pagination-number ${currentPage === index + 1 ? 'active' : ''}`}
-                  onClick={() => handlePageChange(index + 1)}
+                  className={`pagination-button ${currentPage === 1 ? 'disabled' : ''}`}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
                 >
-                  {index + 1}
+                  <ChevronLeft size={16} />
                 </button>
-              ))}
-              
-              <button 
-                className={`pagination-button ${currentPage === totalPages ? 'disabled' : ''}`}
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight size={16} />
-              </button>
+                
+                {/* Tạo các nút số trang */}
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, index) => {
+                  let pageNumber;
+                  if (totalPages <= 5) {
+                    pageNumber = index + 1;
+                  } else if (currentPage <= 3) {
+                    pageNumber = index + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + index;
+                  } else {
+                    pageNumber = currentPage - 2 + index;
+                  }
+                  
+                  return (
+                    <button 
+                      key={pageNumber}
+                      className={`pagination-number ${currentPage === pageNumber ? 'active' : ''}`}
+                      onClick={() => handlePageChange(pageNumber)}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+                
+                <button 
+                  className={`pagination-button ${currentPage === totalPages ? 'disabled' : ''}`}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
