@@ -68,8 +68,8 @@ const Categories = () => {
       setCategories(data);
       setError(null);
     } catch {
-      setError("Không thể tải danh sách danh mục. Vui lòng thử lại sau.");
-      toast.error("Lỗi khi tải danh sách danh mục");
+      setError("Unable to load categories list. Please try again later.");
+      toast.error("Error loading categories list");
     } finally {
       setLoading(false);
     }
@@ -82,7 +82,7 @@ const Categories = () => {
       const data = await getAllDeletedCategories();
       setDeletedCategories(data);
     } catch {
-      toast.error("Lỗi khi tải danh sách danh mục đã xóa");
+      toast.error("Error loading deleted categories list");
     } finally {
       setLoadingDeleted(false);
     }
@@ -99,18 +99,18 @@ const Categories = () => {
   }, [showDeletedList, filters.status]);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa danh mục này không? Danh mục sẽ bị xóa vĩnh viễn sau 7 ngày.")) {
+    if (window.confirm("Are you sure you want to delete this category? The category will be permanently deleted after 7 days.")) {
       try {
         await deleteCategory(id);
-        // Sau khi xóa thành công, cập nhật lại danh sách từ server
+        // After successful deletion, refresh the list from server
         fetchCategories();
-        // Nếu đang xem danh sách đã xóa thì cũng cập nhật luôn
+        // If viewing deleted list, also refresh it
         if (showDeletedList || filters.status === "deleted") {
           fetchDeletedCategories();
         }
-        toast.success("Đã xóa danh mục thành công");
+        toast.success("Category deleted successfully");
       } catch {
-        toast.error("Không thể xóa danh mục. Vui lòng thử lại sau.");
+        toast.error("Unable to delete category. Please try again later.");
       }
     }
   };
@@ -119,11 +119,11 @@ const Categories = () => {
     try {
       // Validate form
       if (!formData.name.trim()) {
-        toast.error("Vui lòng nhập tên danh mục");
+        toast.error("Please enter category name");
         return;
       }
 
-      // Tạo object data gửi đi
+      // Create data object to send
       const categoryData = {
         name: formData.name,
         icon: formData.icon,
@@ -131,10 +131,10 @@ const Categories = () => {
         commissionRate: formData.commissionRate,
       };
 
-      // Gọi API tạo danh mục
+      // Call API to create category
       await createCategory(categoryData);
 
-      // Refresh danh sách
+      // Refresh list
       fetchCategories();
 
       setShowAddModal(false);
@@ -147,9 +147,9 @@ const Categories = () => {
         commissionRate: 3,
       });
 
-      toast.success("Đã thêm danh mục mới thành công");
+      toast.success("New category added successfully");
     } catch {
-      toast.error("Không thể thêm danh mục. Vui lòng thử lại sau.");
+      toast.error("Unable to add category. Please try again later.");
     }
   };
 
@@ -157,11 +157,11 @@ const Categories = () => {
     try {
       // Validate form
       if (!formData.name.trim()) {
-        toast.error("Vui lòng nhập tên danh mục");
+        toast.error("Please enter category name");
         return;
       }
 
-      // Tạo object data gửi đi
+      // Create data object to send
       const categoryData = {
         name: formData.name,
         icon: formData.icon,
@@ -169,16 +169,16 @@ const Categories = () => {
         commissionRate: formData.commissionRate,
       };
 
-      // Gọi API cập nhật danh mục
+      // Call API to update category
       await updateCategory(currentCategory.id, categoryData);
 
-      // Refresh danh sách
+      // Refresh list
       fetchCategories();
 
       setShowEditModal(false);
-      toast.success("Đã cập nhật danh mục thành công");
+      toast.success("Category updated successfully");
     } catch {
-      toast.error("Không thể cập nhật danh mục. Vui lòng thử lại sau.");
+      toast.error("Unable to update category. Please try again later.");
     }
   };
 
@@ -195,20 +195,20 @@ const Categories = () => {
 
   const handleRestore = async (id) => {
     try {
-      // Gọi API để khôi phục danh mục đã xóa
+      // Call API to restore deleted category
       await restoreCategory(id);
 
-      // Refresh danh sách
+      // Refresh lists
       fetchCategories();
       fetchDeletedCategories();
 
-      toast.success("Đã khôi phục danh mục thành công");
+      toast.success("Category restored successfully");
     } catch {
-      toast.error("Không thể khôi phục danh mục. Vui lòng thử lại sau.");
+      toast.error("Unable to restore category. Please try again later.");
     }
   };
 
-  // Toggle hiển thị danh sách đã xóa
+  // Toggle deleted list display
   const toggleDeletedList = () => {
     setShowDeletedList(!showDeletedList);
     if (!showDeletedList) {
@@ -246,16 +246,16 @@ const Categories = () => {
 
       switch (filters.dateRange) {
         case "today":
-          // Chỉ lấy các danh mục được tạo từ đầu ngày hôm nay
+          // Only get categories created from beginning of today
           pastDate = today;
           break;
         case "week":
-          // Lấy các danh mục được tạo trong 7 ngày gần đây
+          // Get categories created in the last 7 days
           pastDate = new Date(today);
           pastDate.setDate(today.getDate() - 7);
           break;
         case "month":
-          // Lấy các danh mục được tạo trong 30 ngày gần đây
+          // Get categories created in the last 30 days
           pastDate = new Date(today);
           pastDate.setMonth(today.getMonth() - 1);
           break;
@@ -267,7 +267,7 @@ const Categories = () => {
         if (!cat.createdAt) return false;
         const catDate = new Date(cat.createdAt);
 
-        // Nếu là "today", chỉ lấy các danh mục có cùng ngày với ngày hiện tại
+        // If "today", only get categories with same date as current date
         if (filters.dateRange === "today") {
           return (
             catDate.getFullYear() === today.getFullYear() &&
@@ -276,7 +276,7 @@ const Categories = () => {
           );
         }
 
-        // Ngược lại lấy các danh mục có ngày tạo >= pastDate
+        // Otherwise get categories with creation date >= pastDate
         return catDate >= pastDate;
       });
     }
@@ -296,7 +296,7 @@ const Categories = () => {
     return filtered;
   };
 
-  // Lấy danh sách hiển thị dựa trên các bộ lọc và trạng thái hiển thị
+  // Get display list based on filters and display state
   const getDisplayItems = () => {
     if (showDeletedList) {
       return applyFilters(deletedCategories);
@@ -330,7 +330,7 @@ const Categories = () => {
       .padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
   };
 
-  // Tính số ngày còn lại trước khi xóa vĩnh viễn
+  // Calculate remaining days before permanent deletion
   const calculateRemainingDays = (category) => {
     if (!category.deleted) return null;
     return category.daysUntilPermanentDeletion;
@@ -349,10 +349,10 @@ const Categories = () => {
             <div className="d-flex justify-content-between align-items-center mb-4">
               <div>
                 <h5 className="mb-1 fw-bold">
-                  {showDeletedList ? "Danh mục đã xóa" : "Tất cả danh mục"}
+                  {showDeletedList ? "Deleted Categories" : "All Categories"}
                 </h5>
                 <p className="text-muted mb-0">
-                  Tổng cộng {filteredCategories.length} danh mục
+                  Total {filteredCategories.length} categories
                 </p>
               </div>
               <div>
@@ -361,14 +361,14 @@ const Categories = () => {
                   onClick={toggleDeletedList}
                 >
                   <FaHistory className="me-1" /> 
-                  {showDeletedList ? "Xem danh mục đang hoạt động" : "Xem danh mục đã xóa"}
+                  {showDeletedList ? "View Active Categories" : "View Deleted Categories"}
                 </button>
                 {!showDeletedList && (
                   <button
                     className="btn btn-primary d-inline-flex align-items-center"
                     onClick={() => setShowAddModal(true)}
                   >
-                    <FaPlus className="me-1" /> Thêm mới danh mục
+                    <FaPlus className="me-1" /> Add New Category
                   </button>
                 )}
               </div>
@@ -381,7 +381,7 @@ const Categories = () => {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Tìm kiếm danh mục..."
+                    placeholder="Search categories..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -395,7 +395,7 @@ const Categories = () => {
                   className="btn btn-outline-secondary"
                   onClick={() => setShowFilters(!showFilters)}
                 >
-                  <FaFilter className="me-1" /> Bộ lọc
+                  <FaFilter className="me-1" /> Filters
                 </button>
               </div>
             </div>
@@ -404,7 +404,7 @@ const Categories = () => {
             {showFilters && (
               <div className="row mb-4 bg-light p-3 rounded">
                 <div className="col-md-4 mb-2">
-                  <label className="form-label">Ngày tạo</label>
+                  <label className="form-label">Created Date</label>
                   <select
                     className="form-select"
                     value={filters.dateRange}
@@ -412,14 +412,14 @@ const Categories = () => {
                       setFilters({ ...filters, dateRange: e.target.value })
                     }
                   >
-                    <option value="all">Tất cả thời gian</option>
-                    <option value="today">Hôm nay</option>
-                    <option value="week">Tuần này</option>
-                    <option value="month">Tháng này</option>
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
                   </select>
                 </div>
                 <div className="col-md-4 mb-2">
-                  <label className="form-label">Tỷ lệ hoa hồng</label>
+                  <label className="form-label">Commission Rate</label>
                   <select
                     className="form-select"
                     value={filters.commissionRate}
@@ -427,11 +427,11 @@ const Categories = () => {
                       setFilters({ ...filters, commissionRate: e.target.value })
                     }
                   >
-                    <option value="all">Tất cả</option>
+                    <option value="all">All</option>
                     <option value="0-2">0% - 2%</option>
                     <option value="2-3">2% - 3%</option>
                     <option value="3-5">3% - 5%</option>
-                    <option value="5-100">Trên 5%</option>
+                    <option value="5-100">Above 5%</option>
                   </select>
                 </div>
               </div>
@@ -443,7 +443,7 @@ const Categories = () => {
                 <div className="spinner-border text-primary" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
-                <p className="mt-2">Đang tải danh mục...</p>
+                <p className="mt-2">Loading categories...</p>
               </div>
             )}
 
@@ -460,13 +460,13 @@ const Categories = () => {
                 <table className="table align-middle">
                   <thead className="bg-light">
                     <tr>
-                      <th className="ps-3">Danh mục</th>
-                      <th>Mô tả</th>
-                      <th>Tỷ lệ hoa hồng</th>
-                      <th>Ngày tạo</th>
-                      <th>Cập nhật</th>
-                      <th>Trạng thái</th>
-                      <th className="text-end pe-3">Thao tác</th>
+                      <th className="ps-3">Category</th>
+                      <th>Description</th>
+                      <th>Commission Rate</th>
+                      <th>Created Date</th>
+                      <th>Updated</th>
+                      <th>Status</th>
+                      <th className="text-end pe-3">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -502,14 +502,14 @@ const Categories = () => {
                           <td>
                             {cat.deleted ? (
                               <div>
-                                <span className="badge bg-danger mb-1">Đã xóa</span>
+                                <span className="badge bg-danger mb-1">Deleted</span>
                                 <div className="small text-danger">
-                                  Xóa vĩnh viễn sau: {calculateRemainingDays(cat)} ngày
+                                  Permanent deletion in: {calculateRemainingDays(cat)} days
                                 </div>
                               </div>
                             ) : (
                               <span className="badge bg-success">
-                                Đang hoạt động
+                                Active
                               </span>
                             )}
                           </td>
@@ -534,7 +534,7 @@ const Categories = () => {
                                 className="btn btn-sm btn-outline-success"
                                 onClick={() => handleRestore(cat.id)}
                               >
-                                Khôi phục
+                                Restore
                               </button>
                             )}
                           </td>
@@ -543,7 +543,7 @@ const Categories = () => {
                     ) : (
                       <tr>
                         <td colSpan="7" className="text-center py-4">
-                          Không tìm thấy danh mục nào
+                          No categories found
                         </td>
                       </tr>
                     )}
@@ -690,17 +690,17 @@ const Categories = () => {
         {/* Edit Category Modal */}
         <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
           <Modal.Header closeButton>
-            <Modal.Title>Chỉnh sửa danh mục</Modal.Title>
+            <Modal.Title>Edit Category</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
               <Form.Group className="mb-3">
                 <Form.Label>
-                  Tên danh mục <span className="text-danger">*</span>
+                  Category Name <span className="text-danger">*</span>
                 </Form.Label>
                 <Form.Control
                   type="text"
-                  placeholder="Nhập tên danh mục"
+                  placeholder="Enter category name"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
@@ -710,7 +710,7 @@ const Categories = () => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Đường dẫn biểu tượng</Form.Label>
+                <Form.Label>Icon Path</Form.Label>
                 <Form.Control
                   type="text"
                   placeholder="/icons/example.svg"
@@ -722,11 +722,11 @@ const Categories = () => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Mô tả</Form.Label>
+                <Form.Label>Description</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}
-                  placeholder="Mô tả ngắn về danh mục"
+                  placeholder="Brief description of the category"
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
@@ -735,7 +735,7 @@ const Categories = () => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Tỷ lệ hoa hồng (%)</Form.Label>
+                <Form.Label>Commission Rate (%)</Form.Label>
                 <Form.Control
                   type="number"
                   min="0"
@@ -754,10 +754,10 @@ const Categories = () => {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-              Hủy bỏ
+              Cancel
             </Button>
             <Button variant="primary" onClick={handleEditCategory}>
-              Lưu thay đổi
+              Save Changes
             </Button>
           </Modal.Footer>
         </Modal>
