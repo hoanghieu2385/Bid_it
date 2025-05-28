@@ -65,7 +65,7 @@ class _HomeContentState extends State<HomeContent> {
   List<Category> categories = [];
   List<Auction> auctions = [];
   bool isLoading = true;
-  bool showAllAuctions = false;
+  int displayLimit = 3;
 
   @override
   void initState() {
@@ -95,153 +95,88 @@ class _HomeContentState extends State<HomeContent> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 3,
         clipBehavior: Clip.antiAlias,
-        child: StatefulBuilder(
-          builder: (context, setCardState) {
-            final PageController _pageController = PageController();
-            int _currentPage = 0;
-
-            if (auction.mediaUrls.length > 1) {
-              Future.delayed(const Duration(milliseconds: 300), () {
-                Timer.periodic(const Duration(seconds: 3), (timer) {
-                  if (!_pageController.hasClients) {
-                    timer.cancel();
-                    return;
-                  }
-                  _currentPage++;
-                  if (_currentPage >= auction.mediaUrls.length) {
-                    _currentPage = 0;
-                  }
-                  _pageController.animateToPage(
-                    _currentPage,
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.easeInOut,
-                  );
-                });
-              });
-            }
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                auction.mediaUrls.isNotEmpty
-                    ? Stack(
-                  children: [
-                    SizedBox(
-                      height: 180,
-                      child: PageView.builder(
-                        controller: _pageController,
-                        itemCount: auction.mediaUrls.length,
-                        onPageChanged: (index) {
-                          setCardState(() => _currentPage = index);
-                        },
-                        itemBuilder: (context, i) => ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            auction.mediaUrls[i],
-                            width: double.infinity,
-                            height: 180,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Image.asset(
-                              'assets/images/product-img.png',
-                              width: double.infinity,
-                              height: 180,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 8,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(auction.mediaUrls.length, (index) {
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 3),
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _currentPage == index
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.5),
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                  ],
-                )
-                    : Image.asset(
-                  'assets/images/product-img.png',
-                  width: double.infinity,
-                  height: 180,
-                  fit: BoxFit.cover,
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            auction.thumbnailUrl != null
+                ? Image.network(
+              auction.thumbnailUrl!,
+              width: double.infinity,
+              height: 180,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Image.asset(
+                'assets/images/product-img.png',
+                width: double.infinity,
+                height: 180,
+                fit: BoxFit.cover,
+              ),
+            )
+                : Image.asset(
+              'assets/images/product-img.png',
+              width: double.infinity,
+              height: 180,
+              fit: BoxFit.cover,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(auction.title,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Text(
+                    auction.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
                     children: [
-                      Text(auction.title,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 6),
-                      Text(
-                        auction.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 13, color: Colors.black87),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text('Start: ${dateFormatter.format(auction.startTime)}',
-                              style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                          const SizedBox(width: 12),
-                          const Icon(Icons.flag, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text('End: ${dateFormatter.format(auction.endTime)}',
-                              style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('${auction.startingPrice.toStringAsFixed(0)} VNĐ',
-                              style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.orange)),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(auction.status,
-                                style: const TextStyle(fontSize: 12, color: Colors.orange)),
-                          ),
-                        ],
+                      const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text('Start: ${dateFormatter.format(auction.startTime)}',
+                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.flag, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text('End: ${dateFormatter.format(auction.endTime)}',
+                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${auction.startingPrice.toStringAsFixed(0)} VNĐ',
+                          style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(auction.status,
+                            style: const TextStyle(fontSize: 12, color: Colors.orange)),
                       ),
                     ],
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
+    final visibleAuctions = auctions.take(displayLimit).toList();
     return isLoading
         ? const Center(child: CircularProgressIndicator())
         : RefreshIndicator(
@@ -320,25 +255,30 @@ class _HomeContentState extends State<HomeContent> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ListView.builder(
-                itemCount: showAllAuctions
-                    ? auctions.length
-                    : (auctions.length >= 5 ? 5 : auctions.length),
+                itemCount: visibleAuctions.length,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (context, index) => _buildAuctionCard(auctions[index]),
+                itemBuilder: (context, index) => _buildAuctionCard(visibleAuctions[index]),
               ),
             ),
-
-            if (auctions.length > 5)
+            if (displayLimit < auctions.length)
               Center(
                 child: TextButton(
                   onPressed: () {
-                    setState(() => showAllAuctions = !showAllAuctions);
+                    setState(() => displayLimit += 3);
                   },
-                  child: Text(
-                    showAllAuctions ? 'Show Less' : 'View All',
-                    style: const TextStyle(color: Colors.orange, fontSize: 14),
-                  ),
+                  child: const Text('View More',
+                      style: TextStyle(color: Colors.orange, fontSize: 14)),
+                ),
+              )
+            else if (auctions.length > 3)
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    setState(() => displayLimit = 3);
+                  },
+                  child: const Text('Show Less',
+                      style: TextStyle(color: Colors.orange, fontSize: 14)),
                 ),
               ),
           ],
