@@ -54,3 +54,9 @@ export const getAuctionsByCategory = async (categoryId) => {
 	const response = await api.get(`/auction-service/api/auctions/search/category?categoryId=${categoryId}`);
 	return response.data;
 };
+
+// Get auction details by ID 
+export const getAuctionDetailById = async (auctionId) => {
+	const response = await api.get(`/auction-service/api/auctions/${auctionId}`);
+	return response.data;
+};

@@ -26,9 +26,7 @@ const Home = () => {
 					.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
 				// Latest: order by creation time descending (assuming startTime ≈ createdTime)
-				const latest = data
-					.sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
-					.slice(0, 6); // top 6 latest
+				const latest = data.sort((a, b) => new Date(b.startTime) - new Date(a.startTime)).slice(0, 6); // top 6 latest
 
 				setLatestAuctions(latest);
 				setUpcomingAuctions(upcoming.slice(0, 6)); // limit to 6 for UI
@@ -51,8 +49,12 @@ const Home = () => {
 				/>
 				<div className="card-body d-flex flex-column">
 					<h5 className="card-title">{auction.title}</h5>
-					<p className="mb-1"><b>Current Bid:</b> {auction.currentBid?.toLocaleString('vi-VN')}₫</p>
-					<p className="mb-1"><b>Ends:</b> {new Date(auction.endTime).toLocaleString('vi-VN')}</p>
+					<p className="mb-1">
+						<b>Current Bid:</b> {auction.currentBid?.toLocaleString('vi-VN')}₫
+					</p>
+					<p className="mb-1">
+						<b>Ends:</b> {new Date(auction.endTime).toLocaleString('vi-VN')}
+					</p>
 					<div className="mt-auto">
 						<Link to={`/auctions/${auction.id}`} className="btn btn-outline-primary btn-sm w-100">
 							View Details
@@ -71,6 +73,20 @@ const Home = () => {
 			{/* Categories Section */}
 			<Categories />
 
+			{/* Upcoming Auctions Section */}
+			<section className="py-5">
+				<div className="container">
+					<h2 className="text-center mb-4">Upcoming Auctions</h2>
+					<div className="row">
+						{upcomingAuctions.length > 0 ? (
+							upcomingAuctions.map(renderAuctionCard)
+						) : (
+							<p className="text-center">No upcoming auctions.</p>
+						)}
+					</div>
+				</div>
+			</section>
+			
 			{/* Latest Auctions Section */}
 			<section className="py-5 bg-light">
 				<div className="container">
@@ -83,21 +99,9 @@ const Home = () => {
 						)}
 					</div>
 					<div className="text-center mt-3">
-						<Link to="/auctions" className="btn btn-link">View All Auctions</Link>
-					</div>
-				</div>
-			</section>
-
-			{/* Upcoming Auctions Section */}
-			<section className="py-5">
-				<div className="container">
-					<h2 className="text-center mb-4">Upcoming Auctions</h2>
-					<div className="row">
-						{upcomingAuctions.length > 0 ? (
-							upcomingAuctions.map(renderAuctionCard)
-						) : (
-							<p className="text-center">No upcoming auctions.</p>
-						)}
+						<Link to="/auctions" className="btn btn-link">
+							View All Auctions
+						</Link>
 					</div>
 				</div>
 			</section>
