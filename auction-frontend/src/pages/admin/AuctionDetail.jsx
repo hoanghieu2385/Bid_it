@@ -451,9 +451,7 @@ But getting your own auction site up and running has always required learning co
               <Link to="/admin/auctions">Auctions</Link>
               <ChevronRight size={16} />
               <span>Detail</span>
-            </div>
-            
-            <h2>Detail</h2>
+            </div>            
           </div>
           
           {/* Auction Header Card */}

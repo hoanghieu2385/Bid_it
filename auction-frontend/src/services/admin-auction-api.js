@@ -14,6 +14,16 @@ const adminAuctionAPI = {
         }
     },
 
+    getAuctionsBySeller: async (sellerId) => {
+        try {
+            const response = await api.get(`${API_CONFIG.AUCTION_SERVICE}/seller/${sellerId}`);
+            return response.data;
+        } catch (error) {
+            console.error(`Error fetching auctions by seller ${sellerId}:`, error);
+            throw error;
+        }
+    },
+
     // Lấy auction theo ID
     getAuctionById: async (id) => {
         try {
@@ -49,18 +59,7 @@ const adminAuctionAPI = {
             console.error(`Error searching auctions by category ${categoryId}:`, error);
             throw error;
         }
-    },
-
-    // Lấy auctions theo seller ID
-    getAuctionsBySeller: async (sellerId) => {
-        try {
-            const response = await api.get(`${API_CONFIG.AUCTION_SERVICE}/seller/${sellerId}`);
-            return response.data;
-        } catch (error) {
-            console.error(`Error fetching auctions by seller ${sellerId}:`, error);
-            throw error;
-        }
-    },
+    },    
 
     // Tạo auction mới
     createAuction: async (auctionData, requesterId) => {

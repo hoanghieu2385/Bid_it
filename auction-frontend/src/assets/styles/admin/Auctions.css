@@ -278,6 +278,7 @@
   
   .auction-title {
     font-weight: 500;
+    text-decoration: none !important;
     margin-bottom: 4px;
     color: #333;
     font-size: 14px;
