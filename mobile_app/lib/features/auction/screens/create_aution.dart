@@ -310,6 +310,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Create Auction'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
