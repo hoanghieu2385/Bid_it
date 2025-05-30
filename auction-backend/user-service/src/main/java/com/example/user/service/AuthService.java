@@ -65,7 +65,7 @@ public class AuthService {
         user.setEnable(false);
         user.setVerified(false);
         user.setLocked(false);
-        user.setScore(0);
+        user.setScore(100);
         user.addRole(Role.USER);
 
         userRepository.save(user);

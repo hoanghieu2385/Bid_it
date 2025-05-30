@@ -5,7 +5,7 @@ public class UserDTO {
     private String lastName;
     private String email;
     private String password;
-    private Integer score = 0; // Giá trị mặc định
+    private Integer score = 100; // Giá trị mặc định
 
     public UserDTO() {
     }

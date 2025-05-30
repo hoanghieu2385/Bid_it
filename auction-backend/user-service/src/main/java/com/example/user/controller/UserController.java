@@ -1,9 +1,6 @@
 package com.example.user.controller;
 
-import com.example.user.Dtos.RoleUpdateRequest;
-import com.example.user.Dtos.UserCCCDVerifyDto;
-import com.example.user.Dtos.UserUpdateRequest;
-import com.example.user.Dtos.UpdateCCCDRequest;
+import com.example.user.Dtos.*;
 import com.example.user.model.OtpType;
 import com.example.user.model.User;
 import com.example.user.service.UserService;
@@ -140,6 +137,52 @@ public class UserController {
         userService.saveUser(user);
         return ResponseEntity.ok("User CCCD denied and data cleared");
     }
+    // Get verify status ADMIN
+    @GetMapping("/{id}/verify-status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getVerificationStatus(@PathVariable Long id) {
+        Optional<User> userOpt = userService.getUserById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User user = userOpt.get();
+        var response = new Object() {
+            public final boolean phoneVerified = user.isPhoneVerified();
+            public final boolean cccdVerified = user.getVerifiedAccount() == 1;
+            public final String citizenId = user.getCitizenId();
+        };
+
+        return ResponseEntity.ok(response);
+    }
+// Get verify status USER
+@GetMapping("/me/verify-status")
+public ResponseEntity<VerificationStatusResponse> getMyVerificationStatus() {
+    User user = userService.getCurrentUserProfile();
+
+    String phoneStatus = user.isPhoneVerified() ? "VERIFIED" : "UNVERIFIED";
+
+    String cccdStatus;
+    if (user.getCitizenId() == null) {
+        cccdStatus = "NOT_SUBMITTED";
+    } else if (user.getVerifiedAccount() == 0) {
+        cccdStatus = "PENDING";
+    } else if (user.getVerifiedAccount() == 1) {
+        cccdStatus = "APPROVED";
+    } else {
+        cccdStatus = "REJECTED";
+    }
+
+    VerificationStatusResponse response = new VerificationStatusResponse(
+            user.isPhoneVerified(),
+            phoneStatus,
+            user.getCitizenId(),
+            cccdStatus
+    );
+
+    return ResponseEntity.ok(response);
+}
+
 
 
     ///  Verify Phone Number
