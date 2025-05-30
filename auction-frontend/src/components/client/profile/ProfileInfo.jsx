@@ -148,11 +148,11 @@ const ProfileInfo = () => {
 			showError('Please enter a phone number first.');
 			return;
 		}
-		const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/;
-		if (!phoneRegex.test(form.phoneNumber)) {
-			showError('Please enter a valid Vietnamese phone number.');
-			return;
-		}
+		// const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/;
+		// if (!phoneRegex.test(form.phoneNumber)) {
+		// 	showError('Please enter a valid Vietnamese phone number.');
+		// 	return;
+		// }
 
 		setPhoneVerification((prev) => ({ ...prev, isLoading: true }));
 
