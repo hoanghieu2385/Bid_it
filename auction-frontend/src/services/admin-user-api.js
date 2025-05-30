@@ -73,30 +73,20 @@ export const resetUserPassword = async (userId) => {
   return response.data;
 };
 
+// ✅ Lấy danh sách user chờ xác minh CCCD
 export const getVerifyRequests = async () => {
-  const token = Cookies.get('jwt');
-  const response = await axios.get('http://localhost:8082/api/users/verify-requests', {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
+  const response = await api.get(`${API_CONFIG.USER_API}/verify-requests`);
   return response.data;
 };
 
-export const denyUserCCCD = async (userId) => {
-  const token = Cookies.get('jwt');
-  return axios.post(`http://localhost:8082/api/users/${userId}/verify/deny`, {}, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
+// ✅ Duyệt xác minh CCCD
+export const approveUserCCCD = async (userId) => {
+  const response = await api.post(`${API_CONFIG.USER_API}/${userId}/verify/approve`);
+  return response.data;
 };
 
-export const approveUserCCCD = async (userId) => {
-  const token = Cookies.get('jwt');
-  return axios.post(`http://localhost:8082/api/users/${userId}/verify/approve`, {}, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
+// ✅ Từ chối xác minh CCCD
+export const denyUserCCCD = async (userId) => {
+  const response = await api.post(`${API_CONFIG.USER_API}/${userId}/verify/deny`);
+  return response.data;
 };
