@@ -1,8 +1,5 @@
-// File: lib/core/widgets/custom_bottom_nav.dart
-// Chức năng: BottomNavigationBar tái sử dụng được trong toàn ứng dụng, đã thêm Watchlist
-
 import 'package:flutter/material.dart';
-import 'package:mobile_app/core/constants/app_colors.dart';
+import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -11,24 +8,25 @@ class CustomBottomNav extends StatelessWidget {
   const CustomBottomNav({
     super.key,
     required this.currentIndex,
-    required this.onTap, required String title,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      currentIndex: currentIndex,
-      selectedItemColor: AppColors.black,
-      unselectedItemColor: AppColors.grey,
-      onTap: onTap,
+    return ConvexAppBar(
+      style: TabStyle.reactCircle,
+      backgroundColor: Colors.white,
+      activeColor: Colors.orange,
+      color: Colors.grey,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-        BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Create'),
-        BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: 'Watchlist'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'User'),
+        TabItem(icon: Icons.home, title: 'Home'),
+        TabItem(icon: Icons.search, title: 'Search'),
+        TabItem(icon: Icons.add, title: 'Create'),
+        TabItem(icon: Icons.favorite_border, title: 'Watchlist'),
+        TabItem(icon: Icons.person_outline, title: 'User'),
       ],
+      initialActiveIndex: currentIndex,
+      onTap: onTap,
     );
   }
 }
