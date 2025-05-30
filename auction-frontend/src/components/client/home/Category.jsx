@@ -23,58 +23,30 @@ const Categories = () => {
 		fetchCategories();
 	}, []);
 
-	const handleMouseDown = (e) => {
+	const startDrag = (clientX) => {
 		const container = categoriesRef.current;
 		if (!container) return;
 		setIsDragging(true);
-		setStartX(e.pageX - container.offsetLeft);
+		setStartX(clientX - container.offsetLeft);
 		setScrollLeft(container.scrollLeft);
 		container.style.cursor = 'grabbing';
 	};
 
-	const handleMouseLeave = () => {
+	const stopDrag = () => {
 		const container = categoriesRef.current;
 		if (!container) return;
 		setIsDragging(false);
 		container.style.cursor = 'grab';
 	};
 
-	const handleMouseUp = () => {
-		const container = categoriesRef.current;
-		if (!container) return;
-		setIsDragging(false);
-		container.style.cursor = 'grab';
-	};
-
-	const handleMouseMove = (e) => {
+	const handleMouseMove = (clientX, e) => {
 		if (!isDragging) return;
 		e.preventDefault();
 		const container = categoriesRef.current;
 		if (!container) return;
-		const x = e.pageX - container.offsetLeft;
+		const x = clientX - container.offsetLeft;
 		const walk = (x - startX) * 2;
 		container.scrollLeft = scrollLeft - walk;
-	};
-
-	const handleTouchStart = (e) => {
-		const container = categoriesRef.current;
-		if (!container) return;
-		setIsDragging(true);
-		setStartX(e.touches[0].pageX - container.offsetLeft);
-		setScrollLeft(container.scrollLeft);
-	};
-
-	const handleTouchMove = (e) => {
-		if (!isDragging) return;
-		const container = categoriesRef.current;
-		if (!container) return;
-		const x = e.touches[0].pageX - container.offsetLeft;
-		const walk = (x - startX) * 2;
-		container.scrollLeft = scrollLeft - walk;
-	};
-
-	const handleTouchEnd = () => {
-		setIsDragging(false);
 	};
 
 	return (
@@ -84,23 +56,25 @@ const Categories = () => {
 				<div
 					className="categories-scroll-wrapper"
 					ref={categoriesRef}
-					onMouseDown={handleMouseDown}
-					onMouseLeave={handleMouseLeave}
-					onMouseUp={handleMouseUp}
-					onMouseMove={handleMouseMove}
-					onTouchStart={handleTouchStart}
-					onTouchMove={handleTouchMove}
-					onTouchEnd={handleTouchEnd}
+					onMouseDown={(e) => startDrag(e.pageX)}
+					onMouseLeave={stopDrag}
+					onMouseUp={stopDrag}
+					onMouseMove={(e) => handleMouseMove(e.pageX, e)}
+					onTouchStart={(e) => startDrag(e.touches[0].pageX)}
+					onTouchMove={(e) => handleMouseMove(e.touches[0].pageX, e)}
+					onTouchEnd={stopDrag}
+					style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
 				>
 					<div className="categories-scroll-content">
 						{categories.map((category) => (
 							<div key={category.id} className="categories-item-wrapper">
 								<Link
-									to={`/auctions?categoryId=${category.id}`}
+									to={`/auctions?category=${encodeURIComponent(category.name)}`}
 									className="categories-item d-flex flex-column align-items-center text-decoration-none"
+									aria-label={`Go to ${category.name} category`}
 								>
 									<div className="categories-item-icon mb-2 text-secondary d-flex align-items-center justify-content-center">
-										<i className={`bi ${category.icon}`}></i>
+										{category.icon && <i className={`bi ${category.icon}`}></i>}
 									</div>
 									<span className="categories-item-name small text-center text-secondary">{category.name}</span>
 								</Link>
