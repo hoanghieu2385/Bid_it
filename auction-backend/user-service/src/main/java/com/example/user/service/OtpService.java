@@ -3,6 +3,8 @@ package com.example.user.service;
 import com.example.user.model.Otp;
 import com.example.user.model.OtpType;
 import com.example.user.repository.OtpRepository;
+import com.example.user.model.User;
+import com.example.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -14,14 +16,16 @@ public class OtpService {
     private final OtpRepository otpRepository;
     private final EmailService emailService;
     private final SmsService smsService;
+    private final UserRepository userRepository;
 
     @Value("${otp.expiration.minutes}")
     private int otpExpirationMinutes;
 
-    public OtpService(OtpRepository otpRepository, EmailService emailService, SmsService smsService) {
+    public OtpService(OtpRepository otpRepository, EmailService emailService, SmsService smsService, UserRepository userRepository) {
         this.otpRepository = otpRepository;
         this.emailService = emailService;
         this.smsService = smsService;
+        this.userRepository = userRepository;
     }
 
     public String generateOtp() {
@@ -64,14 +68,7 @@ public class OtpService {
         emailService.sendLoginOtp(email, otp);
     }
 
-    // ✅ VERIFY OTP (EMAIL/LOGIN từ DB)
     public boolean verifyOtp(String contact, String otp, OtpType type) {
-        // Nếu là PHONE_VERIFICATION thì dùng Verify API, không dùng DB
-        if (type == OtpType.PHONE_VERIFICATION) {
-            return smsService.checkOtp(contact, otp); // 📱 Verify qua Twilio
-        }
-
-        // EMAIL hoặc LOGIN dùng DB
         Otp otpEntity = otpRepository.findByContactAndCodeAndTypeAndUsedFalse(contact, otp, type)
                 .orElse(null);
 
@@ -81,8 +78,18 @@ public class OtpService {
 
         otpEntity.setUsed(true);
         otpRepository.save(otpEntity);
+
+        // Nếu là xác minh số điện thoại thì update user.phoneVerified = true
+        if (type == OtpType.PHONE_VERIFICATION) {
+            userRepository.findByPhoneNumber(contact).ifPresent(user -> {
+                user.setPhoneVerified(true);
+                userRepository.save(user);
+            });
+        }
+
         return true;
     }
+
 
     // 📱 PHONE: gửi OTP qua Twilio Verify API
     public void sendPhoneVerificationOtp(String phoneNumber) {
