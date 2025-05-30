@@ -4,7 +4,7 @@ import {
     getVerifyRequests,
     approveUserCCCD,
     denyUserCCCD
-} from '../../services/user-api';
+} from '../../services/admin-user-api';
 
 const VerifyRequests = () => {
     const [requests, setRequests] = useState([]);

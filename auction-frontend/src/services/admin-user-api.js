@@ -1,6 +1,8 @@
 // src/services/admin-user-api.js - Phiên bản đơn giản hóa
 import api from './api';
 import API_CONFIG from './apiConfig';
+import Cookies from "js-cookie";
+import axios from "axios";
 
 // Lấy danh sách tất cả người dùng (Admin only)
 export const getAllUsers = async () => {
@@ -68,5 +70,23 @@ export const toggleUserVerification = async (userId, verified) => {
 export const resetUserPassword = async (userId) => {
   // throw new Error('Backend chưa có endpoint POST /api/users/{id}/reset-password');
   const response = await api.post(`${API_CONFIG.USER_API}/${userId}/reset-password`);
+  return response.data;
+};
+
+// ✅ Lấy danh sách user chờ xác minh CCCD
+export const getVerifyRequests = async () => {
+  const response = await api.get(`${API_CONFIG.USER_API}/verify-requests`);
+  return response.data;
+};
+
+// ✅ Duyệt xác minh CCCD
+export const approveUserCCCD = async (userId) => {
+  const response = await api.post(`${API_CONFIG.USER_API}/${userId}/verify/approve`);
+  return response.data;
+};
+
+// ✅ Từ chối xác minh CCCD
+export const denyUserCCCD = async (userId) => {
+  const response = await api.post(`${API_CONFIG.USER_API}/${userId}/verify/deny`);
   return response.data;
 };
