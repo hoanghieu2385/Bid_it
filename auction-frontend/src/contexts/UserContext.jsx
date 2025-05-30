@@ -26,7 +26,7 @@ export const UserProvider = ({ children }) => {
 
 			} catch (error) {
 				console.error('[UserContext] Error fetching user:', error?.response?.status);
-				localStorage.removeItem('jwt');
+				// localStorage.removeItem('jwt');
 			} finally {
 				setLoading(false);
 			}
