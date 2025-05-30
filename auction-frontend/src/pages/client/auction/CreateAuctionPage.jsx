@@ -1,18 +1,20 @@
-// src/pages/client/CreateAuctionPage.jsx
 import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Tooltip } from 'bootstrap';
+import Swal from 'sweetalert2';
 import { UserContext } from '../../../contexts/UserContext';
 import { getAllCategories } from '../../../services/category-api';
 import { createAuction, uploadAuctionImages } from '../../../services/auction-api';
 import AuctionTimeAndPrice from '../../../components/client/auction/AuctionTimeAndPrice';
 import AuctionImageUpload from '../../../components/client/auction/AuctionImageUpload';
+import useToastMessage from '../../../hooks/useToastMessage';
 
 const CreateAuctionPage = () => {
 	const navigate = useNavigate();
 	const { user } = useContext(UserContext);
+	const toast = useToastMessage();
 
 	const [categories, setCategories] = useState([]);
 	const [images, setImages] = useState([]);
@@ -65,10 +67,20 @@ const CreateAuctionPage = () => {
 	});
 
 	const handleSubmit = async (values, { setSubmitting }) => {
-		if (!window.confirm('Are you sure you want to create this auction?')) {
+		const result = await Swal.fire({
+			title: 'Confirm Auction Creation',
+			text: 'Do you want to publish this auction now?',
+			icon: 'question',
+			showCancelButton: true,
+			confirmButtonText: 'Yes, create it!',
+			cancelButtonText: 'Cancel',
+		});
+
+		if (!result.isConfirmed) {
 			setSubmitting(false);
 			return;
 		}
+
 		try {
 			const payload = {
 				...values,
@@ -87,11 +99,11 @@ const CreateAuctionPage = () => {
 				await uploadAuctionImages(auction.id, images);
 			}
 
-			alert('Auction created!');
+			toast.showSuccess('Auction created successfully!');
 			navigate('/profile?tab=my-auctions');
 		} catch (err) {
 			console.error(err);
-			alert('Failed to create auction');
+			toast.showError('Failed to create auction. Please try again.');
 		} finally {
 			setSubmitting(false);
 		}
@@ -105,7 +117,7 @@ const CreateAuctionPage = () => {
 						<h3 className="text-center mb-4">Create a New Auction</h3>
 						<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
 							{({ values, setFieldValue, isSubmitting }) => (
-								<Form className="">
+								<Form>
 									<div className="row g-3">
 										<div className="col-12">
 											<label className="form-label">Title</label>

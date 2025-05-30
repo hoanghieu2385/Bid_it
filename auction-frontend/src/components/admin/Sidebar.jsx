@@ -1,39 +1,26 @@
+// src/components/admin/Sidebar.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../../assets/styles/admin/Sidebar.css';
 import Logo from '../../assets/images/Logo2.png';
 
 const Sidebar = () => {
-    // State để quản lý trạng thái mở/đóng của các menu
     const [isDashboardOpen, setIsDashboardOpen] = useState(false);
     const [isAuctionOpen, setIsAuctionOpen] = useState(false);
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-    const [isCategoryOpen, setIsCategoryOpen] = useState(false); // Thêm state mới cho Categories
-    
-    // Refs để quản lý chiều cao của các dropdown
+    const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+
     const paymentRef = useRef(null);
-    // const categoryRef = useRef(null); // Thêm ref mới cho Categories
-    
-    // State để quản lý hiệu ứng animation của các dropdown
     const [paymentHeight, setPaymentHeight] = useState("0px");
-    // const [categoryHeight, setCategoryHeight] = useState("0px"); // Thêm state mới cho chiều cao của Categories
-    
-    // Dùng useEffect để tính toán chiều cao thực của các dropdown
+
     useEffect(() => {
         if (isPaymentOpen && paymentRef.current) {
             setPaymentHeight(`${paymentRef.current.scrollHeight}px`);
         } else {
             setPaymentHeight("0px");
         }
-        
-        // if (isCategoryOpen && categoryRef.current) {
-        //     setCategoryHeight(`${categoryRef.current.scrollHeight}px`);
-        // } else {
-        //     setCategoryHeight("0px");
-        // }
     }, [isDashboardOpen, isAuctionOpen, isPaymentOpen, isCategoryOpen]);
-    
-    // Hàm xử lý việc toggle các dropdown
+
     const toggleCollapse = (section) => {
         switch (section) {
             case 'dashboard':
@@ -46,7 +33,7 @@ const Sidebar = () => {
                 setIsPaymentOpen(!isPaymentOpen);
                 break;
             case 'category':
-                setIsCategoryOpen(!isCategoryOpen); // Sử dụng state mới cho Categories
+                setIsCategoryOpen(!isCategoryOpen);
                 break;
             default:
                 break;
@@ -59,11 +46,11 @@ const Sidebar = () => {
                 <div className="sidebar-brand-icon">
                     <img src={Logo} alt="Logo" />
                 </div>
-                <div className="sidebar-brand-text mx-3">Bit it Admin</div>
+                <div className="sidebar-brand-text mx-3">Bid it Admin</div>
             </Link>
             <hr className="sidebar-divider my-0" />
-            
-            {/* Dashboard Menu */}
+
+            {/* Dashboard */}
             <li className="nav-item">
                 <Link className="nav-link" to="/admin/dashboard">
                     <span>Dashboard</span>
@@ -71,16 +58,17 @@ const Sidebar = () => {
             </li>
 
             <hr className="sidebar-divider d-none d-md-block" />
-            
-            {/* Auctions Menu */}
+
+            {/* Auctions */}
             <li className="nav-item">
                 <Link className="nav-link" to="/admin/auctions">
                     <span>Auctions</span>
                 </Link>
             </li>
-            
+
             <hr className="sidebar-divider d-none d-md-block" />
 
+            {/* Categories */}
             <li className="nav-item">
                 <Link className="nav-link" to="/admin/categories">
                     <span>Categories</span>
@@ -88,10 +76,10 @@ const Sidebar = () => {
             </li>
 
             <hr className="sidebar-divider d-none d-md-block" />
-            
-            {/* Payments Menu */}
+
+            {/* Payments */}
             <li className="nav-item">
-                <a 
+                <a
                     className={`nav-link ${isPaymentOpen ? '' : 'collapsed'}`}
                     href="#"
                     onClick={(e) => {
@@ -105,21 +93,21 @@ const Sidebar = () => {
                 >
                     <span>Payments</span>
                 </a>
-                <div 
+                <div
                     id="collapsePayment"
                     ref={paymentRef}
                     className="collapse-container"
-                    style={{ 
+                    style={{
                         maxHeight: paymentHeight,
                         overflow: 'hidden',
                         transition: 'max-height 0.3s ease'
                     }}
                 >
                     <div className="bg-white py-2 collapse-inner rounded">
-                        <Link 
-                            className={`collapse-item ${isPaymentOpen ? 'animate-item' : ''}`} 
+                        <Link
+                            className={`collapse-item ${isPaymentOpen ? 'animate-item' : ''}`}
                             to="/payments/deposits"
-                            style={{ 
+                            style={{
                                 transitionDelay: '0.1s',
                                 opacity: isPaymentOpen ? 1 : 0,
                                 transform: isPaymentOpen ? 'translateY(0)' : 'translateY(-10px)',
@@ -128,10 +116,10 @@ const Sidebar = () => {
                         >
                             Deposits
                         </Link>
-                        <Link 
-                            className={`collapse-item ${isPaymentOpen ? 'animate-item' : ''}`} 
+                        <Link
+                            className={`collapse-item ${isPaymentOpen ? 'animate-item' : ''}`}
                             to="/payments/winners"
-                            style={{ 
+                            style={{
                                 transitionDelay: '0.2s',
                                 opacity: isPaymentOpen ? 1 : 0,
                                 transform: isPaymentOpen ? 'translateY(0)' : 'translateY(-10px)',
@@ -140,10 +128,10 @@ const Sidebar = () => {
                         >
                             Winner Payments
                         </Link>
-                        <Link 
-                            className={`collapse-item ${isPaymentOpen ? 'animate-item' : ''}`} 
+                        <Link
+                            className={`collapse-item ${isPaymentOpen ? 'animate-item' : ''}`}
                             to="/payments/seller-revenue"
-                            style={{ 
+                            style={{
                                 transitionDelay: '0.3s',
                                 opacity: isPaymentOpen ? 1 : 0,
                                 transform: isPaymentOpen ? 'translateY(0)' : 'translateY(-10px)',
@@ -158,14 +146,23 @@ const Sidebar = () => {
 
             <hr className="sidebar-divider d-none d-md-block" />
 
+            {/* Users */}
             <li className="nav-item">
                 <Link className="nav-link" to="/admin/users">
                     <span>Users</span>
                 </Link>
             </li>
 
+            {/* ✅ Verify Requests */}
+            <li className="nav-item">
+                <Link className="nav-link" to="/admin/verify-requests">
+                    <span>Verify Requests</span>
+                </Link>
+            </li>
+
             <hr className="sidebar-divider d-none d-md-block" />
 
+            {/* Security */}
             <li className="nav-item">
                 <Link className="nav-link" to="/admin/security">
                     <span>Security</span>
