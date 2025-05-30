@@ -32,9 +32,7 @@ const Home = () => {
 					return start <= now && end >= now;
 				});
 
-				const latest = data
-					.sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
-					.slice(0, 6);
+				const latest = data.sort((a, b) => new Date(b.startTime) - new Date(a.startTime)).slice(0, 6);
 
 				setLatestAuctions(latest);
 				setUpcomingAuctions(upcoming.slice(0, 6));
@@ -49,13 +47,28 @@ const Home = () => {
 	const renderAuctionCard = (auction) => (
 		<div key={auction.id} className="col-12 col-md-6 col-lg-4 mb-4">
 			<div className="card h-100 shadow-sm border-0">
-				<img
-					src={auction.media?.[0]?.url || '/default-image.jpg'}
-					onError={(e) => (e.target.src = '/default-image.jpg')}
-					className="card-img-top"
-					alt={auction.title}
-					style={{ height: '200px', objectFit: 'cover' }}
-				/>
+				<div
+					style={{
+						height: '200px',
+						backgroundColor: '#fff',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						overflow: 'hidden',
+					}}
+				>
+					<img
+						src={auction.media?.[0]?.url || '/default-image.jpg'}
+						onError={(e) => (e.target.src = '/default-image.jpg')}
+						alt={auction.title}
+						style={{
+							maxHeight: '100%',
+							maxWidth: '100%',
+							objectFit: 'contain',
+						}}
+					/>
+				</div>
+
 				<div className="card-body d-flex flex-column">
 					<h5 className="card-title">{auction.title}</h5>
 					<p className="mb-1">

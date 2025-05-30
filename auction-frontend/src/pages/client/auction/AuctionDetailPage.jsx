@@ -5,6 +5,7 @@ import { getAllAuctions } from '../../../services/auction-api';
 import { getSellerById } from '../../../services/user-api';
 // import '../../../assets/styles/client/auction-detail.css'; // chưa có
 import { getAuctionDetailById } from '../../../services/auction-api';
+import defaultAvatar from '../../../assets/images/default-avatar.png'; // Placeholder for seller avatar
 
 const AuctionDetailPage = () => {
 	const { id } = useParams();
@@ -96,20 +97,42 @@ const AuctionDetailPage = () => {
 				<div className="col-lg-7">
 					{auction.media?.length > 0 && (
 						<div>
-							<img
-								src={auction.media[activeImage].url}
-								alt="main"
-								className="w-100 rounded shadow mb-3"
-								style={{ maxHeight: '400px', objectFit: 'cover' }}
-							/>
-							<div className="d-flex gap-2 overflow-auto">
+							<div
+								style={{
+									height: '400px',
+									width: '100%',
+									backgroundColor: '#fff',
+									display: 'flex',
+									alignItems: 'center',
+									justifyContent: 'center',
+									overflow: 'hidden',
+								}}
+							>
+								<img
+									src={auction.media[activeImage].url}
+									alt="main"
+									className="rounded mb-3"
+									style={{
+										maxHeight: '100%',
+										maxWidth: '100%',
+										objectFit: 'contain',
+									}}
+								/>
+							</div>
+
+							<div className="d-flex gap-2 overflow-auto mt-2">
 								{auction.media.map((img, idx) => (
 									<img
 										key={img.id}
 										src={img.url}
 										alt={`thumb-${idx}`}
 										className={`rounded ${idx === activeImage ? 'border border-primary' : ''}`}
-										style={{ height: '80px', width: '100px', objectFit: 'cover', cursor: 'pointer' }}
+										style={{
+											height: 'auto',
+											width: '100px',
+											objectFit: 'cover',
+											cursor: 'pointer',
+										}}
 										onClick={() => setActiveImage(idx)}
 									/>
 								))}
@@ -139,38 +162,61 @@ const AuctionDetailPage = () => {
 				<div className="col-lg-5">
 					<h2 className="fw-bold mb-3">{auction.title}</h2>
 
+					{/* Seller Info */}
 					{seller && (
 						<div className="d-flex align-items-center bg-white rounded p-3 shadow-sm mb-3">
-							<div>
+							<img
+								src={defaultAvatar} // Placeholder, replace with seller.avatarUrl if available
+								alt="Seller"
+								className="rounded-circle me-3"
+								style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+							/>
+							<div className="flex-grow-1">
 								<div className="fw-semibold">Seller: {seller.fullName}</div>
 								<small className="text-muted">{seller.address}</small>
 							</div>
-							<div className="ms-auto text-center">
-								<div className="badge bg-success rounded-pill fs-6">{seller.score || 75}</div>
-								<small className="text-muted d-block">Very Good</small>
+							<div className="text-end">
+								<span className="badge bg-success rounded-pill fs-6">{seller.score || 1}</span>
+								<br />
+								<small className="text-muted">Very Good</small>
 							</div>
 						</div>
 					)}
 
-					<div className="bg-light rounded p-3 shadow-sm">
-						<div className="mb-2">
-							<strong>Current Bid:</strong>
-							<span className="text-success float-end">0 ₫</span>
+					{/* Auction Pricing Details */}
+					<div className="bg-white rounded p-4 shadow-sm">
+						<div className="d-flex justify-content-between mb-2">
+							<span>
+								<strong>Current Bid:</strong>
+							</span>
+							<span className="text-success fw-bold">
+								{auction.currentBid ? Number(auction.currentBid).toLocaleString('vi-VN') : '0'} ₫
+							</span>
 						</div>
-						<div>Starting Price: {Number(auction.startingPrice).toLocaleString('vi-VN')} ₫</div>
-						<div>Increment Amount: {Number(auction.incrementAmount).toLocaleString('vi-VN')} ₫</div>
-						<div>Security Deposit: {Number(auction.securityDeposit).toLocaleString('vi-VN')} ₫</div>
+						<hr className="my-2" />
+						<div className="d-flex justify-content-between mb-1">
+							<span>Starting Price:</span>
+							<span>{Number(auction.startingPrice).toLocaleString('vi-VN')} ₫</span>
+						</div>
+						<div className="d-flex justify-content-between mb-1">
+							<span>Increment Amount:</span>
+							<span>{Number(auction.incrementAmount).toLocaleString('vi-VN')} ₫</span>
+						</div>
+						<div className="d-flex justify-content-between mb-3">
+							<span>Security Deposit:</span>
+							<span>{Number(auction.securityDeposit).toLocaleString('vi-VN')} ₫</span>
+						</div>
 
 						{new Date() < new Date(auction.startTime) ? (
-							<div className="alert alert-info mt-3">Auction hasn't started yet. Please wait...</div>
+							<div className="alert alert-info text-center py-2 mb-2">Auction hasn't started yet. Please wait...</div>
 						) : (
-							<button className="btn btn-success w-100 mt-3">Join Auction</button>
+							<button className="btn btn-success w-100 fw-semibold">Join Auction</button>
 						)}
 
 						{auction.requiresDeposit && (
-							<div className="alert alert-warning mt-2">
-								This auction requires deposit
-								<button className="btn btn-outline-success btn-sm float-end">Pay Deposit</button>
+							<div className="alert alert-warning mt-3 d-flex justify-content-between align-items-center">
+								<span>This auction requires a deposit</span>
+								<button className="btn btn-outline-success btn-sm">Pay Deposit</button>
 							</div>
 						)}
 					</div>
@@ -185,18 +231,32 @@ const AuctionDetailPage = () => {
 						{relatedAuctions.map((item) => (
 							<div className="col-md-3" key={item.id}>
 								<Link to={`/auctions/${item.id}`} className="text-decoration-none">
-									<div className="card h-100">
-										{item.media?.[0]?.url && (
+									<div className="card h-100 shadow-sm">
+										<div
+											style={{
+												height: '160px',
+												backgroundColor: '#fff',
+												display: 'flex',
+												alignItems: 'center',
+												justifyContent: 'center',
+												overflow: 'hidden',
+											}}
+										>
 											<img
-												src={item.media[0].url}
-												className="card-img-top"
-												alt="..."
-												style={{ height: '160px', objectFit: 'cover' }}
+												src={item.media?.[0]?.url || '/default-image.jpg'}
+												onError={(e) => (e.target.src = '/default-image.jpg')}
+												alt={item.title}
+												style={{
+													maxHeight: '100%',
+													maxWidth: '100%',
+													objectFit: 'contain',
+												}}
 											/>
-										)}
+										</div>
 										<div className="card-body">
 											<h6 className="card-title mb-1 text-dark">{item.title}</h6>
 											<small className="text-muted">Starting: {new Date(item.startTime).toLocaleString('vi-VN')}</small>
+											<small className="text-muted"><br/>End: {new Date(item.endTime).toLocaleString('vi-VN')}</small>
 										</div>
 									</div>
 								</Link>
