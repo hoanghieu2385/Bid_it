@@ -17,6 +17,19 @@ import {
   getAllDeletedCategories,
 } from "../../services/category-api";
 
+const BOOTSTRAP_ICONS = [
+  "bi-bag",
+  "bi-alarm",
+  "bi-award",
+  "bi-basket",
+  "bi-book",
+  "bi-camera",
+  "bi-cart",
+  "bi-cash",
+  "bi-chat",
+  "bi-clipboard",
+];
+
 const Categories = () => {
   const [categories, setCategories] = useState([]);
   const [deletedCategories, setDeletedCategories] = useState([]);
@@ -595,17 +608,17 @@ const Categories = () => {
         {/* Add Category Modal */}
         <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
           <Modal.Header closeButton>
-            <Modal.Title>Thêm danh mục mới</Modal.Title>
+            <Modal.Title>Add New Category</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
               <Form.Group className="mb-3">
                 <Form.Label>
-                  Tên danh mục <span className="text-danger">*</span>
+                  Category Name <span className="text-danger">*</span>
                 </Form.Label>
                 <Form.Control
                   type="text"
-                  placeholder="Nhập tên danh mục"
+                  placeholder="Enter category name"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
@@ -615,23 +628,30 @@ const Categories = () => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Đường dẫn biểu tượng</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="/icons/example.svg"
+                <Form.Label>Choose Icon</Form.Label>
+                <Form.Select
                   value={formData.icon}
                   onChange={(e) =>
                     setFormData({ ...formData, icon: e.target.value })
                   }
-                />
+                >
+                  {BOOTSTRAP_ICONS.map((icon) => (
+                    <option key={icon} value={icon}>
+                      {icon}
+                    </option>
+                  ))}
+                </Form.Select>
+                <div className="mt-2">
+                  <i className={`bi ${formData.icon} fs-4`}></i>
+                </div>
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Mô tả</Form.Label>
+                <Form.Label>Description</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}
-                  placeholder="Mô tả ngắn về danh mục"
+                  placeholder="Brief description of the category"
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
@@ -640,7 +660,7 @@ const Categories = () => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Tỷ lệ hoa hồng (%)</Form.Label>
+                <Form.Label>Commission Rate (%)</Form.Label>
                 <Form.Control
                   type="number"
                   min="0"
@@ -659,10 +679,10 @@ const Categories = () => {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-              Hủy bỏ
+              Cancel
             </Button>
             <Button variant="primary" onClick={handleAddCategory}>
-              Thêm danh mục
+              Add Category
             </Button>
           </Modal.Footer>
         </Modal>

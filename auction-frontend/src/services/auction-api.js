@@ -49,13 +49,14 @@ export const getAuctionsBySeller = async (sellerId) => {
 	return response.data;
 };
 
-// Get auction by ID
-export const getAuctionById = async (id) => {
-	const token = Cookies.get('jwt');
-	const response = await api.get(`/auction-service/api/auctions/${id}`, {
-		headers: {
-			Authorization: `Bearer ${token}`,
-		},
-	});
+// Get auctions by category ID
+export const getAuctionsByCategory = async (categoryId) => {
+	const response = await api.get(`/auction-service/api/auctions/search/category?categoryId=${categoryId}`);
+	return response.data;
+};
+
+// Get auction details by ID 
+export const getAuctionDetailById = async (auctionId) => {
+	const response = await api.get(`/auction-service/api/auctions/${auctionId}`);
 	return response.data;
 };

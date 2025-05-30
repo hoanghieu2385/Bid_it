@@ -1,8 +1,12 @@
+// src/components/client/profile/ProfileInfo.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import useToastMessage from '../../../hooks/useToastMessage';
 import { getCurrentUser, updateUserProfile } from '../../../services/user-api';
 
 const ProfileInfo = () => {
+	const { showSuccess, showError } = useToastMessage();
+
 	const [user, setUser] = useState(null);
 	const [editMode, setEditMode] = useState(false);
 	const [provinces, setProvinces] = useState([]);
@@ -21,6 +25,13 @@ const ProfileInfo = () => {
 		district: '',
 		ward: '',
 		detail: '',
+	});
+
+	const [errors, setErrors] = useState({
+		province: false,
+		district: false,
+		ward: false,
+		detail: false,
 	});
 
 	useEffect(() => {
@@ -81,6 +92,8 @@ const ProfileInfo = () => {
 	const handleProvinceChange = async (e) => {
 		const provinceCode = e.target.value;
 		setLocation({ ...location, province: provinceCode, district: '', ward: '' });
+		setErrors({ ...errors, province: false });
+
 		const res = await axios.get(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`);
 		setDistricts(res.data.districts || []);
 		setWards([]);
@@ -89,16 +102,20 @@ const ProfileInfo = () => {
 	const handleDistrictChange = async (e) => {
 		const districtCode = e.target.value;
 		setLocation({ ...location, district: districtCode, ward: '' });
+		setErrors({ ...errors, district: false });
+
 		const res = await axios.get(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`);
 		setWards(res.data.wards || []);
 	};
 
 	const handleWardChange = (e) => {
 		setLocation({ ...location, ward: e.target.value });
+		setErrors({ ...errors, ward: false });
 	};
 
 	const handleDetailChange = (e) => {
 		setLocation({ ...location, detail: e.target.value });
+		setErrors({ ...errors, detail: false });
 	};
 
 	const handleChange = (e) => {
@@ -106,13 +123,28 @@ const ProfileInfo = () => {
 	};
 
 	const handleSave = async () => {
+		const provinceValid = !!location.province;
+		const districtValid = !!location.district;
+		const wardValid = !!location.ward;
+		const detailValid = location.detail.trim() !== '';
+
+		setErrors({
+			province: !provinceValid,
+			district: !districtValid,
+			ward: !wardValid,
+			detail: !detailValid,
+		});
+
+		if (!provinceValid || !districtValid || !wardValid || !detailValid) {
+			showError('Please complete all address fields before saving.');
+			return;
+		}
+
 		const selectedProvince = provinces.find((p) => p.code.toString() === location.province);
 		const selectedDistrict = districts.find((d) => d.code.toString() === location.district);
 		const selectedWard = wards.find((w) => w.code.toString() === location.ward);
 
-		const fullAddress = `${location.detail}, ${selectedWard?.name || ''}, ${selectedDistrict?.name || ''}, ${
-			selectedProvince?.name || ''
-		}`;
+		const fullAddress = `${location.detail}, ${selectedWard.name}, ${selectedDistrict.name}, ${selectedProvince.name}`;
 
 		try {
 			await updateUserProfile(user.id, {
@@ -120,18 +152,18 @@ const ProfileInfo = () => {
 				address: fullAddress,
 			});
 			setForm({ ...form, address: fullAddress });
-			alert('Profile updated successfully');
+			showSuccess('Profile updated successfully!');
 			setEditMode(false);
 		} catch (error) {
 			console.error('Update failed:', error);
-			alert('Failed to update profile');
+			showError('Failed to update profile. Please try again later.');
 		}
 	};
 
 	if (!user) return <div>Loading...</div>;
 
 	return (
-		<div className="profile-info-card p-4 shadow-sm rounded">
+		<div className="profile-info-card p-4">
 			<h4 className="mb-4 text-primary fw-bold">Personal Information</h4>
 			<div className="row g-3">
 				<div className="col-md-6">
@@ -179,7 +211,11 @@ const ProfileInfo = () => {
 					<>
 						<div className="col-md-4">
 							<label className="form-label">Province / City</label>
-							<select className="form-select" value={location.province} onChange={handleProvinceChange}>
+							<select
+								className={`form-select ${errors.province ? 'is-invalid' : ''}`}
+								value={location.province}
+								onChange={handleProvinceChange}
+							>
 								<option value="">Select province</option>
 								{provinces.map((prov) => (
 									<option key={prov.code} value={prov.code}>
@@ -187,11 +223,16 @@ const ProfileInfo = () => {
 									</option>
 								))}
 							</select>
+							{errors.province && <div className="invalid-feedback">Province is required.</div>}
 						</div>
 
 						<div className="col-md-4">
 							<label className="form-label">District</label>
-							<select className="form-select" value={location.district} onChange={handleDistrictChange}>
+							<select
+								className={`form-select ${errors.district ? 'is-invalid' : ''}`}
+								value={location.district}
+								onChange={handleDistrictChange}
+							>
 								<option value="">Select district</option>
 								{districts.map((dist) => (
 									<option key={dist.code} value={dist.code}>
@@ -199,11 +240,16 @@ const ProfileInfo = () => {
 									</option>
 								))}
 							</select>
+							{errors.district && <div className="invalid-feedback">District is required.</div>}
 						</div>
 
 						<div className="col-md-4">
 							<label className="form-label">Ward</label>
-							<select className="form-select" value={location.ward} onChange={handleWardChange}>
+							<select
+								className={`form-select ${errors.ward ? 'is-invalid' : ''}`}
+								value={location.ward}
+								onChange={handleWardChange}
+							>
 								<option value="">Select ward</option>
 								{wards.map((ward) => (
 									<option key={ward.code} value={ward.code}>
@@ -211,11 +257,18 @@ const ProfileInfo = () => {
 									</option>
 								))}
 							</select>
+							{errors.ward && <div className="invalid-feedback">Ward is required.</div>}
 						</div>
 
 						<div className="col-md-12">
 							<label className="form-label">Detail Address</label>
-							<input type="text" className="form-control" value={location.detail} onChange={handleDetailChange} />
+							<input
+								type="text"
+								className={`form-control ${errors.detail ? 'is-invalid' : ''}`}
+								value={location.detail}
+								onChange={handleDetailChange}
+							/>
+							{errors.detail && <div className="invalid-feedback">Detail address is required.</div>}
 						</div>
 					</>
 				) : (
@@ -225,7 +278,6 @@ const ProfileInfo = () => {
 					</div>
 				)}
 
-				{/* Score luôn hiển thị */}
 				<div className="col-md-6">
 					<label className="form-label">Score</label>
 					<input type="text" className="form-control" value={user.score} disabled />

@@ -1,9 +1,10 @@
 // src/pages/client/auction/AuctionDetailPage.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getAuctionById, getAllAuctions } from '../../../services/auction-api';
+import { getAllAuctions } from '../../../services/auction-api';
 import { getSellerById } from '../../../services/user-api';
 // import '../../../assets/styles/client/auction-detail.css'; // chưa có
+import { getAuctionDetailById } from '../../../services/auction-api';
 
 const AuctionDetailPage = () => {
 	const { id } = useParams();
@@ -21,7 +22,7 @@ const AuctionDetailPage = () => {
 
 		const fetchAuction = async () => {
 			try {
-				const data = await getAuctionById(id);
+				const data = await getAuctionDetailById(id);
 				setAuction(data);
 				startCountdown(data.endTime);
 				fetchSeller(data.sellerId);
@@ -45,10 +46,11 @@ const AuctionDetailPage = () => {
 		const fetchRelatedAuctions = async (currentAuction) => {
 			try {
 				const all = await getAllAuctions();
-				const filtered = all.filter(a =>
-					a.id !== currentAuction.id &&
-					a.categoryId === currentAuction.categoryId &&
-					['UPCOMING', 'ONGOING'].includes(a.status)
+				const filtered = all.filter(
+					(a) =>
+						a.id !== currentAuction.id &&
+						a.categoryId === currentAuction.categoryId &&
+						['UPCOMING', 'ONGOING'].includes(a.status),
 				);
 				setRelatedAuctions(filtered.slice(0, 4));
 			} catch (err) {
@@ -82,9 +84,10 @@ const AuctionDetailPage = () => {
 	if (error) return <div className="text-danger text-center">{error}</div>;
 	if (!auction) return null;
 
-	const truncatedDesc = auction.description?.length > 1000 && !showFullDesc
-		? auction.description.substring(0, 1000) + '...'
-		: auction.description;
+	const truncatedDesc =
+		auction.description?.length > 1000 && !showFullDesc
+			? auction.description.substring(0, 1000) + '...'
+			: auction.description;
 
 	return (
 		<div className="container py-4">
@@ -179,12 +182,17 @@ const AuctionDetailPage = () => {
 				<div className="mt-5">
 					<h4 className="mb-3">Other auctions you may like</h4>
 					<div className="row g-4">
-						{relatedAuctions.map(item => (
+						{relatedAuctions.map((item) => (
 							<div className="col-md-3" key={item.id}>
 								<Link to={`/auctions/${item.id}`} className="text-decoration-none">
 									<div className="card h-100">
 										{item.media?.[0]?.url && (
-											<img src={item.media[0].url} className="card-img-top" alt="..." style={{ height: '160px', objectFit: 'cover' }} />
+											<img
+												src={item.media[0].url}
+												className="card-img-top"
+												alt="..."
+												style={{ height: '160px', objectFit: 'cover' }}
+											/>
 										)}
 										<div className="card-body">
 											<h6 className="card-title mb-1 text-dark">{item.title}</h6>
