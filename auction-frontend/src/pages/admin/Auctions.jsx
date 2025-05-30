@@ -1,3 +1,4 @@
+// Auctions.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/styles/admin/Auctions.css";
@@ -5,9 +6,9 @@ import Sidebar from "../../components/admin/Sidebar";
 import Topbar from "../../components/admin/Topbar";
 import { Search, ChevronDown, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react";
 import adminAuctionAPI from "../../services/admin-auction-api";
+import { getUserById } from "../../services/admin-user-api";
 
 const Auctions = () => {
-  // State cho dữ liệu đấu giá
   const [auctions, setAuctions] = useState([]);
   const [filteredAuctions, setFilteredAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,53 +19,48 @@ const Auctions = () => {
   const [sortOrder, setSortOrder] = useState("Newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  
-  // State cho các thẻ thống kê
-  const [stats, setStats] = useState({
-    all: 0,
-    active: 0,
-    draft: 0,
-    delivered: 0,
-    pending: 0,
-    completed: 0
-  });
-
-  // State để theo dõi ảnh lỗi - tránh load lại nhiều lần
+  const [stats, setStats] = useState({ all: 0, active: 0, draft: 0, delivered: 0, pending: 0, completed: 0 });
   const [failedImages, setFailedImages] = useState(new Set());
+  const userCache = new Map();
 
-  // Load dữ liệu ban đầu
-  useEffect(() => {
-    loadInitialData();
-  }, []);
+  useEffect(() => { loadInitialData(); }, []);
+  useEffect(() => { applyFiltersAndSort(); }, [auctions, searchQuery, currentCategory, currentStatus, sortOrder]);
 
-  // Apply filters khi có thay đổi
-  useEffect(() => {
-    applyFiltersAndSort();
-  }, [auctions, searchQuery, currentCategory, currentStatus, sortOrder]);
+  const fetchUsersForAuctions = async (auctionList) => {
+    return await Promise.all(
+      auctionList.map(async (auction) => {
+        if (!auction.sellerId) return auction;
+        try {
+          if (!userCache.has(auction.sellerId)) {
+            const user = await getUserById(auction.sellerId);
+            userCache.set(auction.sellerId, user);
+          }
+          return { ...auction, user: userCache.get(auction.sellerId) };
+        } catch {
+          return { ...auction, user: null };
+        }
+      })
+    );
+  };
 
-  // Load dữ liệu ban đầu
   const loadInitialData = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Load auctions và stats đồng thời
       const [auctionsData, statsData] = await Promise.all([
         adminAuctionAPI.getAllAuctions(),
         adminAuctionAPI.getAuctionStats()
       ]);
-      
-      setAuctions(auctionsData);
+      const auctionsWithUsers = await fetchUsersForAuctions(auctionsData);
+      setAuctions(auctionsWithUsers);
       setStats(statsData);
-    } catch (err) {
-      console.error('Error loading initial data:', err);
-      setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+    } catch {
+      setError("Unable to load data. Please try again later.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Apply filters và sorting
   const applyFiltersAndSort = async () => {
     try {
       const filters = {
@@ -75,118 +71,147 @@ const Auctions = () => {
         page: currentPage,
         size: itemsPerPage
       };
-
       const filteredData = await adminAuctionAPI.searchAuctions(filters);
-      setFilteredAuctions(filteredData);
-    } catch (err) {
-      console.error('Error applying filters:', err);
+      const dataWithUsers = await fetchUsersForAuctions(filteredData);
+      setFilteredAuctions(dataWithUsers);
+    } catch {
       setFilteredAuctions([]);
     }
   };
 
-  // Hàm lấy tên seller - SỬA ĐỔI CHÍNH TẠI ĐÂY
+  // Function to get seller name - IMPROVED
   const getSellerName = (auction) => {
-    // Debug để xem cấu trúc dữ liệu
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Auction seller data:', {
-        sellerId: auction.sellerId,
-        user: auction.user,
-        userKeys: auction.user ? Object.keys(auction.user) : 'No user object'
-      });
+    console.log('Getting seller name for auction:', auction?.id, 'User data:', auction?.user); // Debug log
+    
+    // Check if user information exists
+    if (!auction?.user) {
+      console.log('No user data found for auction:', auction?.id);
+      return `Seller #${auction?.sellerId || 'Unknown'}`;
     }
 
-    // Thử các cách khác nhau để lấy tên
-    if (auction.user) {
-      // Trường hợp 1: firstName + lastName
-      if (auction.user.firstName || auction.user.lastName) {
-        const firstName = auction.user.firstName || '';
-        const lastName = auction.user.lastName || '';
-        const fullName = `${firstName} ${lastName}`.trim();
-        if (fullName) return fullName;
-      }
+    const user = auction.user;
 
-      // Trường hợp 2: fullName
-      if (auction.user.fullName) {
-        return auction.user.fullName;
-      }
-
-      // Trường hợp 3: name
-      if (auction.user.name) {
-        return auction.user.name;
-      }
-
-      // Trường hợp 4: displayName hoặc username
-      if (auction.user.displayName) {
-        return auction.user.displayName;
-      }
-
-      if (auction.user.username) {
-        return auction.user.username;
-      }
-
-      // Trường hợp 5: email (nếu không có tên)
-      if (auction.user.email) {
-        return auction.user.email.split('@')[0]; // Lấy phần trước @ của email
+    // Try different ways to get name in priority order
+    // 1. firstName + lastName
+    if (user.firstName || user.lastName) {
+      const firstName = user.firstName || '';
+      const lastName = user.lastName || '';
+      const fullName = `${firstName} ${lastName}`.trim();
+      if (fullName) {
+        console.log('Using firstName + lastName:', fullName);
+        return fullName;
       }
     }
 
-    // Fallback cuối cùng
-    return `Seller #${auction.sellerId}`;
+    // 2. fullName (if available)
+    if (user.fullName && user.fullName.trim()) {
+      console.log('Using fullName:', user.fullName);
+      return user.fullName.trim();
+    }
+
+    // 3. name (if available)
+    if (user.name && user.name.trim()) {
+      console.log('Using name:', user.name);
+      return user.name.trim();
+    }
+
+    // 4. displayName or username
+    if (user.displayName && user.displayName.trim()) {
+      console.log('Using displayName:', user.displayName);
+      return user.displayName.trim();
+    }
+
+    if (user.username && user.username.trim()) {
+      console.log('Using username:', user.username);
+      return user.username.trim();
+    }
+
+    // 5. email (get part before @)
+    if (user.email && user.email.trim()) {
+      const emailName = user.email.split('@')[0];
+      console.log('Using email name:', emailName);
+      return emailName;
+    }
+
+    // Final fallback
+    console.log('Using fallback seller ID');
+    return `Seller #${auction.sellerId || 'Unknown'}`;
   };
 
-  // Hàm lấy email seller
+  // Function to get seller email
   const getSellerEmail = (auction) => {
-    return auction.user?.email || '';
+    return auction?.user?.email || '';
   };
 
-  // Hàm kiểm tra seller verified
+  // Function to check if seller is verified
   const isSellerVerified = (auction) => {
-    return auction.user?.verified === true;
+    return auction?.user?.verified === true;
   };
 
-  // Hàm kiểm tra và trả về URL ảnh hợp lệ
+  // Function to get complete seller information for tooltip
+  const getSellerInfo = (auction) => {
+    if (!auction?.user) return `Seller ID: ${auction?.sellerId || 'Unknown'}`;
+    
+    const user = auction.user;
+    const info = [];
+    
+    if (user.firstName || user.lastName) {
+      info.push(`Name: ${getSellerName(auction)}`);
+    }
+    if (user.email) {
+      info.push(`Email: ${user.email}`);
+    }
+    if (user.phoneNumber) {
+      info.push(`Phone: ${user.phoneNumber}`);
+    }
+    info.push(`Seller ID: ${auction.sellerId}`);
+    
+    return info.join('\n');
+  };
+
+  // Function to check and return valid image URL
   const getValidImageUrl = (auction) => {
-    // Kiểm tra các nguồn ảnh theo thứ tự ưu tiên
+    // Check image sources in priority order
     const imageUrls = [
       auction.thumbnailUrl,
       auction.media?.[0]?.url,
       auction.imageUrl
-    ].filter(Boolean); // Loại bỏ các giá trị null/undefined/empty
+    ].filter(Boolean); // Remove null/undefined/empty values
 
-    // Nếu không có ảnh hợp lệ, trả về ảnh mặc định
+    // If no valid images, return default image
     if (imageUrls.length === 0) {
       return '';
     }
 
-    // Tìm URL đầu tiên chưa từng lỗi
+    // Find first URL that hasn't failed before
     for (const url of imageUrls) {
       if (!failedImages.has(url)) {
         return url;
       }
     }
 
-    // Nếu tất cả đều lỗi, trả về ảnh mặc định
+    // If all failed, return default image
     return '';
   };
 
-  // Hàm xử lý khi ảnh bị lỗi
+  // Function to handle image error
   const handleImageError = (e, auctionId, imageUrl) => {
-    // Thêm URL lỗi vào danh sách
+    // Add failed URL to list
     setFailedImages(prev => new Set([...prev, imageUrl]));
     
-    // Chỉ đổi sang ảnh mặc định nếu chưa phải là ảnh mặc định
+    // Only change to default image if not already default
     if (e.target.src !== '/default-auction-image.jpg') {
       e.target.src = '/default-auction-image.jpg';
     }
   };
 
-  // Hàm xử lý tìm kiếm
+  // Function to handle search
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1); // Reset về trang đầu khi search
+    setCurrentPage(1); // Reset to first page when searching
   };
 
-  // Hàm lọc auctions dựa theo trạng thái từ stats cards
+  // Function to filter auctions by status from stats cards
   const filterByStatus = async (status) => {
     try {
       setLoading(true);
@@ -228,31 +253,31 @@ const Auctions = () => {
       }
     } catch (err) {
       console.error('Error filtering by status:', err);
-      setError('Không thể lọc theo trạng thái. Vui lòng thử lại sau.');
+      setError('Unable to filter by status. Please try again later.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Hàm xử lý khi thay đổi danh mục
+  // Function to handle category change
   const handleCategoryChange = (e) => {
     setCurrentCategory(e.target.value);
     setCurrentPage(1);
   };
 
-  // Hàm xử lý khi thay đổi trạng thái
+  // Function to handle status change
   const handleStatusChange = (e) => {
     setCurrentStatus(e.target.value);
     setCurrentPage(1);
   };
 
-  // Hàm xử lý khi thay đổi thứ tự sắp xếp
+  // Function to handle sort order change
   const handleSortChange = (e) => {
     setSortOrder(e.target.value);
     setCurrentPage(1);
   };
 
-  // Hàm xử lý khi thay đổi trang
+  // Function to handle page change
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
@@ -261,8 +286,8 @@ const Auctions = () => {
 
   // Format currency
   const formatCurrency = (amount) => {
-    if (!amount) return "0 đ";
-    return new Intl.NumberFormat('vi-VN', {
+    if (!amount) return "đ0";
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'VND'
     }).format(amount);
@@ -272,7 +297,7 @@ const Auctions = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('vi-VN', {
+    return new Intl.DateTimeFormat('en-US', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
@@ -338,7 +363,7 @@ const Auctions = () => {
                 className="btn btn-sm btn-outline-danger ml-2"
                 onClick={loadInitialData}
               >
-                Thử lại
+                Try Again
               </button>
             </div>
           )}
@@ -452,13 +477,15 @@ const Auctions = () => {
                 {loading ? (
                   <tr>
                     <td colSpan="8" className="loading-row">
-                      <div className="loading-spinner">Đang tải...</div>
+                      <div className="centered-loading">
+                        <span>Loading auctions, please wait...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : currentAuctions.length === 0 ? (
                   <tr>
                     <td colSpan="8" className="no-data-row">
-                      {error ? 'Có lỗi xảy ra khi tải dữ liệu' : 'Không tìm thấy đấu giá nào'}
+                      {error ? 'An error occurred while loading data' : 'No auctions found'}
                     </td>
                   </tr>
                 ) : (
@@ -485,21 +512,23 @@ const Auctions = () => {
                             </div>
                           </div>
                         </td>
-                        {/* SELLER CELL - ĐÃ CẬP NHẬT */}
-                        <td className="seller-cell">
-                          <div className="seller-name" title={getSellerName(auction)}>
+                        {/* SELLER CELL - IMPROVED */}
+                        <td className="seller-cell" title={getSellerInfo(auction)}>
+                          <div className="seller-name">
                             {getSellerName(auction)}
+                            {isSellerVerified(auction) && (
+                              <span className="verified-badge" style={{marginLeft: '5px', color: '#10b981'}}>
+                                ✓
+                              </span>
+                            )}
                           </div>
-                          {isSellerVerified(auction) && (
-                            <div className="seller-verified">✓ Verified</div>
-                          )}
                           {getSellerEmail(auction) && (
-                            <div className="seller-email" title={getSellerEmail(auction)}>
+                            <div className="seller-email" style={{fontSize: '12px', color: '#666', marginTop: '2px'}}>
                               {getSellerEmail(auction)}
                             </div>
                           )}
-                          <div className="seller-id" style={{fontSize: '11px', color: '#888'}}>
-                            Seller ID: {auction.sellerId}
+                          <div className="seller-id" style={{fontSize: '11px', color: '#888', marginTop: '2px'}}>
+                            ID: {auction.sellerId}
                           </div>
                         </td>
                         <td className="dates-cell">
@@ -551,7 +580,7 @@ const Auctions = () => {
                   <ChevronLeft size={16} />
                 </button>
                 
-                {/* Tạo các nút số trang */}
+                {/* Generate page number buttons */}
                 {Array.from({ length: Math.min(totalPages, 5) }, (_, index) => {
                   let pageNumber;
                   if (totalPages <= 5) {
