@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
+import 'package:mobile_app/core/models/auction_model.dart';
+import 'package:mobile_app/core/services/auction_service.dart';
+import '../../auction/screens/auction_detail.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -12,6 +15,7 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  String _searchKeyword = '';
 
   @override
   void initState() {
@@ -85,7 +89,9 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
                   ),
                 ),
                 onChanged: (value) {
-                  print('Search query: $value');
+                  setState(() {
+                    _searchKeyword = value.trim();
+                  });
                 },
               ),
             ),
@@ -94,10 +100,19 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
             child: TabBarView(
               controller: _tabController,
               children: [
-                SearchResults(tab: 'Newly Listed'),
-                SearchResults(tab: 'Ending Soon'),
-                SearchResults(tab: 'Best Bids'),
-                SearchResults(tab: 'Most Watched'),
+                SearchResults(
+                  tab: 'new',
+                  searchKeyword: _searchKeyword,
+                ),
+                SearchResults(
+                  tab: 'ending',
+                  searchKeyword: _searchKeyword,
+                ),
+                SearchResults(
+                  tab: 'bids',
+                  searchKeyword: _searchKeyword,
+                ),
+                const Center(child: Text('Coming soon...')),
               ],
             ),
           ),
@@ -107,124 +122,188 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
   }
 }
 
-class SearchResults extends StatelessWidget {
+class SearchResults extends StatefulWidget {
   final String tab;
+  final String searchKeyword;
 
-  const SearchResults({super.key, required this.tab});
+  const SearchResults({super.key, required this.tab, required this.searchKeyword});
+
+  @override
+  State<SearchResults> createState() => _SearchResultsState();
+}
+
+class _SearchResultsState extends State<SearchResults> {
+  int showCount = 5;
+
+  String? getAuctionImage(Auction auction) {
+    if (auction.mediaUrls.isNotEmpty) {
+      return auction.mediaUrls.first;
+    }
+    if (auction.thumbnailUrl != null && auction.thumbnailUrl!.isNotEmpty) {
+      return auction.thumbnailUrl;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> searchItems = [
-      {
-        'image': 'https://via.placeholder.com/150',
-        'title': 'BMW AIGID a Class',
-        'currentBid': '\$90,000.00',
-        'bids': 12,
-      },
-      {
-        'image': 'https://via.placeholder.com/150',
-        'title': 'Watercolor 2.5 for Sale',
-        'currentBid': '\$90,000.00',
-        'bids': 12,
-      },
-      {
-        'image': 'https://via.placeholder.com/150',
-        'title': 'Michael Korian Gold',
-        'currentBid': '\$90,000.00',
-        'bids': 12,
-      },
-      {
-        'image': 'https://via.placeholder.com/150',
-        'title': 'Watercolor A8 for Variants',
-        'currentBid': '\$90,000.00',
-        'bids': 12,
-      },
-    ];
+    return FutureBuilder<List<Auction>>(
+      future: AuctionService.fetchAuctions(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Failed to load auctions: ${snapshot.error}'));
+        }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      itemCount: searchItems.length,
-      itemBuilder: (context, index) {
-        final item = searchItems[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    'assets/images/product-img.png',
-                    width: 90,
-                    height: 90,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item['title'],
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${item['bids']} bids',
-                        style: const TextStyle(fontSize: 13, color: AppColors.grey),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Current Bid: ${item['currentBid']}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: 140,
-                        child: CustomButton(
-                          text: 'Join Auction',
-                          onPressed: () {
-                            print('Join Auction pressed');
-                          },
-                          backgroundColor: AppColors.black,
-                          textColor: AppColors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.favorite_border),
-                  onPressed: () {
-                    print('Add to watchlist');
+        List<Auction> auctions = snapshot.data ?? [];
+        if (widget.searchKeyword.isNotEmpty) {
+          auctions = auctions.where((a) =>
+          a.title.toLowerCase().contains(widget.searchKeyword.toLowerCase()) ||
+              a.description.toLowerCase().contains(widget.searchKeyword.toLowerCase())).toList();
+        }
+        if (widget.tab == 'new') {
+          auctions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        } else if (widget.tab == 'ending') {
+          auctions.sort((a, b) => a.endTime.compareTo(b.endTime));
+        } else if (widget.tab == 'bids') {
+          auctions.sort((a, b) => (b.bidCount ?? 0).compareTo(a.bidCount ?? 0));
+        }
+
+        if (auctions.isEmpty) {
+          return const Center(child: Text('No auctions found.'));
+        }
+
+        final displayAuctions = auctions.take(showCount).toList();
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          itemCount: displayAuctions.length + ((auctions.length > 5) ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == displayAuctions.length && auctions.length > 5) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: TextButton(
+                    onPressed: () {
+                      setState(() {
+                        if (showCount < auctions.length) {
+                          showCount = (showCount + 5).clamp(5, auctions.length);
+                        } else {
+                          showCount = 5;
+                        }
+                      });
                     },
+                    child: Text(
+                      showCount < auctions.length ? 'View More' : 'Show Less',
+                      style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
+                    ),
+                  ),
                 ),
-              ],
-            ),
-          ),
+              );
+            }
+
+            final auction = displayAuctions[index];
+            final imgUrl = getAuctionImage(auction);
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: imgUrl != null && imgUrl.isNotEmpty
+                          ? Image.network(
+                        imgUrl,
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Image.asset(
+                          'assets/images/product-img.png',
+                          width: 90,
+                          height: 90,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                          : Image.asset(
+                        'assets/images/product-img.png',
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            auction.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${auction.bidCount} bids',
+                            style: const TextStyle(fontSize: 13, color: AppColors.grey),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Current Bid: ₫${(auction.currentBid ?? auction.startingPrice).toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: 140,
+                            child: CustomButton(
+                              text: 'Join Auction',
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AuctionDetailPage(auction: auction),
+                                  ),
+                                );
+                              },
+                              backgroundColor: AppColors.black,
+                              textColor: AppColors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.favorite_border),
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );

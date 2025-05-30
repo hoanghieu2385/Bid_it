@@ -38,34 +38,50 @@ class AuctionService {
     }
     return [];
   }
-
-  static Future<Auction?> createAuction(Map<String, dynamic> auctionData) async {
+  static Future<Map<String, dynamic>?> createAuction(Map<String, dynamic> data) async {
     final token = await _getToken();
     if (token == null) return null;
-
     final user = await UserService.getCurrentUser();
     if (user == null || user['id'] == null) return null;
 
     final sellerId = user['id'];
-    auctionData['sellerId'] = sellerId;
-
-    final url = Uri.parse('$baseAuctionUrl/auctions?requesterId=$sellerId');
-    final res = await http.post(
-      url,
+    data['sellerId'] = sellerId;
+    final response = await http.post(
+      Uri.parse('$baseAuctionUrl/auctions?requesterId=$sellerId'),
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
       },
-      body: jsonEncode(auctionData),
+      body: jsonEncode(data),
     );
 
-    if (res.statusCode == 201 || res.statusCode == 200) {
-      return Auction.fromJson(jsonDecode(res.body));
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
     } else {
-      print('[AuctionService] Create failed: ${res.statusCode}, ${res.body}');
-      return null;
+      return {
+        'message': jsonDecode(response.body)['message'] ?? 'Failed to create auction',
+        'status': 'error'
+      };
     }
   }
+  static Future<List<Auction>> getMyAuctionsByStatus(String status) async {
+    final token = await _getToken();
+    final url = Uri.parse('$baseAuctionUrl/auctions/search/status?status=$status');
+
+    final response = await http.get(url, headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((e) => Auction.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to load auctions by status');
+    }
+  }
+
+
 
   static Future<Map<String, dynamic>?> uploadImage(
       Uint8List bytes,

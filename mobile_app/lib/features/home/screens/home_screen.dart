@@ -1,8 +1,7 @@
 // File: home_page.dart
-// Description: Home page with modern UI, category filter, improved auction cards, and View All toggle.
+// Description: Home Page with auto-updating countdown, keyword search, and auction grouping. Hiển thị ảnh đúng logic mediaUrls > thumbnailUrl > default.
 
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
@@ -17,6 +16,7 @@ import 'package:mobile_app/features/auction/screens/create_aution.dart';
 import 'package:mobile_app/features/auction/screens/watchlist_screen.dart';
 import 'package:mobile_app/features/profile/screens/user_screen.dart';
 import 'package:mobile_app/features/search/screens/search_screen.dart';
+import 'package:mobile_app/features/auction/screens/auction_detail.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -49,7 +49,6 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        title: '',
       ),
     );
   }
@@ -63,23 +62,56 @@ class HomeContent extends StatefulWidget {
 
 class _HomeContentState extends State<HomeContent> {
   List<Category> categories = [];
-  List<Auction> auctions = [];
+  List<Auction> ongoingAuctions = [];
+  List<Auction> upcomingAuctions = [];
+  List<Auction> allAuctions = [];
   bool isLoading = true;
-  int displayLimit = 3;
+
+  final TextEditingController _searchController = TextEditingController();
+  String _searchKeyword = '';
+  Timer? _countdownTimer;
 
   @override
   void initState() {
     super.initState();
     loadData();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> loadData() async {
     try {
       final fetchedCategories = await CategoryService.fetchCategories();
       final fetchedAuctions = await AuctionService.fetchAuctions();
+      final now = DateTime.now();
+
+      final validAuctions =
+      fetchedAuctions.where((a) => a.endTime.isAfter(now)).toList();
+
+      final ongoing = validAuctions
+          .where((a) => now.isAfter(a.startTime) && now.isBefore(a.endTime))
+          .toList();
+
+      final upcoming = validAuctions
+          .where((a) => now.isBefore(a.startTime))
+          .toList();
+
+      final all = List<Auction>.from(validAuctions)
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
       setState(() {
         categories = fetchedCategories;
-        auctions = fetchedAuctions;
+        ongoingAuctions = ongoing;
+        upcomingAuctions = upcoming;
+        allAuctions = all;
         isLoading = false;
       });
     } catch (e) {
@@ -87,82 +119,145 @@ class _HomeContentState extends State<HomeContent> {
     }
   }
 
+  String getCountdownText(DateTime time) {
+    final now = DateTime.now();
+    final difference = time.difference(now);
+    if (difference.isNegative) return '00:00:00';
+    final hours = difference.inHours;
+    final minutes = difference.inMinutes % 60;
+    final seconds = difference.inSeconds % 60;
+    return '${hours.toString().padLeft(2, '0')}:'
+        '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
+  }
+
   Widget _buildAuctionCard(Auction auction) {
-    final dateFormatter = DateFormat('dd/MM/yyyy');
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 3,
-        clipBehavior: Clip.antiAlias,
+    final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
+    final duration = auction.endTime.difference(DateTime.now());
+    final days = duration.inDays;
+    final hours = duration.inHours % 24;
+    final minutes = duration.inMinutes % 60;
+    final seconds = duration.inSeconds % 60;
+    String? displayImage;
+    if (auction.mediaUrls.isNotEmpty) {
+      displayImage = auction.mediaUrls.first;
+    } else if (auction.thumbnailUrl != null && auction.thumbnailUrl!.isNotEmpty) {
+      displayImage = auction.thumbnailUrl;
+    } else {
+      displayImage = null;
+    }
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AuctionDetailPage(auction: auction),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+          color: Colors.white,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            auction.thumbnailUrl != null
-                ? Image.network(
-              auction.thumbnailUrl!,
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12), topRight: Radius.circular(12)),
+                  child: displayImage != null && displayImage.isNotEmpty
+                      ? Image.network(
+                    displayImage,
+                    width: double.infinity,
+                    height: 180,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      'assets/images/product-img.png',
+                      width: double.infinity,
+                      height: 180,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                      : Image.asset(
+                    'assets/images/product-img.png',
+                    width: double.infinity,
+                    height: 180,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.85),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Container(
               width: double.infinity,
-              height: 180,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Image.asset(
-                'assets/images/product-img.png',
-                width: double.infinity,
-                height: 180,
-                fit: BoxFit.cover,
+              color: Colors.black87,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildTimeItem('$days', 'Days'),
+                      _buildTimeItem('$hours', 'Hours'),
+                      _buildTimeItem('$minutes', 'Minutes'),
+                      _buildTimeItem('$seconds', 'Seconds'),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: Text(
+                      'End time: ${dateFormatter.format(auction.endTime)}',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
+                ],
               ),
-            )
-                : Image.asset(
-              'assets/images/product-img.png',
-              width: double.infinity,
-              height: 180,
-              fit: BoxFit.cover,
             ),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(auction.title,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
                   Text(
-                    auction.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                    auction.title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.access_time, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text('Start: ${dateFormatter.format(auction.startTime)}',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      const SizedBox(width: 12),
-                      const Icon(Icons.flag, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text('End: ${dateFormatter.format(auction.endTime)}',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      const Text('Starting Price: '),
+                      Text('${auction.startingPrice.toStringAsFixed(0)} đ',
+                          style: const TextStyle(color: Colors.green))
                     ],
                   ),
-                  const SizedBox(height: 8),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('${auction.startingPrice.toStringAsFixed(0)} VNĐ',
-                          style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(auction.status,
-                            style: const TextStyle(fontSize: 12, color: Colors.orange)),
-                      ),
+                      const Text('Current Bid: '),
+                      Text('${auction.startingPrice.toStringAsFixed(0)} đ',
+                          style: const TextStyle(color: Colors.green))
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Text('Bid Count: '),
+                      Text('0 bids', style: const TextStyle(color: Colors.green))
                     ],
                   ),
                 ],
@@ -174,9 +269,63 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
+  Widget _buildTimeItem(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+              fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        Text(label, style: const TextStyle(color: Colors.white, fontSize: 12))
+      ],
+    );
+  }
+
+  Widget _buildSection(String title, List<Auction> auctionList) {
+    if (auctionList.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${auctionList.length}',
+                  style: const TextStyle(color: Colors.orange, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ListView.builder(
+            itemCount: auctionList.length,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemBuilder: (context, index) => _buildAuctionCard(auctionList[index]),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final visibleAuctions = auctions.take(displayLimit).toList();
+    final filteredAllAuctions = allAuctions
+        .where((a) => a.title.toLowerCase().contains(_searchKeyword.toLowerCase()))
+        .toList();
+
     return isLoading
         ? const Center(child: CircularProgressIndicator())
         : RefreshIndicator(
@@ -190,6 +339,10 @@ class _HomeContentState extends State<HomeContent> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() => _searchKeyword = value.trim());
+                },
                 decoration: InputDecoration(
                   hintText: 'Search auctions...',
                   prefixIcon: const Icon(Icons.search, color: AppColors.grey),
@@ -206,7 +359,6 @@ class _HomeContentState extends State<HomeContent> {
                 ),
               ),
             ),
-
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text('Categories',
@@ -246,41 +398,9 @@ class _HomeContentState extends State<HomeContent> {
                 },
               ),
             ),
-
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Text('Latest Auctions',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ListView.builder(
-                itemCount: visibleAuctions.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (context, index) => _buildAuctionCard(visibleAuctions[index]),
-              ),
-            ),
-            if (displayLimit < auctions.length)
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    setState(() => displayLimit += 3);
-                  },
-                  child: const Text('View More',
-                      style: TextStyle(color: Colors.orange, fontSize: 14)),
-                ),
-              )
-            else if (auctions.length > 3)
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    setState(() => displayLimit = 3);
-                  },
-                  child: const Text('Show Less',
-                      style: TextStyle(color: Colors.orange, fontSize: 14)),
-                ),
-              ),
+            _buildSection('Ongoing Auctions', ongoingAuctions),
+            _buildSection('Upcoming Auctions', upcomingAuctions),
+            _buildSection('All Auctions (Newest First)', filteredAllAuctions),
           ],
         ),
       ),
