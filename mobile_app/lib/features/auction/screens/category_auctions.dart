@@ -78,7 +78,20 @@ class _CategoryAuctionsPageState extends State<CategoryAuctionsPage> {
                   children: [
                     ClipRRect(
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                      child: Image.asset(
+                      child: auction.thumbnailUrl != null
+                          ? Image.network(
+                        auction.thumbnailUrl!,
+                        width: double.infinity,
+                        height: 160,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Image.asset(
+                          'assets/images/product-img.png',
+                          width: double.infinity,
+                          height: 160,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                          : Image.asset(
                         'assets/images/product-img.png',
                         width: double.infinity,
                         height: 160,
