@@ -2,6 +2,7 @@
 // Chức năng: Màn hình đăng nhập với giao diện SnackBar được cải tiến và ngôn ngữ tiếng Anh.
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/utils/navigation.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
@@ -23,8 +24,29 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
-  bool _rememberMe = true;
+  bool _rememberMe = false;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    loadRememberedCredentials();
+  }
+
+  Future<void> loadRememberedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('saved_email') ?? '';
+    final savedPassword = prefs.getString('saved_password') ?? '';
+    final remember = prefs.getBool('remember_me') ?? false;
+
+    if (remember) {
+      setState(() {
+        _emailController.text = savedEmail;
+        _passwordController.text = savedPassword;
+        _rememberMe = true;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -48,6 +70,17 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (result != null && result['error'] != true) {
+        final prefs = await SharedPreferences.getInstance();
+        if (_rememberMe) {
+          await prefs.setString('saved_email', _emailController.text.trim());
+          await prefs.setString('saved_password', _passwordController.text.trim());
+          await prefs.setBool('remember_me', true);
+        } else {
+          await prefs.remove('saved_email');
+          await prefs.remove('saved_password');
+          await prefs.setBool('remember_me', false);
+        }
+
         _showSnackbar("Welcome back! You have signed in successfully.");
         await Future.delayed(const Duration(milliseconds: 700));
         navigateTo(context, const HomePage());

@@ -80,3 +80,6 @@ export const getSellerById = async (sellerId) => {
   const response = await api.get(`${API_CONFIG.USER_API}/seller/${sellerId}`);
   return response.data;
 };
+
+
+
