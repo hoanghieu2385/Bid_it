@@ -33,6 +33,7 @@ public class AuctionController {
         this.mediaService = mediaService;
     }
 
+    // CREATE Auction
     @PostMapping
     public ResponseEntity<AuctionResponseDTO> createAuction(
             @Valid @RequestBody AuctionRequestDTO auctionRequestDTO,
@@ -42,6 +43,7 @@ public class AuctionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // GET ALL Auctions
     @GetMapping
     public ResponseEntity<List<AuctionResponseDTO>> getAuctions() {
         List<AuctionResponseDTO> auctions = auctionService.getAllAuctions().stream()
@@ -50,6 +52,7 @@ public class AuctionController {
         return ResponseEntity.ok(auctions);
     }
 
+    // GET Auction by AuctionID
     @GetMapping("/{id}")
     public ResponseEntity<AuctionResponseDTO> getAuction(@PathVariable Long id) {
         Auction auction = auctionService.getAuctionById(id)
@@ -57,6 +60,7 @@ public class AuctionController {
         return ResponseEntity.ok(mapToResponseDTO(auction));
     }
 
+    // GET Auction by AuctionStatus
     @GetMapping("/search/status")
     public ResponseEntity<List<AuctionResponseDTO>> searchAuctionsByStatus(
             @RequestParam String status) {
@@ -76,6 +80,7 @@ public class AuctionController {
         return ResponseEntity.ok(response);
     }
 
+    // GET Auction by Category
     @GetMapping("/search/category")
     public ResponseEntity<List<AuctionResponseDTO>> searchAuctionsByCategory(
             @RequestParam Long categoryId) {
@@ -89,12 +94,15 @@ public class AuctionController {
         return ResponseEntity.ok(response);
     }
 
+    // GET Auction by UserID
     @GetMapping("/seller/{sellerId}")
     public ResponseEntity<List<AuctionResponseDTO>> getAuctionsBySellerId(@PathVariable Long sellerId) {
         List<AuctionResponseDTO> response = auctionService.getAuctionsBySellerId(sellerId);
+
         return ResponseEntity.ok(response);
     }
 
+    // PUT Auction Status by AuctionID
     @PutMapping("/{id}/status")
     public ResponseEntity<AuctionResponseDTO> updateAuctionStatus(
             @PathVariable Long id,
@@ -104,6 +112,7 @@ public class AuctionController {
         return ResponseEntity.ok(updated);
     }
 
+    // PUT Auction (full) by AuctionID
     @PutMapping("/{id}")
     public ResponseEntity<AuctionResponseDTO> updateAuction(
             @PathVariable Long id,
@@ -113,6 +122,7 @@ public class AuctionController {
         return ResponseEntity.ok(auctionService.updateAuction(id, auctionRequestDTO, requesterId));
     }
 
+    // DELETE Auction by AuctionID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAuction(
             @PathVariable Long id,

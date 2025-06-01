@@ -22,6 +22,7 @@ public class MediaController {
         this.mediaService = mediaService;
     }
 
+    // SINGLE Upload of Media
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MediaResponseDTO> upload(
             @RequestParam("auctionId") Long auctionId,
@@ -37,6 +38,7 @@ public class MediaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // MULTIPLE Upload of Media
     @PostMapping(value = "/multi-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<MediaResponseDTO>> uploadMultiple(
             @RequestParam("auctionId") Long auctionId,
@@ -56,17 +58,20 @@ public class MediaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(responses);
     }
 
+    // GET Media by AuctionID
     @GetMapping("/auction/{auctionId}")
     public ResponseEntity<List<MediaResponseDTO>> getByAuction(@PathVariable Long auctionId) {
         return ResponseEntity.ok(mediaService.getMediaByAuctionId(auctionId));
     }
 
+    // DELETE Media by MediaID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         mediaService.deleteMedia(id);
         return ResponseEntity.noContent().build();
     }
 
+    // Set Media Thumbnail
     @PatchMapping("/{id}/set-thumbnail")
     public ResponseEntity<Void> setThumbnail(@PathVariable Long id) {
         mediaService.setAsThumbnail(id);

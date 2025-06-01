@@ -29,6 +29,7 @@ public class AuctionService implements IAuctionService{
         this.userClient = userClient;
     }
 
+    // Create Auction
     public AuctionResponseDTO createAuction(AuctionRequestDTO request, Long requesterId) {
         if (requesterId == null) {
             throw new IllegalArgumentException("Seller (requester) ID is required");
@@ -73,6 +74,7 @@ public class AuctionService implements IAuctionService{
         return mapToResponseDTO(saved);
     }
 
+    // Update Auction
     public AuctionResponseDTO updateAuction(Long id, AuctionRequestDTO request, Long requesterId) {
         Auction auction = auctionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
@@ -124,6 +126,8 @@ public class AuctionService implements IAuctionService{
         return mapToResponseDTO(updated);
     }
 
+
+    // Update Auction STATUS
     public AuctionResponseDTO updateAuctionStatus(Long id, String status, Long requesterId) {
         Auction auction = auctionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
@@ -149,22 +153,27 @@ public class AuctionService implements IAuctionService{
         return mapToResponseDTO(updated);
     }
 
+    // Get All Auction
     public List<Auction> getAllAuctions() {
         return auctionRepository.findAll();
     }
 
+    // Get Auction by AuctionID
     public Optional<Auction> getAuctionById(Long id) {
         return auctionRepository.findById(id);
     }
 
+    // Get Auction by CategoryID
     public List<Auction> findAuctionsByCategory(Long categoryId) {
         return auctionRepository.findByCategoryId(categoryId);
     }
 
+    // Get Auction by Auction STATUS
     public List<Auction> findAuctionsByStatus(AuctionStatus status) {
         return auctionRepository.findByStatus(status);
     }
 
+    // Get Auction by UserID
     @Override
     public List<AuctionResponseDTO> getAuctionsBySellerId(Long sellerId) {
         List<Auction> auctions = auctionRepository.findBySellerId(sellerId);
@@ -173,6 +182,7 @@ public class AuctionService implements IAuctionService{
                 .collect(Collectors.toList());
     }
 
+    // SOFT Delete Auction by AuctionID
     public void deleteAuction(Long id, Long requesterId) {
         Auction auction = auctionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
@@ -185,6 +195,7 @@ public class AuctionService implements IAuctionService{
         auctionRepository.delete(auction);
     }
 
+    // Get Seller info via UserID
     public UserDTO getSellerInfo(Long sellerId) {
         try {
             return userClient.getUserById(sellerId);
