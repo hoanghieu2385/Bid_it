@@ -45,45 +45,42 @@ const Home = () => {
 	}, []);
 
 	const renderAuctionCard = (auction) => (
-		<div key={auction.id} className="col-12 col-md-6 col-lg-4 mb-4">
-			<div className="card h-100 shadow-sm border-0">
-				<div
-					style={{
-						height: '200px',
-						backgroundColor: '#fff',
-						display: 'flex',
-						alignItems: 'center',
-						justifyContent: 'center',
-						overflow: 'hidden',
-					}}
-				>
-					<img
-						src={auction.media?.[0]?.url || '/default-image.jpg'}
-						onError={(e) => (e.target.src = '/default-image.jpg')}
-						alt={auction.title}
+		<div key={auction.id} className="col-12 col-md-6 col-lg-3 mb-4">
+			<Link to={`/auctions/${auction.id}`} className="text-decoration-none text-dark">
+				<div className="card h-100 shadow-sm border-0">
+					<div
 						style={{
-							maxHeight: '100%',
-							maxWidth: '100%',
-							objectFit: 'contain',
+							height: '200px',
+							backgroundColor: '#fff',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							overflow: 'hidden',
 						}}
-					/>
-				</div>
+					>
+						<img
+							src={auction.media?.[0]?.url || '/default-image.jpg'}
+							onError={(e) => (e.target.src = '/default-image.jpg')}
+							alt={auction.title}
+							style={{
+								maxHeight: '100%',
+								maxWidth: '100%',
+								objectFit: 'contain',
+							}}
+						/>
+					</div>
 
-				<div className="card-body d-flex flex-column">
-					<h5 className="card-title">{auction.title}</h5>
-					<p className="mb-1">
-						<b>Current Bid:</b> {auction.currentBid?.toLocaleString('vi-VN')}₫
-					</p>
-					<p className="mb-1">
-						<b>Ends:</b> {new Date(auction.endTime).toLocaleString('vi-VN')}
-					</p>
-					<div className="mt-auto">
-						<Link to={`/auctions/${auction.id}`} className="btn btn-outline-primary btn-sm w-100">
-							View Details
-						</Link>
+					<div className="card-body d-flex flex-column">
+						<h5 className="card-title">{auction.title}</h5>
+						<p className="mb-1">
+							<b>Current Bid:</b> {auction.currentBid?.toLocaleString('vi-VN')}₫
+						</p>
+						<p className="mb-1">
+							<b>Ends:</b> {new Date(auction.endTime).toLocaleString('vi-VN')}
+						</p>
 					</div>
 				</div>
-			</div>
+			</Link>
 		</div>
 	);
 
