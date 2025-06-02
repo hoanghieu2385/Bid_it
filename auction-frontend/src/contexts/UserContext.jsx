@@ -26,7 +26,9 @@ export const UserProvider = ({ children }) => {
 			});
 		} catch (error) {
 			console.error('[UserContext] Error fetching user:', error?.response?.status);
+			// Uncomment this if you want to remove invalid tokens
 			// localStorage.removeItem('jwt');
+			// setUser(null);
 		} finally {
 			setLoading(false);
 		}
@@ -36,29 +38,41 @@ export const UserProvider = ({ children }) => {
 	useEffect(() => {
 		const handleOnline = () => setIsOnline(true);
 		const handleOffline = () => setIsOnline(false);
+		
 		window.addEventListener('online', handleOnline);
 		window.addEventListener('offline', handleOffline);
+		
 		return () => {
 			window.removeEventListener('online', handleOnline);
 			window.removeEventListener('offline', handleOffline);
 		};
 	}, []);
 
-	// Fetch user when first load or route changes
-useEffect(() => {
-	const token = localStorage.getItem('jwt');
-	if (!token || !isOnline || user) return;
-
-	setLoading(true);
-	const timer = setTimeout(() => {
+	// Initial fetch user when component mounts
+	useEffect(() => {
 		fetchUser();
-	}, 300); // Delay 300ms
+	}, []); // run one-time when component mount
 
-	return () => clearTimeout(timer); // Clear khi unmount
-}, [location]);
+	// Fetch user when going online or location changes (but only if no user data)
+	useEffect(() => {
+		const token = localStorage.getItem('jwt');
+		
+		// fetch user data when:
+		// - has token
+		// - Online
+		// - No user data OR location changed and needs to be refreshed
+		if (token && isOnline && !user) {
+			setLoading(true);
+			const timer = setTimeout(() => {
+				fetchUser();
+			}, 300);
 
+			return () => clearTimeout(timer);
+		}
+	}, [location.pathname, isOnline, user]); // add dependencies needed for re-fetching
 
 	const loginUser = (userData) => setUser(userData);
+	
 	const logoutUser = () => {
 		localStorage.removeItem('jwt');
 		setUser(null);
