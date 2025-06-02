@@ -4,6 +4,26 @@ import axios from 'axios';
 import useToastMessage from '../../../hooks/useToastMessage';
 import { getCurrentUser, updateUserProfile, sendPhoneOtp, verifyPhoneOtp } from '../../../services/user-api';
 
+// Danh sách mã vùng quốc gia phổ biến
+const COUNTRY_CODES = [
+	{ code: '+84', country: 'Vietnam', flag: '🇻🇳' },
+	{ code: '+1', country: 'USA', flag: '🇺🇸' },
+	{ code: '+86', country: 'China', flag: '🇨🇳' },
+	{ code: '+81', country: 'Japan', flag: '🇯🇵' },
+	{ code: '+82', country: 'South Korea', flag: '🇰🇷' },
+	{ code: '+65', country: 'Singapore', flag: '🇸🇬' },
+	{ code: '+66', country: 'Thailand', flag: '🇹🇭' },
+	{ code: '+60', country: 'Malaysia', flag: '🇲🇾' },
+	{ code: '+62', country: 'Indonesia', flag: '🇮🇩' },
+	{ code: '+63', country: 'Philippines', flag: '🇵🇭' },
+	{ code: '+44', country: 'UK', flag: '🇬🇧' },
+	{ code: '+33', country: 'France', flag: '🇫🇷' },
+	{ code: '+49', country: 'Germany', flag: '🇩🇪' },
+	{ code: '+91', country: 'India', flag: '🇮🇳' },
+	{ code: '+61', country: 'Australia', flag: '🇦🇺' },
+	{ code: '+7', country: 'Russia', flag: '🇷🇺' },
+];
+
 const ProfileInfo = () => {
 	const { showSuccess, showError } = useToastMessage();
 
@@ -25,6 +45,7 @@ const ProfileInfo = () => {
 		firstName: '',
 		lastName: '',
 		phoneNumber: '',
+		countryCode: '+84', // Mặc định là Việt Nam
 		address: '',
 	});
 
@@ -47,10 +68,25 @@ const ProfileInfo = () => {
 			try {
 				const userData = await getCurrentUser();
 				setUser(userData);
+
+				// Parse số điện thoại nếu có mã vùng
+				let phoneNumber = userData.phoneNumber || '';
+				let countryCode = '+84'; // Mặc định
+
+				if (phoneNumber) {
+					// Kiểm tra xem số điện thoại có chứa mã vùng không
+					const matchedCode = COUNTRY_CODES.find(item => phoneNumber.startsWith(item.code));
+					if (matchedCode) {
+						countryCode = matchedCode.code;
+						phoneNumber = phoneNumber.substring(matchedCode.code.length);
+					}
+				}
+
 				setForm({
 					firstName: userData.firstName || '',
 					lastName: userData.lastName || '',
-					phoneNumber: userData.phoneNumber || '',
+					phoneNumber: phoneNumber,
+					countryCode: countryCode,
 					address: userData.address || '',
 				});
 				await loadProvinces();
@@ -143,21 +179,50 @@ const ProfileInfo = () => {
 		setForm({ ...form, [e.target.name]: e.target.value });
 	};
 
-	const handleSendPhoneOtp = async () => {
+	const handleCountryCodeChange = (e) => {
+		setForm({ ...form, countryCode: e.target.value });
+	};
+
+	const getFullPhoneNumber = () => {
+		return form.countryCode + form.phoneNumber;
+	};
+
+	const validatePhoneNumber = () => {
 		if (!form.phoneNumber.trim()) {
-			showError('Please enter a phone number first.');
+			return { valid: false, message: 'Please enter a phone number first.' };
+		}
+
+		// Validation cho số Việt Nam
+		if (form.countryCode === '+84') {
+			// Loại bỏ số 0 đầu nếu có
+			let phoneNum = form.phoneNumber.replace(/^0+/, '');
+			const phoneRegex = /^([3|5|7|8|9])+([0-9]{8})$/;
+			if (!phoneRegex.test(phoneNum)) {
+				return { valid: false, message: 'Please enter a valid Vietnamese phone number (without leading 0).' };
+			}
+		} else {
+			// Validation cơ bản cho số quốc tế khác
+			const phoneRegex = /^[0-9]{7,15}$/;
+			if (!phoneRegex.test(form.phoneNumber)) {
+				return { valid: false, message: 'Please enter a valid phone number.' };
+			}
+		}
+
+		return { valid: true };
+	};
+
+	const handleSendPhoneOtp = async () => {
+		const validation = validatePhoneNumber();
+		if (!validation.valid) {
+			showError(validation.message);
 			return;
 		}
-		// const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/;
-		// if (!phoneRegex.test(form.phoneNumber)) {
-		// 	showError('Please enter a valid Vietnamese phone number.');
-		// 	return;
-		// }
 
 		setPhoneVerification((prev) => ({ ...prev, isLoading: true }));
 
 		try {
-			await sendPhoneOtp(form.phoneNumber);
+			const fullPhoneNumber = getFullPhoneNumber();
+			await sendPhoneOtp(fullPhoneNumber);
 			setPhoneVerification((prev) => ({
 				...prev,
 				otpSent: true,
@@ -183,7 +248,8 @@ const ProfileInfo = () => {
 		setPhoneVerification((prev) => ({ ...prev, isLoading: true }));
 
 		try {
-			await verifyPhoneOtp(form.phoneNumber, phoneVerification.otp);
+			const fullPhoneNumber = getFullPhoneNumber();
+			await verifyPhoneOtp(fullPhoneNumber, phoneVerification.otp);
 			const updatedUser = await getCurrentUser();
 			setUser(updatedUser);
 			setPhoneVerification({
@@ -236,8 +302,12 @@ const ProfileInfo = () => {
 		const fullAddress = `${location.detail}, ${selectedWard.name}, ${selectedDistrict.name}, ${selectedProvince.name}`;
 
 		try {
+			// Lưu số điện thoại với mã vùng đầy đủ
+			const fullPhoneNumber = getFullPhoneNumber();
 			await updateUserProfile(user.id, {
-				...form,
+				firstName: form.firstName,
+				lastName: form.lastName,
+				phoneNumber: fullPhoneNumber,
 				address: fullAddress,
 			});
 			setForm({ ...form, address: fullAddress });
@@ -284,30 +354,43 @@ const ProfileInfo = () => {
 					/>
 				</div>
 
-				{/* Phone Number with Verification */}
+				{/* Phone Number with Country Code */}
 				<div className="col-lg-6">
 					<label className="form-label fs-6 fw-semibold">
 						Phone Number
 						{user.phoneVerified && (
 							<span className="badge bg-success ms-2 px-3 py-2">
-        <i className="fas fa-check-circle me-1"></i>Verified
-      </span>
+								<i className="fas fa-check-circle me-1"></i>Verified
+							</span>
 						)}
 					</label>
 
 					{editMode ? (
 						<div className="row g-2">
-							<div className="col-8">
+							<div className="col-4">
+								<select
+									className="form-select form-select-lg"
+									value={form.countryCode}
+									onChange={handleCountryCodeChange}
+								>
+									{COUNTRY_CODES.map((item) => (
+										<option key={item.code} value={item.code}>
+											{item.flag} {item.code}
+										</option>
+									))}
+								</select>
+							</div>
+							<div className="col-5">
 								<input
 									type="text"
 									className="form-control form-control-lg"
 									name="phoneNumber"
 									value={form.phoneNumber}
 									onChange={handleChange}
-									placeholder="Enter your phone number"
+									placeholder={form.countryCode === '+84' ? '987654321' : 'Phone number'}
 								/>
 							</div>
-							<div className="col-4">
+							<div className="col-3">
 								{!user.phoneVerified && !phoneVerification.isVerifying && (
 									<button
 										className="btn btn-outline-primary btn-lg w-100"
@@ -317,13 +400,12 @@ const ProfileInfo = () => {
 									>
 										{phoneVerification.isLoading ? (
 											<>
-												<span className="spinner-border spinner-border-sm me-2"
-													  role="status"></span>
-												Sending...
+												<span className="spinner-border spinner-border-sm me-1" role="status"></span>
+												...
 											</>
 										) : (
 											<>
-												<i className="fas fa-shield-alt me-2"></i>
+												<i className="fas fa-shield-alt me-1"></i>
 												Verify
 											</>
 										)}
@@ -335,12 +417,19 @@ const ProfileInfo = () => {
 						<input
 							type="text"
 							className="form-control form-control-lg"
-							value={form.phoneNumber}
+							value={user.phoneNumber || ''}
 							disabled
 						/>
 					)}
-				</div>
 
+					{/* Display full phone number preview when editing */}
+					{editMode && form.phoneNumber && (
+						<small className="text-muted mt-1 d-block">
+							<i className="fas fa-info-circle me-1"></i>
+							Full number: {getFullPhoneNumber()}
+						</small>
+					)}
+				</div>
 
 				{/* OTP Verification Section */}
 				{phoneVerification.isVerifying && (
@@ -352,8 +441,7 @@ const ProfileInfo = () => {
 									Phone Verification
 								</h5>
 								<p className="card-text text-muted mb-4 fs-6">
-									We've sent a verification code to <strong
-									className="text-dark">{form.phoneNumber}</strong>
+									We've sent a verification code to <strong className="text-dark">{getFullPhoneNumber()}</strong>
 								</p>
 
 								<div className="row g-3 align-items-end">
@@ -381,8 +469,7 @@ const ProfileInfo = () => {
 											>
 												{phoneVerification.isLoading ? (
 													<>
-														<span className="spinner-border spinner-border-sm me-2"
-															  role="status"></span>
+														<span className="spinner-border spinner-border-sm me-2" role="status"></span>
 														Verifying...
 													</>
 												) : (
@@ -411,7 +498,7 @@ const ProfileInfo = () => {
 												)}
 											</button>
 
-											<button
+											<button 
 												className="btn btn-outline-secondary btn-lg px-4"
 												onClick={handleCancelPhoneVerification}
 												disabled={phoneVerification.isLoading}

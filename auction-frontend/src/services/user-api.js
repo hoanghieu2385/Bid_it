@@ -2,7 +2,8 @@
 import api from './api';
 import API_CONFIG from './apiConfig';
 import Cookies from 'js-cookie';
-
+import axios from "axios";
+const API_URL = 'http://localhost:8080/user-service/api/users';
 // Auth endpoints
 export const login = async (email, password) => {
     const response = await api.post(`${API_CONFIG.USER_AUTH}/login`, { email, password });
@@ -47,23 +48,35 @@ export const resetPassword = async (token, email, newPassword) => {
     return response.data;
 };
 
-// Phone verification functions - Fixed to match backend API
-export const sendPhoneOtp = async (phoneNumber) => {
-    const response = await api.post('/user-service/api/users/send-phone-otp', null, {
-        params: { phone: phoneNumber }
-    });
-    return response.data;
+export const sendPhoneOtp = async (phone) => {
+    try {
+        const response = await axios.post(`${API_URL}/send-phone-otp`, null, {
+            params: { phone },
+        });
+        return response.data;
+    } catch (error) {
+        console.error("API Error:", error?.response?.data || error.message);
+        throw error;
+    }
 };
 
-export const verifyPhoneOtp = async (phoneNumber, otp) => {
-    const response = await api.post('/user-service/api/users/verify-phone-otp', null, {
-        params: {
-            phone: phoneNumber,
-            otp: otp
-        }
-    });
-    return response.data;
+export const verifyPhoneOtp = async (phone, otp) => {
+    try {
+        const response = await axios.post(
+            'http://localhost:8080/user-service/api/users/verify-phone-otp',
+            {
+                phone,
+                otp,
+            }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("API Error:", error?.response?.data || error.message);
+        throw error;
+    }
 };
+
+
 
 export const submitEkycRequest = async (formData) => {
     const token = Cookies.get('jwt');

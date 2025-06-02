@@ -193,13 +193,13 @@ public ResponseEntity<VerificationStatusResponse> getMyVerificationStatus() {
     }
 
     @PostMapping("/verify-phone-otp")
-    public ResponseEntity<String> verifyPhoneOtp(@RequestParam String phone,
-                                                 @RequestParam String otp) {
-        boolean verified = userService.verifyUserPhoneNumber(phone, otp);
-        return verified
-                ? ResponseEntity.ok("Phone verified.")
-                : ResponseEntity.badRequest().body("Invalid or expired OTP.");
+    public ResponseEntity<String> verifyPhoneOtp(@RequestBody VerifyPhoneOtpRequest request) {
+        boolean result = userService.verifyUserPhoneNumber(request.getPhone(), request.getOtp());
+        if (result) return ResponseEntity.ok("Phone number verified successfully");
+        return ResponseEntity.badRequest().body("Invalid or expired OTP");
     }
+
+
 
 
     ///

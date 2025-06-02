@@ -1,19 +1,19 @@
 package com.example.user.service;
 
-import com.example.user.model.Otp;
 import com.example.user.model.OtpType;
-import com.example.user.repository.OtpRepository;
-import com.example.user.model.User;
 import com.example.user.repository.UserRepository;
+import com.twilio.rest.verify.v2.service.Verification;
+import com.twilio.rest.verify.v2.service.VerificationCheck;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Random;
 
 @Service
 public class OtpService {
-    private final OtpRepository otpRepository;
+
     private final EmailService emailService;
     private final SmsService smsService;
     private final UserRepository userRepository;
@@ -21,8 +21,14 @@ public class OtpService {
     @Value("${otp.expiration.minutes}")
     private int otpExpirationMinutes;
 
-    public OtpService(OtpRepository otpRepository, EmailService emailService, SmsService smsService, UserRepository userRepository) {
-        this.otpRepository = otpRepository;
+    @Value("${twilio.verify.sid}")
+    private String twilioVerifySid;
+
+    public OtpService(
+            EmailService emailService,
+            SmsService smsService,
+            UserRepository userRepository
+    ) {
         this.emailService = emailService;
         this.smsService = smsService;
         this.userRepository = userRepository;
@@ -34,65 +40,55 @@ public class OtpService {
         return String.valueOf(number);
     }
 
-    // 📧 EMAIL VERIFICATION
+    // ✅ Gửi OTP xác minh email
     public void sendVerificationOtp(String email) {
         String otp = generateOtp();
-        LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(otpExpirationMinutes);
-
-        Otp otpEntity = Otp.builder()
-                .contact(email)
-                .code(otp)
-                .expiryDate(expiryDate)
-                .used(false)
-                .type(OtpType.EMAIL_VERIFICATION)
-                .build();
-
-        otpRepository.save(otpEntity);
         emailService.sendAccountVerificationEmail(email, otp);
+        // ❗ Nếu bạn cần lưu OTP email vào DB thì bổ sung vào đây (tùy bạn muốn giữ lại hay không)
     }
 
-    // 📧 LOGIN OTP (EMAIL)
+    // ✅ Gửi OTP đăng nhập qua email
     public void sendLoginOtp(String email) {
         String otp = generateOtp();
-        LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(otpExpirationMinutes);
-
-        Otp otpEntity = Otp.builder()
-                .contact(email)
-                .code(otp)
-                .expiryDate(expiryDate)
-                .used(false)
-                .type(OtpType.LOGIN)
-                .build();
-
-        otpRepository.save(otpEntity);
         emailService.sendLoginOtp(email, otp);
     }
 
-    public boolean verifyOtp(String contact, String otp, OtpType type) {
-        Otp otpEntity = otpRepository.findByContactAndCodeAndTypeAndUsedFalse(contact, otp, type)
-                .orElse(null);
+    // ✅ Gửi OTP xác minh số điện thoại (Twilio)
+    public void sendPhoneVerificationOtp(String phoneNumber) {
+        try {
+            Verification verification = Verification.creator(twilioVerifySid, phoneNumber, "sms").create();
+            System.out.println("Send OTP status: " + verification.getStatus());
+        } catch (Exception e) {
+            System.out.println("Error sending OTP with Twilio: " + e.getMessage());
+        }
+    }
 
-        if (otpEntity == null || LocalDateTime.now().isAfter(otpEntity.getExpiryDate())) {
+    // ✅ Xác minh OTP
+    public boolean verifyOtp(String contact, String otp, OtpType type) {
+        if (type == OtpType.PHONE_VERIFICATION) {
+            try {
+                VerificationCheck verification = VerificationCheck.creator(twilioVerifySid)
+                        .setTo(contact)
+                        .setCode(otp)
+                        .create();
+
+                System.out.println("Verify status: " + verification.getStatus());
+
+                if ("approved".equalsIgnoreCase(verification.getStatus())) {
+                    userRepository.findByPhoneNumber(contact).ifPresent(user -> {
+                        user.setPhoneVerified(true);
+                        userRepository.save(user);
+                    });
+                    return true;
+                }
+            } catch (Exception e) {
+                System.out.println("Error verifying OTP with Twilio: " + e.getMessage());
+            }
             return false;
         }
 
-        otpEntity.setUsed(true);
-        otpRepository.save(otpEntity);
-
-        // Nếu là xác minh số điện thoại thì update user.phoneVerified = true
-        if (type == OtpType.PHONE_VERIFICATION) {
-            userRepository.findByPhoneNumber(contact).ifPresent(user -> {
-                user.setPhoneVerified(true);
-                userRepository.save(user);
-            });
-        }
-
-        return true;
-    }
-
-
-    // 📱 PHONE: gửi OTP qua Twilio Verify API
-    public void sendPhoneVerificationOtp(String phoneNumber) {
-        smsService.sendOtpSms(phoneNumber); // ✅ Không cần sinh OTP nữa
+        // Nếu là xác minh qua EMAIL (vẫn dùng DB nếu muốn)
+        // Có thể return false luôn nếu bạn không xử lý OTP email bằng DB nữa
+        return false;
     }
 }
