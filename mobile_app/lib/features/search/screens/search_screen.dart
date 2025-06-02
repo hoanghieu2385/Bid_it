@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
-import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
 import 'package:mobile_app/core/services/auction_service.dart';
 import '../../auction/screens/auction_detail.dart';
@@ -62,7 +62,7 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
                 Tab(text: 'Newly Listed'),
                 Tab(text: 'Ending Soon'),
                 Tab(text: 'Best Bids'),
-                Tab(text: 'Most Watched'),
+                Tab(text: 'Premium Auctions'),
               ],
             ),
           ),
@@ -100,19 +100,10 @@ class _SearchPageState extends State<SearchPage> with SingleTickerProviderStateM
             child: TabBarView(
               controller: _tabController,
               children: [
-                SearchResults(
-                  tab: 'new',
-                  searchKeyword: _searchKeyword,
-                ),
-                SearchResults(
-                  tab: 'ending',
-                  searchKeyword: _searchKeyword,
-                ),
-                SearchResults(
-                  tab: 'bids',
-                  searchKeyword: _searchKeyword,
-                ),
-                const Center(child: Text('Coming soon...')),
+                SearchResults(tab: 'new', searchKeyword: _searchKeyword),
+                SearchResults(tab: 'ending', searchKeyword: _searchKeyword),
+                SearchResults(tab: 'bids', searchKeyword: _searchKeyword),
+                SearchResults(tab: 'premium', searchKeyword: _searchKeyword),
               ],
             ),
           ),
@@ -133,7 +124,8 @@ class SearchResults extends StatefulWidget {
 }
 
 class _SearchResultsState extends State<SearchResults> {
-  int showCount = 5;
+  int showCount = 6;
+  final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
 
   String? getAuctionImage(Auction auction) {
     if (auction.mediaUrls.isNotEmpty) {
@@ -158,47 +150,92 @@ class _SearchResultsState extends State<SearchResults> {
         }
 
         List<Auction> auctions = snapshot.data ?? [];
+
+        auctions = auctions.where((a) =>
+        (a.status?.toUpperCase() != 'ENDED') &&
+            a.endTime.isAfter(DateTime.now())
+        ).toList();
+
         if (widget.searchKeyword.isNotEmpty) {
           auctions = auctions.where((a) =>
           a.title.toLowerCase().contains(widget.searchKeyword.toLowerCase()) ||
-              a.description.toLowerCase().contains(widget.searchKeyword.toLowerCase())).toList();
+              a.description.toLowerCase().contains(widget.searchKeyword.toLowerCase())
+          ).toList();
         }
         if (widget.tab == 'new') {
           auctions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         } else if (widget.tab == 'ending') {
+          final now = DateTime.now();
+          final in20Minutes = now.add(const Duration(minutes: 20));
+          auctions = auctions
+              .where((a) => a.endTime.isAfter(now) && a.endTime.isBefore(in20Minutes))
+              .toList();
           auctions.sort((a, b) => a.endTime.compareTo(b.endTime));
         } else if (widget.tab == 'bids') {
           auctions.sort((a, b) => (b.bidCount ?? 0).compareTo(a.bidCount ?? 0));
+        } else if (widget.tab == 'premium') {
+          auctions.sort((a, b) => (b.startingPrice).compareTo(a.startingPrice));
         }
 
         if (auctions.isEmpty) {
-          return const Center(child: Text('No auctions found.'));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.search_off,
+                  size: 60,
+                  color: Colors.grey.withOpacity(0.4),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'No auctions found.',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Try another keyword or check back later.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+          );
         }
 
         final displayAuctions = auctions.take(showCount).toList();
 
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          itemCount: displayAuctions.length + ((auctions.length > 5) ? 1 : 0),
+        return GridView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 14,
+            childAspectRatio: 0.82, // Tăng tỉ lệ này lên (0.8~1.0) để tránh overflow
+          ),
+          itemCount: displayAuctions.length + ((auctions.length > 6) ? 1 : 0),
           itemBuilder: (context, index) {
-            if (index == displayAuctions.length && auctions.length > 5) {
+            if (index == displayAuctions.length && auctions.length > 6) {
               return Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: TextButton(
-                    onPressed: () {
-                      setState(() {
-                        if (showCount < auctions.length) {
-                          showCount = (showCount + 5).clamp(5, auctions.length);
-                        } else {
-                          showCount = 5;
-                        }
-                      });
-                    },
-                    child: Text(
-                      showCount < auctions.length ? 'View More' : 'Show Less',
-                      style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
-                    ),
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      if (showCount < auctions.length) {
+                        showCount = (showCount + 6).clamp(6, auctions.length);
+                      } else {
+                        showCount = 6;
+                      }
+                    });
+                  },
+                  child: Text(
+                    showCount < auctions.length ? 'View More' : 'Show Less',
+                    style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
                   ),
                 ),
               );
@@ -207,79 +244,103 @@ class _SearchResultsState extends State<SearchResults> {
             final auction = displayAuctions[index];
             final imgUrl = getAuctionImage(auction);
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
+            return Material(
+              borderRadius: BorderRadius.circular(16),
+              elevation: 2,
+              color: Colors.white,
+              child: InkWell(
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AuctionDetailPage(auction: auction),
+                    ),
+                  );
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      ),
                       child: imgUrl != null && imgUrl.isNotEmpty
                           ? Image.network(
                         imgUrl,
-                        width: 90,
-                        height: 90,
+                        height: 96, // Giảm chiều cao hình ảnh xuống
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Image.asset(
-                          'assets/images/product-img.png',
-                          width: 90,
-                          height: 90,
-                          fit: BoxFit.cover,
-                        ),
                       )
                           : Image.asset(
                         'assets/images/product-img.png',
-                        width: 90,
-                        height: 90,
+                        height: 96,
                         fit: BoxFit.cover,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             auction.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            '${auction.bidCount} bids',
-                            style: const TextStyle(fontSize: 13, color: AppColors.grey),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Current Bid: ₫${(auction.currentBid ?? auction.startingPrice).toStringAsFixed(0)}',
                             style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.attach_money, size: 13, color: Colors.deepOrange),
+                                Text(
+                                  currencyFormat.format(auction.startingPrice),
+                                  style: const TextStyle(
+                                    color: Colors.deepOrange,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              Icon(Icons.gavel, size: 12, color: Colors.grey[600]),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${auction.bidCount} bids',
+                                style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
                           SizedBox(
-                            width: 140,
-                            child: CustomButton(
-                              text: 'Join Auction',
+                            width: double.infinity,
+                            height: 30,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.black,
+                                foregroundColor: AppColors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 0,
+                                padding: EdgeInsets.zero,
+                              ),
                               onPressed: () {
                                 Navigator.push(
                                   context,
@@ -288,16 +349,14 @@ class _SearchResultsState extends State<SearchResults> {
                                   ),
                                 );
                               },
-                              backgroundColor: AppColors.black,
-                              textColor: AppColors.white,
+                              child: const Text(
+                                'Join Auction',
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.favorite_border),
-                      onPressed: () {},
                     ),
                   ],
                 ),
