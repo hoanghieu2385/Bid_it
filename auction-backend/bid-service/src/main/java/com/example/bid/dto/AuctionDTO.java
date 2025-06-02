@@ -7,13 +7,12 @@ public class AuctionDTO {
 
     private Long id;
     private String title;
+    private Long userId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private BigDecimal startingPrice;
     private BigDecimal currentBid;
     private String status;
-
-    // Only keep the fields relevant for bidding logic
 
     public Long getId() {
         return id;
@@ -26,6 +25,10 @@ public class AuctionDTO {
     public String getTitle() {return title;}
 
     public void setTitle(String title) {this.title = title;}
+
+    public Long getUserId() {return userId;}
+
+    public void setUserId(Long userId) {this.userId = userId;}
 
     public LocalDateTime getStartTime() {
         return startTime;

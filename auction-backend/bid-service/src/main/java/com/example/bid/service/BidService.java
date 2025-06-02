@@ -1,10 +1,12 @@
 package com.example.bid.service;
 
+import com.example.bid.client.UserClient;
+import com.example.bid.client.AuctionClient;
+import com.example.bid.dto.UserDTO;
 import com.example.bid.dto.AuctionDTO;
 import com.example.bid.model.Bid;
 import com.example.bid.repository.BidRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import com.example.bid.dto.UserBidGroupDTO;
 import com.example.bid.dto.BidDTO;
 
@@ -16,14 +18,16 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-public class BidService {
+public class BidService implements IBidService {
 
+    private final UserClient userClient;
+    private final AuctionClient auctionClient;
     private final BidRepository bidRepository;
-    private final RestTemplate restTemplate;
 
-    public BidService(BidRepository bidRepository, RestTemplate restTemplate) {
+    public BidService(UserClient userClient, AuctionClient auctionClient, BidRepository bidRepository) {
+        this.userClient = userClient;
+        this.auctionClient = auctionClient;
         this.bidRepository = bidRepository;
-        this.restTemplate = restTemplate;
     }
 
     public List<Bid> getBidsByAuction(Long auctionId) {
@@ -33,29 +37,37 @@ public class BidService {
     public Bid placeBid(Bid bid) {
         bid.setCreatedAt(LocalDateTime.now());
 
-        // 🔄 Fetch auction details from auction-service
-        AuctionDTO auction = restTemplate.getForObject(
-                "http://auction-service/api/auctions/" + bid.getAuctionId(),
-                AuctionDTO.class
-        );
+        // Validate user
+        UserDTO user = userClient.getUserById(bid.getBidderId());
+        if (user == null || !Boolean.TRUE.equals(user.getVerified())) {
+            throw new IllegalArgumentException("Bidder not verified or does not exist.");
+        }
 
-        // ❌ Auction not active?
+        // Fetch auction details from auction-service
+        AuctionDTO auction = auctionClient.getAuctionById(bid.getAuctionId());
+
+        // Seller cannot bid
+        if (auction.getUserId().equals(bid.getBidderId())) {
+            throw new IllegalArgumentException("Sellers cannot bid on their own auctions.");
+        }
+
+        // Auction not active?
         if (!"OPENED".equalsIgnoreCase(auction.getStatus())) {
             throw new IllegalArgumentException("Cannot place bid. Auction is not active.");
         }
 
-        // ❌ Auction ended?
+        // Auction ended?
         if (auction.getEndTime().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Cannot place bid. Auction has ended.");
         }
 
-        // ❌ Bid not higher than current?
+        // Bid not higher than current?
         BigDecimal current = auction.getCurrentBid() != null ? auction.getCurrentBid() : auction.getStartingPrice();
         if (bid.getAmount().compareTo(current) <= 0) {
             throw new IllegalArgumentException("Your bid must be higher than the current bid.");
         }
 
-        // ❌ Same user, same amount
+        // Same user, same amount
         boolean alreadyPlacedSameBid = bidRepository.existsByAuctionIdAndBidderIdAndAmount(
                 bid.getAuctionId(), bid.getBidderId(), bid.getAmount()
         );
@@ -63,7 +75,7 @@ public class BidService {
             throw new IllegalArgumentException("You have already placed a bid with this amount.");
         }
 
-        // ❌ Someone else already placed this exact bid first
+        // Someone else already placed this exact bid first
         Bid existing = bidRepository.findTopByAuctionIdAndAmountOrderByCreatedAtAsc(
                 bid.getAuctionId(), bid.getAmount()
         );
@@ -130,14 +142,12 @@ public class BidService {
 
     private String fetchAuctionTitle(Long auctionId) {
         try {
-            String url = "http://auction-service/api/auctions/" + auctionId;
-            AuctionDTO auction = restTemplate.getForObject(url, AuctionDTO.class);
-            return auction != null ? auction.getTitle() : "Unknown Auction";
+            AuctionDTO auction = auctionClient.getAuctionById(auctionId);
+            return auction.getTitle();
         } catch (Exception e) {
             System.err.println("Failed to fetch auction title for ID " + auctionId + ": " + e.getMessage());
             return "Unknown Auction";
         }
     }
-
 
 }
