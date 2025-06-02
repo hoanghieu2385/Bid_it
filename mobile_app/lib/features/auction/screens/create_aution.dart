@@ -251,9 +251,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
       return;
     }
-    print(response);
     final auction = response;
-    print(auction);
     if (auction == null) return;
     for (final image in _galleryImages) {
       final bytes = await image.readAsBytes();

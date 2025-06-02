@@ -1,6 +1,3 @@
-// File: home_page.dart
-// Description: Home Page with auto-updating countdown, keyword search, and auction grouping. Hiển thị ảnh đúng logic mediaUrls > thumbnailUrl > default.
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -70,6 +67,7 @@ class _HomeContentState extends State<HomeContent> {
   final TextEditingController _searchController = TextEditingController();
   String _searchKeyword = '';
   Timer? _countdownTimer;
+  final NumberFormat _vndFormat = NumberFormat("#,##0", "vi_VN");
 
   @override
   void initState() {
@@ -119,18 +117,6 @@ class _HomeContentState extends State<HomeContent> {
     }
   }
 
-  String getCountdownText(DateTime time) {
-    final now = DateTime.now();
-    final difference = time.difference(now);
-    if (difference.isNegative) return '00:00:00';
-    final hours = difference.inHours;
-    final minutes = difference.inMinutes % 60;
-    final seconds = difference.inSeconds % 60;
-    return '${hours.toString().padLeft(2, '0')}:'
-        '${minutes.toString().padLeft(2, '0')}:'
-        '${seconds.toString().padLeft(2, '0')}';
-  }
-
   Widget _buildAuctionCard(Auction auction) {
     final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
     final duration = auction.endTime.difference(DateTime.now());
@@ -146,6 +132,9 @@ class _HomeContentState extends State<HomeContent> {
     } else {
       displayImage = null;
     }
+
+    final String startingPrice = _vndFormat.format(auction.startingPrice);
+    final String currentBid = _vndFormat.format(auction.currentBid ?? auction.startingPrice);
 
     return GestureDetector(
       onTap: () {
@@ -243,21 +232,19 @@ class _HomeContentState extends State<HomeContent> {
                   Row(
                     children: [
                       const Text('Starting Price: '),
-                      Text('${auction.startingPrice.toStringAsFixed(0)} đ',
-                          style: const TextStyle(color: Colors.green))
+                      Text('$startingPrice đ', style: const TextStyle(color: Colors.green)),
                     ],
                   ),
                   Row(
                     children: [
                       const Text('Current Bid: '),
-                      Text('${auction.startingPrice.toStringAsFixed(0)} đ',
-                          style: const TextStyle(color: Colors.green))
+                      Text('$currentBid đ', style: const TextStyle(color: Colors.green)),
                     ],
                   ),
                   Row(
                     children: [
                       const Text('Bid Count: '),
-                      Text('0 bids', style: const TextStyle(color: Colors.green))
+                      Text('${auction.bidCount} bids', style: const TextStyle(color: Colors.green)),
                     ],
                   ),
                 ],
