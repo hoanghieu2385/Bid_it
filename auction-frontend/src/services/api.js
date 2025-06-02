@@ -28,7 +28,7 @@ api.interceptors.response.use(
             
             // Xử lý lỗi 401 (Unauthorized)
             if (error.response.status === 401) {
-                localStorage.removeItem('jwt');
+                // localStorage.removeItem('jwt');
                 // Chuyển hướng về trang đăng nhập nếu cần
                 // window.location.href = '/login';
             }
