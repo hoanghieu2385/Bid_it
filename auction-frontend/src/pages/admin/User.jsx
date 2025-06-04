@@ -21,7 +21,7 @@ const User = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Function để tạo tên đầy đủ từ firstName và lastName
+  // Function to create full name from firstName and lastName
   const getFullName = (user) => {
     const firstName = user.firstName || "";
     const lastName = user.lastName || "";
@@ -58,7 +58,7 @@ const User = () => {
       setLoading(true);
       const data = await getAllUsers();
       
-      // Debug: Kiểm tra dữ liệu trả về
+      // Debug: Check returned data
       console.log("API Response:", data);
       if (data.length > 0) {
         console.log("First user:", data[0]);
@@ -69,7 +69,7 @@ const User = () => {
       setFilteredUsers(data);
     } catch (err) {
       console.error("Error fetching user data:", err);
-      setError("Không thể tải danh sách người dùng. Vui lòng thử lại sau.");
+      setError("Unable to load user list. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -282,7 +282,7 @@ const User = () => {
               {loading ? (
                 <div className="loading-container">
                   <div className="spinner"></div>
-                  <p>Đang tải dữ liệu...</p>
+                  <p>Loading data...</p>
                 </div>
               ) : error ? (
                 <div className="error-container">
@@ -300,7 +300,7 @@ const User = () => {
                       marginTop: '10px'
                     }}
                   >
-                    Thử lại
+                    Try Again
                   </button>
                 </div>
               ) : (
@@ -321,7 +321,7 @@ const User = () => {
                       {currentUsers.length === 0 ? (
                         <tr>
                           <td colSpan="7" className="no-data">
-                            Không tìm thấy người dùng nào
+                            No users found
                           </td>
                         </tr>
                       ) : (
@@ -398,7 +398,7 @@ const User = () => {
                                   console.log("User object:", user);
                                   handleViewUser(user.id);
                                 }}
-                                title="Xem chi tiết"
+                                title="View details"
                               >
                                 <FaEye /> View
                               </button>
@@ -414,7 +414,7 @@ const User = () => {
               {filteredUsers.length > 0 && (
                 <div className="pagination-container">
                   <div className="rows-per-page">
-                    <span>Hiển thị:</span>
+                    <span>Show:</span>
                     <select 
                       className="rows-select"
                       value={rowsPerPage}
@@ -429,7 +429,7 @@ const User = () => {
                       <option value={100}>100</option>
                     </select>
                     <span>
-                      / {filteredUsers.length} người dùng
+                      / {filteredUsers.length} users
                     </span>
                   </div>
                   

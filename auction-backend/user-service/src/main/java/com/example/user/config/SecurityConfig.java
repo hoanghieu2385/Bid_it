@@ -59,11 +59,10 @@ public class SecurityConfig {
                                 "/api/users/send-phone-otp"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/seller/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll() // Not "/{id}"
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(
-                        SessionCreationPolicy.STATELESS
-                ))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(httpBasic -> httpBasic.disable());

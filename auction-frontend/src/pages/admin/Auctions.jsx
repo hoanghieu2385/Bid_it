@@ -1,16 +1,24 @@
-// Auctions.jsx
+// Auctions.jsx - Updated to display correct stats numbers
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/styles/admin/Auctions.css";
 import Sidebar from "../../components/admin/Sidebar";
 import Topbar from "../../components/admin/Topbar";
-import { Search, ChevronDown, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react";
+import {
+  Search,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+} from "lucide-react";
 import adminAuctionAPI from "../../services/admin-auction-api";
 import { getUserById } from "../../services/admin-user-api";
+import { getAllCategories } from "../../services/category-api";
 
 const Auctions = () => {
   const [auctions, setAuctions] = useState([]);
   const [filteredAuctions, setFilteredAuctions] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -19,12 +27,31 @@ const Auctions = () => {
   const [sortOrder, setSortOrder] = useState("Newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [stats, setStats] = useState({ all: 0, active: 0, draft: 0, delivered: 0, pending: 0, completed: 0 });
+  const [stats, setStats] = useState({
+    all: 0,
+    upcoming: 0,
+    opened: 0,
+    cancelled: 0,
+    closed: 0,
+    sold: 0,
+    failed: 0,
+    shipping: 0,
+    delivered: 0,
+    disputed: 0,
+    pending_return: 0,
+    returning: 0,
+    completed: 0,
+  });
   const [failedImages, setFailedImages] = useState(new Set());
   const userCache = new Map();
 
-  useEffect(() => { loadInitialData(); }, []);
-  useEffect(() => { applyFiltersAndSort(); }, [auctions, searchQuery, currentCategory, currentStatus, sortOrder]);
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    applyFiltersAndSort();
+  }, [auctions, searchQuery, currentCategory, currentStatus, sortOrder]);
 
   const fetchUsersForAuctions = async (auctionList) => {
     return await Promise.all(
@@ -43,19 +70,86 @@ const Auctions = () => {
     );
   };
 
+  // Calculate stats from auctions data
+  const calculateStats = (auctionsData) => {
+    const statusCounts = {
+      all: auctionsData.length,
+      upcoming: 0,
+      opened: 0,
+      cancelled: 0,
+      closed: 0,
+      sold: 0,
+      failed: 0,
+      shipping: 0,
+      delivered: 0,
+      disputed: 0,
+      pending_return: 0,
+      returning: 0,
+      completed: 0,
+    };
+
+    auctionsData.forEach((auction) => {
+      const status = auction.status?.toLowerCase();
+      if (Object.prototype.hasOwnProperty.call(statusCounts, status)) {
+        statusCounts[status]++;
+      }
+    });
+
+    return statusCounts;
+  };
+
+  // Load initial data and calculate stats
   const loadInitialData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [auctionsData, statsData] = await Promise.all([
+
+      console.log("Loading initial data...");
+
+      // Load auctions and categories
+      const [auctionsData, categoriesData] = await Promise.all([
         adminAuctionAPI.getAllAuctions(),
-        adminAuctionAPI.getAuctionStats()
+        getAllCategories(),
       ]);
+
+      console.log("Categories loaded:", categoriesData);
+      console.log("Auctions loaded:", auctionsData.length);
+
       const auctionsWithUsers = await fetchUsersForAuctions(auctionsData);
+
+      // Calculate stats from actual data
+      const calculatedStats = calculateStats(auctionsData);
+
+      console.log("Calculated stats:", calculatedStats);
+
       setAuctions(auctionsWithUsers);
-      setStats(statsData);
-    } catch {
+      setStats(calculatedStats);
+      setCategories(categoriesData || []);
+
+      // Reset filters when loading new data
+      setCurrentCategory("All Categories");
+      setCurrentStatus("All Statuses");
+      setCurrentPage(1);
+    } catch (err) {
+      console.error("Error loading initial data:", err);
       setError("Unable to load data. Please try again later.");
+
+      // Set empty stats in case of error
+      setStats({
+        all: 0,
+        upcoming: 0,
+        opened: 0,
+        cancelled: 0,
+        closed: 0,
+        sold: 0,
+        failed: 0,
+        shipping: 0,
+        delivered: 0,
+        disputed: 0,
+        pending_return: 0,
+        returning: 0,
+        completed: 0,
+      });
     } finally {
       setLoading(false);
     }
@@ -63,84 +157,134 @@ const Auctions = () => {
 
   const applyFiltersAndSort = async () => {
     try {
-      const filters = {
-        searchQuery: searchQuery.trim(),
-        category: currentCategory,
-        status: currentStatus,
-        sortBy: sortOrder,
-        page: currentPage,
-        size: itemsPerPage
-      };
-      const filteredData = await adminAuctionAPI.searchAuctions(filters);
-      const dataWithUsers = await fetchUsersForAuctions(filteredData);
-      setFilteredAuctions(dataWithUsers);
-    } catch {
-      setFilteredAuctions([]);
+      let filtered = [...auctions];
+
+      // Apply search filter
+      if (searchQuery.trim()) {
+        filtered = filtered.filter(
+          (auction) =>
+            auction.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            auction.id?.toString().includes(searchQuery) ||
+            getSellerName(auction)
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase())
+        );
+      }
+
+      // Apply category filter
+      if (currentCategory !== "All Categories") {
+        filtered = filtered.filter((auction) => {
+          const categoryName = getCategoryName(auction.categoryId);
+          return categoryName === currentCategory;
+        });
+      }
+
+      // Apply status filter
+      if (currentStatus !== "All Statuses") {
+        filtered = filtered.filter(
+          (auction) => auction.status === currentStatus
+        );
+      }
+
+      // Apply sorting
+      filtered.sort((a, b) => {
+        switch (sortOrder) {
+          case "Newest":
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          case "Oldest":
+            return new Date(a.createdAt) - new Date(b.createdAt);
+          case "Price: High to Low":
+            return (b.startingPrice || 0) - (a.startingPrice || 0);
+          case "Price: Low to High":
+            return (a.startingPrice || 0) - (b.startingPrice || 0);
+          case "Bids: High to Low":
+            return (b.bidCount || 0) - (a.bidCount || 0);
+          case "Bids: Low to High":
+            return (a.bidCount || 0) - (b.bidCount || 0);
+          default:
+            return 0;
+        }
+      });
+
+      setFilteredAuctions(filtered);
+    } catch (error) {
+      console.error("Error applying filters:", error);
+      setFilteredAuctions(auctions);
     }
   };
 
-  // Function to get seller name - IMPROVED
+  // Function to get category name by ID
+  const getCategoryName = (categoryId) => {
+    if (!categoryId) return "Uncategorized";
+
+    const category = categories.find((cat) => cat.id === categoryId);
+    if (category) {
+      return category.name;
+    }
+
+    console.warn(`Category with ID ${categoryId} not found`);
+    return `Category ${categoryId}`;
+  };
+
+  // Function to get seller name
   const getSellerName = (auction) => {
-    console.log('Getting seller name for auction:', auction?.id, 'User data:', auction?.user); // Debug log
-    
-    // Check if user information exists
+    console.log(
+      "Getting seller name for auction:",
+      auction?.id,
+      "User data:",
+      auction?.user
+    );
+
     if (!auction?.user) {
-      console.log('No user data found for auction:', auction?.id);
-      return `Seller #${auction?.sellerId || 'Unknown'}`;
+      console.log("No user data found for auction:", auction?.id);
+      return `Seller #${auction?.sellerId || "Unknown"}`;
     }
 
     const user = auction.user;
 
-    // Try different ways to get name in priority order
-    // 1. firstName + lastName
     if (user.firstName || user.lastName) {
-      const firstName = user.firstName || '';
-      const lastName = user.lastName || '';
+      const firstName = user.firstName || "";
+      const lastName = user.lastName || "";
       const fullName = `${firstName} ${lastName}`.trim();
       if (fullName) {
-        console.log('Using firstName + lastName:', fullName);
+        console.log("Using firstName + lastName:", fullName);
         return fullName;
       }
     }
 
-    // 2. fullName (if available)
     if (user.fullName && user.fullName.trim()) {
-      console.log('Using fullName:', user.fullName);
+      console.log("Using fullName:", user.fullName);
       return user.fullName.trim();
     }
 
-    // 3. name (if available)
     if (user.name && user.name.trim()) {
-      console.log('Using name:', user.name);
+      console.log("Using name:", user.name);
       return user.name.trim();
     }
 
-    // 4. displayName or username
     if (user.displayName && user.displayName.trim()) {
-      console.log('Using displayName:', user.displayName);
+      console.log("Using displayName:", user.displayName);
       return user.displayName.trim();
     }
 
     if (user.username && user.username.trim()) {
-      console.log('Using username:', user.username);
+      console.log("Using username:", user.username);
       return user.username.trim();
     }
 
-    // 5. email (get part before @)
     if (user.email && user.email.trim()) {
-      const emailName = user.email.split('@')[0];
-      console.log('Using email name:', emailName);
+      const emailName = user.email.split("@")[0];
+      console.log("Using email name:", emailName);
       return emailName;
     }
 
-    // Final fallback
-    console.log('Using fallback seller ID');
-    return `Seller #${auction.sellerId || 'Unknown'}`;
+    console.log("Using fallback seller ID");
+    return `Seller #${auction.sellerId || "Unknown"}`;
   };
 
   // Function to get seller email
   const getSellerEmail = (auction) => {
-    return auction?.user?.email || '';
+    return auction?.user?.email || "";
   };
 
   // Function to check if seller is verified
@@ -150,11 +294,11 @@ const Auctions = () => {
 
   // Function to get complete seller information for tooltip
   const getSellerInfo = (auction) => {
-    if (!auction?.user) return `Seller ID: ${auction?.sellerId || 'Unknown'}`;
-    
+    if (!auction?.user) return `Seller ID: ${auction?.sellerId || "Unknown"}`;
+
     const user = auction.user;
     const info = [];
-    
+
     if (user.firstName || user.lastName) {
       info.push(`Name: ${getSellerName(auction)}`);
     }
@@ -165,103 +309,108 @@ const Auctions = () => {
       info.push(`Phone: ${user.phoneNumber}`);
     }
     info.push(`Seller ID: ${auction.sellerId}`);
-    
-    return info.join('\n');
+
+    return info.join("\n");
   };
 
   // Function to check and return valid image URL
   const getValidImageUrl = (auction) => {
-    // Check image sources in priority order
     const imageUrls = [
       auction.thumbnailUrl,
       auction.media?.[0]?.url,
-      auction.imageUrl
-    ].filter(Boolean); // Remove null/undefined/empty values
+      auction.imageUrl,
+    ].filter(Boolean);
 
-    // If no valid images, return default image
     if (imageUrls.length === 0) {
-      return '';
+      return "";
     }
 
-    // Find first URL that hasn't failed before
     for (const url of imageUrls) {
       if (!failedImages.has(url)) {
         return url;
       }
     }
 
-    // If all failed, return default image
-    return '';
+    return "";
   };
 
   // Function to handle image error
   const handleImageError = (e, auctionId, imageUrl) => {
-    // Add failed URL to list
-    setFailedImages(prev => new Set([...prev, imageUrl]));
-    
-    // Only change to default image if not already default
-    if (e.target.src !== '/default-auction-image.jpg') {
-      e.target.src = '/default-auction-image.jpg';
+    setFailedImages((prev) => new Set([...prev, imageUrl]));
+
+    if (e.target.src !== "/default-auction-image.jpg") {
+      e.target.src = "/default-auction-image.jpg";
     }
   };
 
   // Function to handle search
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(1);
   };
 
   // Function to filter auctions by status from stats cards
-  const filterByStatus = async (status) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      let statusFilter;
-      switch (status) {
-        case "All":
-          statusFilter = "All Statuses";
-          break;
-        case "Active":
-          statusFilter = "Opened";
-          break;
-        case "Draft":
-          statusFilter = "Draft";
-          break;
-        case "Delivered":
-          statusFilter = "Delivered";
-          break;
-        case "Pending":
-          statusFilter = "Pending";
-          break;
-        case "Completed":
-          statusFilter = "Completed";
-          break;
-        default:
-          statusFilter = "All Statuses";
-      }
-      
-      setCurrentStatus(statusFilter);
-      setCurrentPage(1);
-      
-      if (status === "All") {
-        const allAuctions = await adminAuctionAPI.getAllAuctions();
-        setFilteredAuctions(allAuctions);
-      } else {
-        const filteredData = await adminAuctionAPI.searchAuctionsByStatus(statusFilter);
-        setFilteredAuctions(filteredData);
-      }
-    } catch (err) {
-      console.error('Error filtering by status:', err);
-      setError('Unable to filter by status. Please try again later.');
-    } finally {
-      setLoading(false);
+  const filterByStatus = (status) => {
+    console.log("Filtering by status:", status);
+
+    let statusFilter;
+    switch (status) {
+      case "All":
+        statusFilter = "All Statuses";
+        break;
+      case "Upcoming":
+        statusFilter = "UPCOMING";
+        break;
+      case "Opened":
+        statusFilter = "OPENED";
+        break;
+      case "Cancelled":
+        statusFilter = "CANCELLED";
+        break;
+      case "Closed":
+        statusFilter = "CLOSED";
+        break;
+      case "Sold":
+        statusFilter = "SOLD";
+        break;
+      case "Failed":
+        statusFilter = "FAILED";
+        break;
+      case "Shipping":
+        statusFilter = "SHIPPING";
+        break;
+      case "Delivered":
+        statusFilter = "DELIVERED";
+        break;
+      case "Disputed":
+        statusFilter = "DISPUTED";
+        break;
+      case "Pending Return":
+        statusFilter = "PENDING_RETURN";
+        break;
+      case "Returning":
+        statusFilter = "RETURNING";
+        break;
+      case "Completed":
+        statusFilter = "COMPLETED";
+        break;
+      default:
+        statusFilter = "All Statuses";
     }
+
+    setCurrentStatus(statusFilter);
+    setCurrentPage(1);
+
+    // Reset other filters to show all results for the selected status
+    setSearchQuery("");
+    setCurrentCategory("All Categories");
   };
 
   // Function to handle category change
   const handleCategoryChange = (e) => {
-    setCurrentCategory(e.target.value);
+    const selectedCategory = e.target.value;
+    console.log("Category changed to:", selectedCategory);
+    setCurrentCategory(selectedCategory);
     setCurrentPage(1);
   };
 
@@ -286,10 +435,10 @@ const Auctions = () => {
 
   // Format currency
   const formatCurrency = (amount) => {
-    if (!amount) return "đ0";
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'VND'
+    if (!amount) return "₫0";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
@@ -297,23 +446,30 @@ const Auctions = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(date);
   };
 
   // Get status display name
   const getStatusDisplayName = (status) => {
     const statusMap = {
-      'OPENED': 'Active',
-      'COMPLETED': 'Completed', 
-      'PENDING': 'Pending',
-      'DRAFT': 'Draft',
-      'DELIVERED': 'Delivered'
+      UPCOMING: "Upcoming",
+      OPENED: "Opened",
+      CANCELLED: "Cancelled",
+      CLOSED: "Closed",
+      SOLD: "Sold",
+      FAILED: "Failed",
+      SHIPPING: "Shipping",
+      DELIVERED: "Delivered",
+      DISPUTED: "Disputed",
+      PENDING_RETURN: "Pending Return",
+      RETURNING: "Returning",
+      COMPLETED: "Completed",
     };
     return statusMap[status] || status;
   };
@@ -321,11 +477,18 @@ const Auctions = () => {
   // Get status CSS class
   const getStatusClass = (status) => {
     const statusClassMap = {
-      'OPENED': 'active',
-      'COMPLETED': 'completed',
-      'PENDING': 'pending', 
-      'DRAFT': 'draft',
-      'DELIVERED': 'delivered'
+      UPCOMING: "upcoming",
+      OPENED: "opened",
+      CANCELLED: "cancelled",
+      CLOSED: "closed",
+      SOLD: "sold",
+      FAILED: "failed",
+      SHIPPING: "shipping",
+      DELIVERED: "delivered",
+      DISPUTED: "disputed",
+      PENDING_RETURN: "pending-return",
+      RETURNING: "returning",
+      COMPLETED: "completed",
     };
     return statusClassMap[status] || status.toLowerCase();
   };
@@ -341,11 +504,15 @@ const Auctions = () => {
     <div id="wrapper">
       {/* Sidebar */}
       <Sidebar />
-      
+
       {/* Main Content */}
-      <div id="content-wrapper" className="d-flex flex-column" style={{ flex: 1 }}>
+      <div
+        id="content-wrapper"
+        className="d-flex flex-column"
+        style={{ flex: 1 }}
+      >
         <Topbar />
-        
+
         {/* Container content */}
         <div className="container-fluid auctions-container">
           {/* Header */}
@@ -359,7 +526,7 @@ const Auctions = () => {
           {error && (
             <div className="alert alert-danger" role="alert">
               {error}
-              <button 
+              <button
                 className="btn btn-sm btn-outline-danger ml-2"
                 onClick={loadInitialData}
               >
@@ -368,29 +535,68 @@ const Auctions = () => {
             </div>
           )}
 
-          {/* Cards section */}
+          {/* Stats Cards section - Updated to show correct numbers */}
           <div className="stats-cards">
-            <div className="stat-card all" onClick={() => filterByStatus("All")}>
+            <div
+              className="stat-card all"
+              onClick={() => filterByStatus("All")}
+            >
               <div className="stat-number">{stats.all}</div>
               <div className="stat-tag">ALL</div>
             </div>
-            <div className="stat-card active" onClick={() => filterByStatus("Active")}>
-              <div className="stat-number">{stats.active}</div>
-              <div className="stat-tag">ACTIVE</div>
+            <div
+              className="stat-card upcoming"
+              onClick={() => filterByStatus("Upcoming")}
+            >
+              <div className="stat-number">{stats.upcoming}</div>
+              <div className="stat-tag">UPCOMING</div>
             </div>
-            <div className="stat-card draft" onClick={() => filterByStatus("Draft")}>
-              <div className="stat-number">{stats.draft}</div>
-              <div className="stat-tag">DRAFT</div>
+            <div
+              className="stat-card opened"
+              onClick={() => filterByStatus("Opened")}
+            >
+              <div className="stat-number">{stats.opened}</div>
+              <div className="stat-tag">OPENED</div>
             </div>
-            <div className="stat-card delivered" onClick={() => filterByStatus("Delivered")}>
+            <div
+              className="stat-card closed"
+              onClick={() => filterByStatus("Closed")}
+            >
+              <div className="stat-number">{stats.closed}</div>
+              <div className="stat-tag">CLOSED</div>
+            </div>
+            <div
+              className="stat-card sold"
+              onClick={() => filterByStatus("Sold")}
+            >
+              <div className="stat-number">{stats.sold}</div>
+              <div className="stat-tag">SOLD</div>
+            </div>
+            <div
+              className="stat-card failed"
+              onClick={() => filterByStatus("Failed")}
+            >
+              <div className="stat-number">{stats.failed}</div>
+              <div className="stat-tag">FAILED</div>
+            </div>
+            <div
+              className="stat-card shipping"
+              onClick={() => filterByStatus("Shipping")}
+            >
+              <div className="stat-number">{stats.shipping}</div>
+              <div className="stat-tag">SHIPPING</div>
+            </div>
+            <div
+              className="stat-card delivered"
+              onClick={() => filterByStatus("Delivered")}
+            >
               <div className="stat-number">{stats.delivered}</div>
               <div className="stat-tag">DELIVERED</div>
             </div>
-            <div className="stat-card pending" onClick={() => filterByStatus("Pending")}>
-              <div className="stat-number">{stats.pending}</div>
-              <div className="stat-tag">PENDING</div>
-            </div>
-            <div className="stat-card completed" onClick={() => filterByStatus("Completed")}>
+            <div
+              className="stat-card completed"
+              onClick={() => filterByStatus("Completed")}
+            >
               <div className="stat-number">{stats.completed}</div>
               <div className="stat-tag">COMPLETED</div>
             </div>
@@ -400,9 +606,9 @@ const Auctions = () => {
           <div className="search-filter-section">
             <div className="search-box">
               <Search size={18} />
-              <input 
-                type="text" 
-                placeholder="Search Auctions" 
+              <input
+                type="text"
+                placeholder="Search Auctions"
                 value={searchQuery}
                 onChange={handleSearch}
               />
@@ -411,42 +617,42 @@ const Auctions = () => {
               <div className="filter-dropdown">
                 <span>{currentCategory}</span>
                 <ChevronDown size={16} />
-                <select 
-                  onChange={handleCategoryChange}
-                  value={currentCategory}
-                >
+                <select onChange={handleCategoryChange} value={currentCategory}>
                   <option value="All Categories">All Categories</option>
-                  <option value="Luxury Watches">Luxury Watches</option>
-                  <option value="Jewelry">Jewelry</option>
-                  <option value="Electronics">Electronics</option>
-                  <option value="Fashion">Fashion</option>
-                  <option value="Automobiles">Automobiles</option>
-                  <option value="Motorcycles">Motorcycles</option>
-                  <option value="Optics">Optics</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.name}>
+                      {category.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="filter-dropdown">
-                <span>{currentStatus}</span>
+                <span>
+                  {currentStatus === "All Statuses"
+                    ? "All Statuses"
+                    : getStatusDisplayName(currentStatus)}
+                </span>
                 <ChevronDown size={16} />
-                <select 
-                  onChange={handleStatusChange}
-                  value={currentStatus}
-                >
+                <select onChange={handleStatusChange} value={currentStatus}>
                   <option value="All Statuses">All Statuses</option>
-                  <option value="Opened">Opened</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Draft">Draft</option>
-                  <option value="Delivered">Delivered</option>
+                  <option value="UPCOMING">Upcoming</option>
+                  <option value="OPENED">Opened</option>
+                  <option value="CANCELLED">Cancelled</option>
+                  <option value="CLOSED">Closed</option>
+                  <option value="SOLD">Sold</option>
+                  <option value="FAILED">Failed</option>
+                  <option value="SHIPPING">Shipping</option>
+                  <option value="DELIVERED">Delivered</option>
+                  <option value="DISPUTED">Disputed</option>
+                  <option value="PENDING_RETURN">Pending Return</option>
+                  <option value="RETURNING">Returning</option>
+                  <option value="COMPLETED">Completed</option>
                 </select>
               </div>
               <div className="filter-dropdown">
                 <span>{sortOrder}</span>
                 <ChevronDown size={16} />
-                <select 
-                  onChange={handleSortChange}
-                  value={sortOrder}
-                >
+                <select onChange={handleSortChange} value={sortOrder}>
                   <option value="Newest">Newest</option>
                   <option value="Oldest">Oldest</option>
                   <option value="Price: High to Low">Price: High to Low</option>
@@ -485,49 +691,79 @@ const Auctions = () => {
                 ) : currentAuctions.length === 0 ? (
                   <tr>
                     <td colSpan="8" className="no-data-row">
-                      {error ? 'An error occurred while loading data' : 'No auctions found'}
+                      {error
+                        ? "An error occurred while loading data"
+                        : "No auctions found"}
                     </td>
                   </tr>
                 ) : (
                   currentAuctions.map((auction) => {
                     const imageUrl = getValidImageUrl(auction);
-                    
+
                     return (
                       <tr key={auction.id}>
                         <td className="auction-title-cell">
-                          <Link to={`/admin/auction/${auction.id}`} className="auction-image">
-                            <img 
+                          <Link
+                            to={`/admin/auction/${auction.id}`}
+                            className="auction-image"
+                          >
+                            <img
                               src={imageUrl}
                               alt={auction.title}
-                              onError={(e) => handleImageError(e, auction.id, imageUrl)}
-                              loading="lazy" 
+                              onError={(e) =>
+                                handleImageError(e, auction.id, imageUrl)
+                              }
+                              loading="lazy"
                             />
                           </Link>
                           <div className="auction-info">
-                            <Link to={`/admin/auction/${auction.id}`} className="auction-title">
+                            <Link
+                              to={`/admin/auction/${auction.id}`}
+                              className="auction-title"
+                            >
                               {auction.title}
                             </Link>
                             <div className="auction-category">
-                              ID #{auction.id} | Category ID: {auction.categoryId}
+                              ID #{auction.id} |{" "}
+                              {getCategoryName(auction.categoryId)}
                             </div>
                           </div>
                         </td>
-                        {/* SELLER CELL - IMPROVED */}
-                        <td className="seller-cell" title={getSellerInfo(auction)}>
+                        <td
+                          className="seller-cell"
+                          title={getSellerInfo(auction)}
+                        >
                           <div className="seller-name">
                             {getSellerName(auction)}
                             {isSellerVerified(auction) && (
-                              <span className="verified-badge" style={{marginLeft: '5px', color: '#10b981'}}>
+                              <span
+                                className="verified-badge"
+                                style={{ marginLeft: "5px", color: "#10b981" }}
+                              >
                                 ✓
                               </span>
                             )}
                           </div>
                           {getSellerEmail(auction) && (
-                            <div className="seller-email" style={{fontSize: '12px', color: '#666', marginTop: '2px'}}>
+                            <div
+                              className="seller-email"
+                              style={{
+                                fontSize: "12px",
+                                color: "#666",
+                                marginTop: "2px",
+                              }}
+                            >
                               {getSellerEmail(auction)}
                             </div>
                           )}
-                          <div className="seller-id" style={{fontSize: '11px', color: '#888', marginTop: '2px'}}>
+                          <div
+                            className="seller-id"
+                            style={{
+                              fontSize: "11px",
+                              color: "#888",
+                              marginTop: "2px",
+                            }}
+                          >
                             ID: {auction.sellerId}
                           </div>
                         </td>
@@ -536,19 +772,35 @@ const Auctions = () => {
                           <div>End: {formatDate(auction.endTime)}</div>
                         </td>
                         <td className="price-cell">
-                          <div className="price">{formatCurrency(auction.startingPrice)}</div>
+                          <div className="price">
+                            {formatCurrency(auction.startingPrice)}
+                          </div>
                           <div className="price-detail">Original Starting</div>
                         </td>
                         <td className="bid-cell">
-                          <div className="bid">{formatCurrency(auction.currentBid || auction.startingPrice)}</div>
-                          <div className="bid-count">{auction.bidCount || 0} bids</div>
+                          <div className="bid">
+                            {formatCurrency(
+                              auction.currentBid || auction.startingPrice
+                            )}
+                          </div>
+                          <div className="bid-count">
+                            {auction.bidCount || 0} bids
+                          </div>
                         </td>
-                        <td className={`status-cell ${getStatusClass(auction.status)}`}>
-                          <span className="status-badge">{getStatusDisplayName(auction.status)}</span>
+                        <td
+                          className={`status-cell ${getStatusClass(
+                            auction.status
+                          )}`}
+                        >
+                          <span className="status-badge">
+                            {getStatusDisplayName(auction.status)}
+                          </span>
                         </td>
                         <td className="created-at-cell">
                           <div>{formatDate(auction.createdAt)}</div>
-                          <div className="time-detail">Updated: {formatDate(auction.updatedAt)}</div>
+                          <div className="time-detail">
+                            Updated: {formatDate(auction.updatedAt)}
+                          </div>
                         </td>
                         <td className="action-cell">
                           <button className="action-button">
@@ -567,20 +819,20 @@ const Auctions = () => {
           {!loading && currentAuctions.length > 0 && (
             <div className="pagination">
               <div className="pagination-info">
-                Showing{' '}
-                <span>{Math.min(endIndex, totalItems)}</span> of{' '}
+                Showing <span>{Math.min(endIndex, totalItems)}</span> of{" "}
                 <span>{totalItems}</span> entries
               </div>
               <div className="pagination-controls">
-                <button 
-                  className={`pagination-button ${currentPage === 1 ? 'disabled' : ''}`}
+                <button
+                  className={`pagination-button ${
+                    currentPage === 1 ? "disabled" : ""
+                  }`}
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
                 >
                   <ChevronLeft size={16} />
                 </button>
-                
-                {/* Generate page number buttons */}
+
                 {Array.from({ length: Math.min(totalPages, 5) }, (_, index) => {
                   let pageNumber;
                   if (totalPages <= 5) {
@@ -592,20 +844,24 @@ const Auctions = () => {
                   } else {
                     pageNumber = currentPage - 2 + index;
                   }
-                  
+
                   return (
-                    <button 
+                    <button
                       key={pageNumber}
-                      className={`pagination-number ${currentPage === pageNumber ? 'active' : ''}`}
+                      className={`pagination-number ${
+                        currentPage === pageNumber ? "active" : ""
+                      }`}
                       onClick={() => handlePageChange(pageNumber)}
                     >
                       {pageNumber}
                     </button>
                   );
                 })}
-                
-                <button 
-                  className={`pagination-button ${currentPage === totalPages ? 'disabled' : ''}`}
+
+                <button
+                  className={`pagination-button ${
+                    currentPage === totalPages ? "disabled" : ""
+                  }`}
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
                 >

@@ -362,6 +362,7 @@ body {
   justify-content: center;
   align-items: center;
   padding: 0.5rem 0;
+  border-radius: 0px;
   margin: 0;
 }
 
@@ -369,6 +370,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: 0px;
   margin: 0;
 }
 
@@ -389,11 +391,13 @@ body {
   border: none;
   color: #5a5c69;
   font-size: 0.85rem;
+  border-radius: 0px;
   padding: 0.5rem 0.75rem;
 }
 
 .pagination .page-item.active .page-link {
   background-color: #2391ff;
+  border-radius: 0px;
   color: white;
 }
 

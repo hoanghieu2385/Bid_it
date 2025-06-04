@@ -1,10 +1,10 @@
-// File: category_auctions_page.dart
-// Description: Displays auctions filtered by selected category, card design matches homepage, only shows auctions that haven't ended.
-
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
 import 'package:mobile_app/core/services/auction_service.dart';
+
+import 'auction_detail.dart';
 
 class CategoryAuctionsPage extends StatefulWidget {
   final int categoryId;
@@ -23,13 +23,14 @@ class CategoryAuctionsPage extends StatefulWidget {
 class _CategoryAuctionsPageState extends State<CategoryAuctionsPage> {
   late Future<List<Auction>> _futureAuctions;
   Timer? _timer;
+  final NumberFormat _vndFormat = NumberFormat("#,##0", "vi_VN");
 
   @override
   void initState() {
     super.initState();
     _futureAuctions = AuctionService.fetchAuctionsByCategory(widget.categoryId);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() {}); // Cập nhật countdown động
+      setState(() {});
     });
   }
 
@@ -54,9 +55,25 @@ class _CategoryAuctionsPageState extends State<CategoryAuctionsPage> {
   }
 
   Widget _buildAuctionCard(Auction auction) {
+    final String startingPrice = _vndFormat.format(auction.startingPrice);
+    final String currentBid = _vndFormat.format(auction.currentBid ?? auction.startingPrice);
+
+    // Xử lý ảnh: Ưu tiên mediaUrls[0], sau đó đến thumbnailUrl, fallback local asset
+    String imageUrl = '';
+    if (auction.mediaUrls.isNotEmpty && auction.mediaUrls[0].isNotEmpty) {
+      imageUrl = auction.mediaUrls[0];
+    } else if (auction.thumbnailUrl != null && auction.thumbnailUrl!.isNotEmpty) {
+      imageUrl = auction.thumbnailUrl!;
+    }
+
     return GestureDetector(
       onTap: () {
-        // TODO: Điều hướng đến trang chi tiết auction nếu muốn
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AuctionDetailPage(auction: auction),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -71,9 +88,9 @@ class _CategoryAuctionsPageState extends State<CategoryAuctionsPage> {
             ClipRRect(
               borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12), topRight: Radius.circular(12)),
-              child: auction.thumbnailUrl != null
+              child: imageUrl.isNotEmpty
                   ? Image.network(
-                auction.thumbnailUrl!,
+                imageUrl,
                 width: double.infinity,
                 height: 180,
                 fit: BoxFit.cover,
@@ -91,23 +108,17 @@ class _CategoryAuctionsPageState extends State<CategoryAuctionsPage> {
                 fit: BoxFit.cover,
               ),
             ),
-            // Countdown
             Container(
               width: double.infinity,
               color: Colors.black87,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildTimeItem(formatCountdown(auction.endTime).split(':')[0], 'Days'),
-                      _buildTimeItem(formatCountdown(auction.endTime).split(':')[1], 'Hours'),
-                      _buildTimeItem(formatCountdown(auction.endTime).split(':')[2], 'Minutes'),
-                      _buildTimeItem(formatCountdown(auction.endTime).split(':')[3], 'Seconds'),
-                    ],
-                  ),
+                  _buildTimeItem(formatCountdown(auction.endTime).split(':')[0], 'Days'),
+                  _buildTimeItem(formatCountdown(auction.endTime).split(':')[1], 'Hours'),
+                  _buildTimeItem(formatCountdown(auction.endTime).split(':')[2], 'Minutes'),
+                  _buildTimeItem(formatCountdown(auction.endTime).split(':')[3], 'Seconds'),
                 ],
               ),
             ),
@@ -131,14 +142,14 @@ class _CategoryAuctionsPageState extends State<CategoryAuctionsPage> {
                   Row(
                     children: [
                       const Text('Starting Price: '),
-                      Text('${auction.startingPrice.toStringAsFixed(0)} đ',
+                      Text('$startingPrice đ',
                           style: const TextStyle(color: Colors.green)),
                     ],
                   ),
                   Row(
                     children: [
                       const Text('Current Bid: '),
-                      Text('${auction.currentBid?.toStringAsFixed(0) ?? auction.startingPrice.toStringAsFixed(0)} đ',
+                      Text('$currentBid đ',
                           style: const TextStyle(color: Colors.green)),
                     ],
                   ),
@@ -219,7 +230,35 @@ class _CategoryAuctionsPageState extends State<CategoryAuctionsPage> {
           final now = DateTime.now();
           final auctions = allAuctions.where((a) => a.endTime.isAfter(now)).toList();
           if (auctions.isEmpty) {
-            return const Center(child: Text('No auctions found for this category.'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.category_outlined,
+                    size: 68,
+                    color: Colors.grey.withOpacity(0.3),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'No auctions found!',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[800],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'There are currently no auctions for this category.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),

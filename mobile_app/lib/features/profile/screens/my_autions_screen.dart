@@ -1,7 +1,3 @@
-// File: my_auctions_page.dart
-// Description: Displays user's created auctions, filterable by status, with View More/Show Less at bottom only.
-// Supports DB image display, createdAt, and handles empty states properly.
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
@@ -70,7 +66,6 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
     return DateFormat('dd/MM/yyyy HH:mm').format(date);
   }
 
-  // Hàm lấy ảnh đại diện: Ưu tiên mediaUrls, rồi đến thumbnailUrl, cuối cùng là null (dùng ảnh mặc định)
   String? getAuctionImage(Auction auction) {
     if (auction.mediaUrls.isNotEmpty) {
       return auction.mediaUrls.first;
@@ -86,15 +81,6 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Auctions'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const HomePage()),
-            );
-          },
-        ),
         backgroundColor: Colors.white,
         elevation: 0.5,
         centerTitle: true,
@@ -143,14 +129,38 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                 final allAuctions = snapshot.data ?? [];
 
                 if (allAuctions.isEmpty) {
-                  return const Center(
-                    child: Text('No auctions found for selected status.'),
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.inbox_rounded,
+                          size: 68,
+                          color: Colors.grey.withOpacity(0.3),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          'No auctions found!',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[800],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'You have not created any auctions with this status.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 }
 
-                // Sắp xếp mới nhất lên trên
                 allAuctions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
                 final displayAuctions = showAll
                     ? allAuctions
                     : allAuctions.take(5).toList();

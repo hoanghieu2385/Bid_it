@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import Sidebar from "../../components/admin/Sidebar";
 import Topbar from "../../components/admin/Topbar";
 import adminAuctionAPI from "../../services/admin-auction-api";
+import { getCategoryById } from "../../services/category-api";
 import "../../assets/styles/admin/AuctionDetail.css";
 import { 
   Calendar, 
@@ -24,6 +25,7 @@ const AuctionDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [categoryName, setCategoryName] = useState('');
 
   useEffect(() => {
     const fetchAuctionDetail = async () => {
@@ -33,6 +35,19 @@ const AuctionDetail = () => {
         
         // Call API to get auction information
         const auctionData = await adminAuctionAPI.getAuctionById(id);
+        
+        // Fetch category name if categoryId exists
+        let categoryNameResult = '';
+        if (auctionData.categoryId) {
+          try {
+            const categoryData = await getCategoryById(auctionData.categoryId);
+            categoryNameResult = categoryData.name || `Category ${auctionData.categoryId}`;
+          } catch (categoryError) {
+            console.error('Error fetching category:', categoryError);
+            categoryNameResult = `Category ${auctionData.categoryId}`;
+          }
+        }
+        setCategoryName(categoryNameResult);
         
         // Format data to fit the component
         const formattedAuction = {
@@ -127,19 +142,6 @@ const AuctionDetail = () => {
     return statusMap[status] || status;
   };
 
-  const getCategoryName = (categoryId) => {
-    const categoryMap = {
-      1: 'Luxury Watches',
-      2: 'Jewelry',
-      3: 'Electronics',
-      4: 'Fashion',
-      5: 'Cars',
-      6: 'Motorcycles',
-      7: 'Optical Equipment'
-    };
-    return categoryMap[categoryId] || `Category ${categoryId}`;
-  };
-
   // Handle tab switching
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -167,7 +169,7 @@ const AuctionDetail = () => {
             
             <div className="detail-row">
               <div className="detail-label">Category</div>
-              <div className="detail-value">{getCategoryName(auction.categoryId)}</div>
+              <div className="detail-value">{categoryName}</div>
             </div>
             
             <div className="detail-row">
