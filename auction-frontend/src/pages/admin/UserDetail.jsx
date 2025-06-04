@@ -57,7 +57,7 @@ const UserDetail = () => {
       console.log("Fetching user with ID:", userId);
 
       if (!userId) {
-        setError("User ID không tồn tại, không thể tải thông tin người dùng");
+        setError("User ID does not exist, unable to load user information");
         setLoading(false);
         return;
       }
@@ -65,7 +65,7 @@ const UserDetail = () => {
       const userData = await getUserById(userId);
       setUser(userData);
       
-      // Cập nhật form dữ liệu để phù hợp với model User của Spring Boot
+      // Update form data to match Spring Boot User model
       setEditedUser({
         firstName: userData.firstName || "",
         lastName: userData.lastName || "",
@@ -75,7 +75,7 @@ const UserDetail = () => {
       });
     } catch (err) {
       console.error("Error fetching user details:", err);
-      setError("Không thể tải thông tin người dùng. Vui lòng thử lại sau.");
+      setError("Unable to load user information. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -89,11 +89,11 @@ const UserDetail = () => {
     }));
   };
 
-  // Thay đổi hàm handleEditToggle
+  // Modified handleEditToggle function
   const handleEditToggle = () => {
-    console.log("Trước khi thay đổi editMode:", editMode);
+    console.log("Before changing editMode:", editMode);
     if (editMode) {
-      // Hủy chỉnh sửa, reset form về dữ liệu ban đầu
+      // Cancel editing, reset form to original data
       setEditedUser({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
@@ -103,7 +103,7 @@ const UserDetail = () => {
       });
     }
     setEditMode(!editMode);
-    console.log("Sau khi thay đổi editMode:", !editMode);
+    console.log("After changing editMode:", !editMode);
     setFormError(null);
   };
 
@@ -114,11 +114,11 @@ const UserDetail = () => {
       const updatedUser = await updateUserProfile(userId, editedUser);
       setUser(updatedUser);
       setEditMode(false);
-      showSuccess("Thông tin người dùng đã được cập nhật thành công!");
+      showSuccess("User information has been updated successfully!");
     } catch (err) {
       console.error("Error updating user:", err);
       setFormError(
-        err.response?.data || "Không thể cập nhật thông tin người dùng. Vui lòng thử lại."
+        err.response?.data || "Unable to update user information. Please try again."
       );
     } finally {
       setLoading(false);
@@ -131,16 +131,16 @@ const UserDetail = () => {
       const updatedUser = await toggleUserLock(userId, !user.locked);
       setUser(updatedUser);
       showSuccess(
-        `Tài khoản đã được ${
-          updatedUser.locked ? "khóa" : "mở khóa"
-        } thành công!`
+        `Account has been ${
+          updatedUser.locked ? "locked" : "unlocked"
+        } successfully!`
       );
     } catch (err) {
       console.error("Error toggling user lock status:", err);
       setFormError(
-        `Không thể ${
-          user.locked ? "mở khóa" : "khóa"
-        } tài khoản. Vui lòng thử lại.`
+        `Unable to ${
+          user.locked ? "unlock" : "lock"
+        } account. Please try again.`
       );
     } finally {
       setLoading(false);
@@ -153,16 +153,16 @@ const UserDetail = () => {
       const updatedUser = await toggleUserVerification(userId, !user.verified);
       setUser(updatedUser);
       showSuccess(
-        `Tài khoản đã được ${
-          updatedUser.verified ? "xác thực" : "hủy xác thực"
-        } thành công!`
+        `Account has been ${
+          updatedUser.verified ? "verified" : "unverified"
+        } successfully!`
       );
     } catch (err) {
       console.error("Error toggling user verification status:", err);
       setFormError(
-        `Không thể ${
-          user.verified ? "hủy xác thực" : "xác thực"
-        } tài khoản. Vui lòng thử lại.`
+        `Unable to ${
+          user.verified ? "unverify" : "verify"
+        } account. Please try again.`
       );
     } finally {
       setLoading(false);
@@ -172,25 +172,25 @@ const UserDetail = () => {
   const handleRoleChange = async (isAdmin) => {
     try {
       setLoading(true);
-      // Chuyển đổi sang định dạng Spring Security roles
+      // Convert to Spring Security roles format
       const roles = new Set(user.roles || []);
       
       if (isAdmin) {
         roles.add("ADMIN");
       } else {
         roles.delete("ADMIN");
-        // Đảm bảo luôn có ít nhất role USER
+        // Ensure there's always at least USER role
         roles.add("USER");
       }
       
       const updatedUser = await updateUserRoles(userId, Array.from(roles));
       setUser(updatedUser);
       showSuccess(
-        `Vai trò người dùng đã được cập nhật thành công!`
+        `User role has been updated successfully!`
       );
     } catch (err) {
       console.error("Error updating user roles:", err);
-      setFormError("Không thể cập nhật vai trò người dùng. Vui lòng thử lại.");
+      setFormError("Unable to update user role. Please try again.");
     } finally {
       setLoading(false);
       setConfirmAction(null);
@@ -201,10 +201,10 @@ const UserDetail = () => {
     try {
       setLoading(true);
       await resetUserPassword(userId);
-      showSuccess("Đã gửi email đặt lại mật khẩu cho người dùng!");
+      showSuccess("Password reset email has been sent to the user!");
     } catch (err) {
       console.error("Error resetting password:", err);
-      setFormError("Không thể đặt lại mật khẩu. Vui lòng thử lại.");
+      setFormError("Unable to reset password. Please try again.");
     } finally {
       setLoading(false);
       setConfirmAction(null);
@@ -216,11 +216,11 @@ const UserDetail = () => {
       setIsDeleting(true);
       await deleteUser(userId);
       navigate("/admin/users", {
-        state: { message: "Đã xóa người dùng thành công!" },
+        state: { message: "User has been deleted successfully!" },
       });
     } catch (err) {
       console.error("Error deleting user:", err);
-      setFormError("Không thể xóa người dùng. Vui lòng thử lại.");
+      setFormError("Unable to delete user. Please try again.");
       setIsDeleting(false);
       setConfirmAction(null);
     }
@@ -243,19 +243,17 @@ const UserDetail = () => {
       hour: "2-digit",
       minute: "2-digit",
     };
-    return new Intl.DateTimeFormat("vi-VN", options).format(date);
+    return new Intl.DateTimeFormat("en-US", options).format(date);
   };
 
   const formatMoney = (amount) => {
-    if (!amount) return "₫ 0";
-    return new Intl.NumberFormat("vi-VN", {
+    if (!amount) return "$ 0";
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "VND",
+      currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    })
-      .format(amount)
-      .replace("₫", "₫ ");
+    }).format(amount);
   };
 
   const getScoreColor = (score) => {
@@ -268,7 +266,7 @@ const UserDetail = () => {
     return user?.roles?.includes("ADMIN");
   };
 
-  // Hiển thị tên đầy đủ người dùng
+  // Display user's full name
   const getFullName = () => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
@@ -277,10 +275,10 @@ const UserDetail = () => {
     } else if (user?.lastName) {
       return user.lastName;
     }
-    return "Không có tên";
+    return "No name";
   };
 
-  // Hiển thị chữ cái đầu tiên của tên để làm avatar (nếu không có avatar)
+  // Display first letter of name for avatar (if no avatar exists)
   const getInitial = () => {
     if (user?.firstName) return user.firstName.charAt(0).toUpperCase();
     if (user?.lastName) return user.lastName.charAt(0).toUpperCase();
@@ -297,23 +295,23 @@ const UserDetail = () => {
 
     switch (confirmAction) {
       case "delete":
-        title = "Xác nhận xóa người dùng";
-        message = `Bạn có chắc muốn xóa tài khoản của người dùng '${user?.email || ""}' không? Hành động này không thể hoàn tác.`;
-        confirmText = "Xóa";
+        title = "Confirm User Deletion";
+        message = `Are you sure you want to delete the account of user '${user?.email || ""}'? This action cannot be undone.`;
+        confirmText = "Delete";
         onConfirmAction = handleDeleteUser;
         break;
       case "reset-password":
-        title = "Xác nhận đặt lại mật khẩu";
-        message = `Gửi email đặt lại mật khẩu cho người dùng '${user?.email || ""}'?`;
-        confirmText = "Gửi";
+        title = "Confirm Password Reset";
+        message = `Send password reset email to user '${user?.email || ""}'?`;
+        confirmText = "Send";
         onConfirmAction = handleResetPassword;
         break;
       case "change-role":
-        title = "Xác nhận thay đổi vai trò";
-        message = `Bạn có chắc muốn ${
-          isUserAdmin() ? "hạ quyền" : "cấp quyền ADMIN"
-        } cho người dùng '${user?.email || ""}' không?`;
-        confirmText = "Xác nhận";
+        title = "Confirm Role Change";
+        message = `Are you sure you want to ${
+          isUserAdmin() ? "remove ADMIN privileges" : "grant ADMIN privileges"
+        } for user '${user?.email || ""}'?`;
+        confirmText = "Confirm";
         onConfirmAction = () => handleRoleChange(!isUserAdmin());
         break;
       default:
@@ -335,14 +333,14 @@ const UserDetail = () => {
               onClick={() => setConfirmAction(null)}
               disabled={isDeleting}
             >
-              Hủy
+              Cancel
             </button>
             <button
               className="modal-btn confirm-btn"
               onClick={onConfirmAction}
               disabled={isDeleting}
             >
-              {isDeleting ? "Đang xử lý..." : confirmText}
+              {isDeleting ? "Processing..." : confirmText}
             </button>
           </div>
         </div>
@@ -364,7 +362,7 @@ const UserDetail = () => {
             <div className="container-fluid">
               <div className="loading-container">
                 <div className="spinner"></div>
-                <p>Đang tải thông tin người dùng...</p>
+                <p>Loading user information...</p>
               </div>
             </div>
           </div>
@@ -387,10 +385,10 @@ const UserDetail = () => {
             <div className="container-fluid">
               <div className="error-container">
                 <FaExclamationTriangle size={40} color="#f8bb86" />
-                <h2>Đã xảy ra lỗi</h2>
+                <h2>An Error Occurred</h2>
                 <p>{error}</p>
                 <button className="btn-retry" onClick={fetchUserData}>
-                  Thử lại
+                  Retry
                 </button>
               </div>
             </div>
@@ -419,7 +417,7 @@ const UserDetail = () => {
                 className="back-button"
                 onClick={() => navigate("/admin/users")}
               >
-                <FaArrowLeft /> Quay lại danh sách
+                <FaArrowLeft /> Back to List
               </button>
 
               <div className="user-actions">
@@ -430,14 +428,14 @@ const UserDetail = () => {
                       onClick={handleSubmit}
                       disabled={loading}
                     >
-                      {loading ? "Đang lưu..." : "Lưu thay đổi"}
+                      {loading ? "Saving..." : "Save Changes"}
                     </button>
                     <button
                       className="action-btn cancel-btn"
                       onClick={handleEditToggle}
                       disabled={loading}
                     >
-                      Hủy
+                      Cancel
                     </button>
                   </>
                 ) : (
@@ -446,13 +444,13 @@ const UserDetail = () => {
                       className="action-btn edit-btn"
                       onClick={handleEditToggle}
                     >
-                      <FaEdit /> Chỉnh sửa
+                      <FaEdit /> Edit
                     </button>
                     <button
                       className="action-btn delete-btn"
                       onClick={() => setConfirmAction("delete")}
                     >
-                      <FaTrash /> Xóa
+                      <FaTrash /> Delete
                     </button>
                   </>
                 )}
@@ -500,17 +498,17 @@ const UserDetail = () => {
                           user?.verified ? "verified" : "unverified"
                         }`}
                       >
-                        {user?.verified ? "Đã xác thực" : "Chưa xác thực"}
+                        {user?.verified ? "Verified" : "Unverified"}
                       </span>
                       {user?.locked && (
-                        <span className="status-badge locked">Đã khóa</span>
+                        <span className="status-badge locked">Locked</span>
                       )}
                       {isUserAdmin() && (
                         <span className="status-badge admin">Admin</span>
                       )}
                     </div>
                     <p className="join-date">
-                      Ngày tham gia: {formatDate(user?.createdAt)}
+                      Join Date: {formatDate(user?.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -525,10 +523,10 @@ const UserDetail = () => {
                   }}
                 >
                   <div className="form-section">
-                    <h2>Thông tin cá nhân</h2>
+                    <h2>Personal Information</h2>
                     <div className="form-row">
                       <div className="form-group">
-                        <label htmlFor="firstName">Tên</label>
+                        <label htmlFor="firstName">First Name</label>
                         {editMode ? (
                           <input
                             type="text"
@@ -541,12 +539,12 @@ const UserDetail = () => {
                           />
                         ) : (
                           <p className="form-value">
-                            {user?.firstName || "Không có"}
+                            {user?.firstName || "None"}
                           </p>
                         )}
                       </div>
                       <div className="form-group">
-                        <label htmlFor="lastName">Họ</label>
+                        <label htmlFor="lastName">Last Name</label>
                         {editMode ? (
                           <input
                             type="text"
@@ -559,7 +557,7 @@ const UserDetail = () => {
                           />
                         ) : (
                           <p className="form-value">
-                            {user?.lastName || "Không có"}
+                            {user?.lastName || "None"}
                           </p>
                         )}
                       </div>
@@ -579,12 +577,12 @@ const UserDetail = () => {
                           />
                         ) : (
                           <p className="form-value">
-                            {user?.email || "Không có"}
+                            {user?.email || "None"}
                           </p>
                         )}
                       </div>
                       <div className="form-group">
-                        <label htmlFor="phoneNumber">Số điện thoại</label>
+                        <label htmlFor="phoneNumber">Phone Number</label>
                         {editMode ? (
                           <input
                             type="tel"
@@ -597,14 +595,14 @@ const UserDetail = () => {
                           />
                         ) : (
                           <p className="form-value">
-                            {user?.phoneNumber || "Không có"}
+                            {user?.phoneNumber || "None"}
                           </p>
                         )}
                       </div>
                     </div>
                     <div className="form-row">
                       <div className="form-group full-width">
-                        <label htmlFor="address">Địa chỉ</label>
+                        <label htmlFor="address">Address</label>
                         {editMode ? (
                           <textarea
                             id="address"
@@ -617,7 +615,7 @@ const UserDetail = () => {
                           />
                         ) : (
                           <p className="form-value">
-                            {user?.address || "Không có"}
+                            {user?.address || "None"}
                           </p>
                         )}
                       </div>
@@ -625,12 +623,12 @@ const UserDetail = () => {
                   </div>
                 </form>
 
-                {/* User Stats and Activity - Sử dụng dữ liệu từ mô hình User trong Spring Boot */}
+                {/* User Stats and Activity - Using data from Spring Boot User model */}
                 <div className="form-section">
-                  <h2>Thống kê sử dụng</h2>
+                  <h2>Usage Statistics</h2>
                   <div className="stats-grid">
                     <div className="stat-card">
-                      <div className="stat-title">Điểm tín nhiệm</div>
+                      <div className="stat-title">Credit Score</div>
                       <div
                         className="stat-value"
                         style={{ color: getScoreColor(user?.points || 0) }}
@@ -639,27 +637,27 @@ const UserDetail = () => {
                       </div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-title">Số đấu giá đã đăng</div>
+                      <div className="stat-title">Auctions Posted</div>
                       <div className="stat-value">
                         {user?.totalAuctions || 0}
                       </div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-title">Lượt đấu giá</div>
+                      <div className="stat-title">Bids Placed</div>
                       <div className="stat-value">{user?.totalBids || 0}</div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-title">Số lần thắng</div>
+                      <div className="stat-title">Auctions Won</div>
                       <div className="stat-value">{user?.bidsWon || 0}</div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-title">Doanh thu từ đấu giá</div>
+                      <div className="stat-title">Auction Earnings</div>
                       <div className="stat-value">
                         {formatMoney(user?.auctionEarnings || 0)}
                       </div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-title">Tổng tiền đã chi</div>
+                      <div className="stat-title">Total Amount Spent</div>
                       <div className="stat-value">
                         {formatMoney(user?.totalPaid || 0)}
                       </div>
@@ -669,25 +667,25 @@ const UserDetail = () => {
 
                 {/* Admin Actions */}
                 <div className="form-section">
-                  <h2>Hành động quản trị</h2>
+                  <h2>Admin Actions</h2>
                   <div className="admin-actions-grid">
                     <div className="admin-action-card">
                       <div className="admin-action-content">
                         <h3>
                           {user?.locked ? (
                             <>
-                              <FaLock /> Tài khoản đã bị khóa
+                              <FaLock /> Account is Locked
                             </>
                           ) : (
                             <>
-                              <FaUnlock /> Tài khoản đang hoạt động
+                              <FaUnlock /> Account is Active
                             </>
                           )}
                         </h3>
                         <p>
                           {user?.locked
-                            ? "Người dùng hiện không thể đăng nhập hoặc sử dụng hệ thống."
-                            : "Người dùng có thể đăng nhập và sử dụng hệ thống bình thường."}
+                            ? "User currently cannot log in or use the system."
+                            : "User can log in and use the system normally."}
                         </p>
                       </div>
                       <button
@@ -697,7 +695,7 @@ const UserDetail = () => {
                         onClick={toggleLockUser}
                         disabled={loading}
                       >
-                        {user?.locked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
+                        {user?.locked ? "Unlock Account" : "Lock Account"}
                       </button>
                     </div>
 
@@ -706,18 +704,18 @@ const UserDetail = () => {
                         <h3>
                           {user?.verified ? (
                             <>
-                              <FaCheckCircle /> Tài khoản đã xác thực
+                              <FaCheckCircle /> Account is Verified
                             </>
                           ) : (
                             <>
-                              <FaTimesCircle /> Tài khoản chưa xác thực
+                              <FaTimesCircle /> Account is Unverified
                             </>
                           )}
                         </h3>
                         <p>
                           {user?.verified
-                            ? "Email của người dùng đã được xác thực."
-                            : "Người dùng chưa xác thực email."}
+                            ? "User's email has been verified."
+                            : "User has not verified their email."}
                         </p>
                       </div>
                       <button
@@ -727,7 +725,7 @@ const UserDetail = () => {
                         onClick={toggleVerifyUser}
                         disabled={loading}
                       >
-                        {user?.verified ? "Hủy xác thực" : "Xác thực tài khoản"}
+                        {user?.verified ? "Unverify Account" : "Verify Account"}
                       </button>
                     </div>
 
@@ -736,18 +734,18 @@ const UserDetail = () => {
                         <h3>
                           {isUserAdmin() ? (
                             <>
-                              <FaUserShield /> Quyền quản trị viên
+                              <FaUserShield /> Administrator Privileges
                             </>
                           ) : (
                             <>
-                              <FaUser /> Người dùng thường
+                              <FaUser /> Regular User
                             </>
                           )}
                         </h3>
                         <p>
                           {isUserAdmin()
-                            ? "Người dùng hiện có quyền quản trị hệ thống."
-                            : "Người dùng không có quyền quản trị hệ thống."}
+                            ? "User currently has system administrator privileges."
+                            : "User does not have system administrator privileges."}
                         </p>
                       </div>
                       <button
@@ -755,23 +753,23 @@ const UserDetail = () => {
                         onClick={() => setConfirmAction("change-role")}
                         disabled={loading}
                       >
-                        {isUserAdmin() ? "Hạ quyền" : "Cấp quyền Admin"}
+                        {isUserAdmin() ? "Remove Admin" : "Grant Admin"}
                       </button>
                     </div>
 
                     <div className="admin-action-card">
                       <div className="admin-action-content">
                         <h3>
-                          <FaKey /> Đặt lại mật khẩu
+                          <FaKey /> Reset Password
                         </h3>
-                        <p>Gửi email đặt lại mật khẩu cho người dùng.</p>
+                        <p>Send password reset email to user.</p>
                       </div>
                       <button
                         className="admin-action-btn reset-password-btn"
                         onClick={() => setConfirmAction("reset-password")}
                         disabled={loading}
                       >
-                        Đặt lại mật khẩu
+                        Reset Password
                       </button>
                     </div>
                   </div>
