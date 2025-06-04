@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
 
 class AuctionDetailPage extends StatefulWidget {
@@ -19,10 +20,9 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
   late AnimationController fadeInController;
   bool showImageViewer = false;
   late PageController _pageController;
-
-  // Bid input & suggestion
   final TextEditingController bidController = TextEditingController();
   List<int> bidSuggestions = [];
+  bool isWatchlisted = false;
 
   @override
   void initState() {
@@ -35,6 +35,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
     countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) => updateRemaining());
     _pageController = PageController(viewportFraction: 0.92, initialPage: 0);
     bidController.addListener(_handleBidInput);
+    _checkWatchlist();
   }
 
   void updateRemaining() {
@@ -51,16 +52,75 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
     final current = (auction.currentBid ?? auction.startingPrice).toInt();
     String inputText = bidController.text.replaceAll('.', '').replaceAll(',', '');
     int inputValue = int.tryParse(inputText) ?? 0;
-
     int suggestStart = inputValue > current ? inputValue : current + increment;
     List<int> suggestions = [];
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 3; i++) {
       suggestions.add(suggestStart + increment * i);
     }
     setState(() {
       bidSuggestions = inputText.isNotEmpty ? suggestions : [];
     });
   }
+
+  Future<void> _checkWatchlist() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList('watchlist') ?? [];
+    setState(() {
+      isWatchlisted = list.contains(widget.auction.id.toString());
+    });
+  }
+
+  Future<void> _toggleWatchlist() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> list = prefs.getStringList('watchlist') ?? [];
+    final id = widget.auction.id.toString();
+    bool added = false;
+    if (isWatchlisted) {
+      list.remove(id);
+      added = false;
+    } else {
+      list.add(id);
+      added = true;
+    }
+    await prefs.setStringList('watchlist', list);
+    setState(() {
+      isWatchlisted = !isWatchlisted;
+    });
+    _showWatchlistSnack(added);
+  }
+
+  void _showWatchlistSnack(bool added) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Icon(
+            added ? Icons.favorite : Icons.favorite_border,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              added
+                  ? 'Added to Watchlist!'
+                  : 'Removed from Watchlist.',
+              style: const TextStyle(fontSize: 15),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: added ? Colors.orange : Colors.grey[700],
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      margin: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+      duration: const Duration(seconds: 2),
+      elevation: 10,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
 
   @override
   void dispose() {
@@ -83,10 +143,6 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  String formatDateTime(DateTime? dt) {
-    return dt != null ? DateFormat('yyyy-MM-dd HH:mm').format(dt) : 'N/A';
-  }
-
   Color getCountdownColor(Duration d) {
     if (d.inSeconds <= 0) return Colors.red;
     if (d.inMinutes < 2) return Colors.orange;
@@ -104,8 +160,6 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
     final now = DateTime.now();
     final hasStarted = now.isAfter(auction.startTime);
     final hasEnded = now.isAfter(auction.endTime);
-    final descriptionThreshold = 120;
-    final isLongDescription = auction.description.length > descriptionThreshold;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -114,6 +168,15 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0.3,
+        actions: [
+          IconButton(
+            onPressed: _toggleWatchlist,
+            icon: Icon(
+              isWatchlisted ? Icons.favorite : Icons.favorite_border,
+              color: Colors.orange,
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: FadeTransition(
@@ -143,6 +206,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
                               child: PageView.builder(
                                 itemCount: mediaList.length,
                                 controller: _pageController,
+                                physics: const BouncingScrollPhysics(),
                                 onPageChanged: (index) => setState(() => currentImageIndex = index),
                                 itemBuilder: (context, index) {
                                   final url = mediaList[index];
@@ -154,26 +218,31 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
                                       });
                                     },
                                     child: AnimatedOpacity(
-                                      duration: const Duration(milliseconds: 350),
-                                      opacity: selected ? 1.0 : 0.7,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(16),
-                                          child: Container(
-                                            color: Colors.white,
-                                            child: Image.network(
-                                              url,
-                                              fit: BoxFit.contain,
-                                              width: double.infinity,
-                                              height: double.infinity,
-                                              errorBuilder: (_, __, ___) =>
-                                                  Image.asset(
-                                                    'assets/images/product-img.png',
-                                                    fit: BoxFit.contain,
-                                                    width: double.infinity,
-                                                    height: double.infinity,
-                                                  ),
+                                      duration: const Duration(milliseconds: 400),
+                                      opacity: selected ? 1.0 : 0.72,
+                                      child: AnimatedScale(
+                                        duration: const Duration(milliseconds: 400),
+                                        scale: selected ? 1.05 : 1,
+                                        curve: Curves.easeOutBack,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(16),
+                                            child: Container(
+                                              color: Colors.white,
+                                              child: Image.network(
+                                                url,
+                                                fit: BoxFit.contain,
+                                                width: double.infinity,
+                                                height: double.infinity,
+                                                errorBuilder: (_, __, ___) =>
+                                                    Image.asset(
+                                                      'assets/images/product-img.png',
+                                                      fit: BoxFit.contain,
+                                                      width: double.infinity,
+                                                      height: double.infinity,
+                                                    ),
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -186,24 +255,20 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
                             if (mediaList.length > 1)
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
-                                child: AnimatedOpacity(
-                                  opacity: 1,
-                                  duration: const Duration(milliseconds: 400),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: List.generate(
-                                      mediaList.length,
-                                          (index) => AnimatedContainer(
-                                        duration: const Duration(milliseconds: 300),
-                                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                                        width: currentImageIndex == index ? 12 : 8,
-                                        height: currentImageIndex == index ? 12 : 8,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: currentImageIndex == index
-                                              ? Colors.orange
-                                              : Colors.grey[300],
-                                        ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: List.generate(
+                                    mediaList.length,
+                                        (index) => AnimatedContainer(
+                                      duration: const Duration(milliseconds: 300),
+                                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                                      width: currentImageIndex == index ? 12 : 8,
+                                      height: currentImageIndex == index ? 12 : 8,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: currentImageIndex == index
+                                            ? Colors.orange
+                                            : Colors.grey[300],
                                       ),
                                     ),
                                   ),
@@ -438,7 +503,6 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
                             ),
                             const SizedBox(height: 14),
 
-                            // Bid input & suggestions
                             Row(
                               children: [
                                 Expanded(
@@ -467,7 +531,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
                                         elevation: 0,
                                       ),
                                       onPressed: (!hasStarted || hasEnded) ? null : () {
-                                        // TODO: handle bid submit
+                                        // handle bid submit
                                       },
                                       child: const Text("Bid", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
                                     ),
@@ -487,7 +551,6 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
                                     ),
                                     onPressed: () {
                                       bidController.text = price.toString();
-                                      // Đặt lại vị trí con trỏ về cuối chuỗi
                                       bidController.selection = TextSelection.fromPosition(TextPosition(offset: bidController.text.length));
                                     },
                                     backgroundColor: Colors.orange.withOpacity(0.15),

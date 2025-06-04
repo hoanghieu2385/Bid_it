@@ -59,13 +59,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const HomePage()),
-          ),
-        ),
         title: const Text('User Profile'),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.black,
