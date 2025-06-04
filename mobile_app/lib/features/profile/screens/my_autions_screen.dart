@@ -81,15 +81,6 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Auctions'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const HomePage()),
-            );
-          },
-        ),
         backgroundColor: Colors.white,
         elevation: 0.5,
         centerTitle: true,

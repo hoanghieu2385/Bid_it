@@ -1,6 +1,3 @@
-// File: bid_history_page.dart
-// Chức năng: Hiển thị danh sách các lượt ra giá mà người dùng đã thực hiện.
-
 import 'package:flutter/material.dart';
 
 class BidHistoryPage extends StatelessWidget {

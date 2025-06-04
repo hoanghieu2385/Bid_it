@@ -1,17 +1,13 @@
-// File: user_page.dart
-// Chức năng: Màn hình hồ sơ người dùng, hiển thị thông tin cá nhân và chuyển đến các màn liên quan như hồ sơ, lịch sử đấu giá, các phiên đã tham gia, đổi mật khẩu, v.v.
-
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/services/user_service.dart';
 import 'package:mobile_app/core/widgets/custom_button.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
-import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
 import 'package:mobile_app/features/auction/screens/bid_history.dart';
 import 'package:mobile_app/features/auction/screens/participated_auctions.dart';
-import 'package:mobile_app/features/profile/screens/profile_screen.dart';
 import 'package:mobile_app/features/profile/screens/change_password.dart';
 import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
+import 'package:mobile_app/features/profile/screens/profile_screen.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -32,17 +28,23 @@ class _UserPageState extends State<UserPage> {
 
   Future<void> _loadUser() async {
     final user = await UserService.getCurrentUser();
-    setState(() {
-      _userData = user;
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _userData = user;
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Colors.orange,
+          ),
+        ),
       );
     }
 
@@ -50,17 +52,39 @@ class _UserPageState extends State<UserPage> {
       return Scaffold(
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 20.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text(
-                  'You are not logged in.',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Icon(
+                  Icons.person_off_outlined,
+                  size: 72,
+                  color: Colors.orange[400],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
+                Text(
+                  'Login Required',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.black.withOpacity(0.85),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'You need to be logged in to view your profile. Please log in to continue.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: AppColors.grey,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
                 CustomButton(
-                  text: 'Return to Start Page',
+                  text: 'Go to Login',
                   onPressed: () {
                     Navigator.pushReplacement(
                       context,
@@ -93,13 +117,13 @@ class _UserPageState extends State<UserPage> {
                   backgroundColor: AppColors.grey,
                   backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
                   child: avatar.isEmpty
-                      ? const Icon(Icons.person, size: 50, color: AppColors.white)
+                      ? Icon(Icons.person, size: 50, color: AppColors.white)
                       : null,
                 ),
                 const SizedBox(height: 16.0),
                 Text(
                   name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: AppColors.black,
@@ -108,7 +132,7 @@ class _UserPageState extends State<UserPage> {
                 const SizedBox(height: 8.0),
                 Text(
                   email,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     color: AppColors.grey,
                   ),
@@ -118,6 +142,7 @@ class _UserPageState extends State<UserPage> {
           ),
           Expanded(
             child: ListView(
+              padding: EdgeInsets.zero,
               children: [
                 _buildMenuItem(
                   context: context,
@@ -130,7 +155,7 @@ class _UserPageState extends State<UserPage> {
                 ),
                 _buildMenuItem(
                   context: context,
-                  icon: Icons.gavel,
+                  icon: Icons.gavel_outlined,
                   title: 'My Auctions',
                   onTap: () => Navigator.push(
                     context,
@@ -139,7 +164,7 @@ class _UserPageState extends State<UserPage> {
                 ),
                 _buildMenuItem(
                   context: context,
-                  icon: Icons.history,
+                  icon: Icons.history_outlined,
                   title: 'Bid History',
                   onTap: () => Navigator.push(
                     context,
@@ -148,7 +173,7 @@ class _UserPageState extends State<UserPage> {
                 ),
                 _buildMenuItem(
                   context: context,
-                  icon: Icons.how_to_vote,
+                  icon: Icons.how_to_vote_outlined,
                   title: 'Participated Auctions',
                   onTap: () => Navigator.push(
                     context,
@@ -164,23 +189,26 @@ class _UserPageState extends State<UserPage> {
                     MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
                   ),
                 ),
-                const SizedBox(height: 16.0),
+                const SizedBox(height: 24.0),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: CustomButton(
                     text: 'Logout',
                     onPressed: () async {
                       await UserService.logout();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const StartPage()),
-                      );
+                      if (mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => const StartPage()),
+                              (route) => false,
+                        );
+                      }
                     },
                     backgroundColor: Colors.orange,
                     textColor: AppColors.white,
                   ),
                 ),
-                const SizedBox(height: 16.0),
+                const SizedBox(height: 24.0),
               ],
             ),
           ),
@@ -196,10 +224,14 @@ class _UserPageState extends State<UserPage> {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: Colors.orange),
-      title: Text(title, style: const TextStyle(fontSize: 16)),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.grey),
+      leading: Icon(icon, color: Colors.orange, size: 24),
+      title: Text(
+        title,
+        style: TextStyle(fontSize: 16, color: AppColors.black.withOpacity(0.8)),
+      ),
+      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.grey.withOpacity(0.7)),
       onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
     );
   }
 }

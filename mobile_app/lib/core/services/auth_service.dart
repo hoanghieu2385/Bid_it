@@ -7,6 +7,7 @@ import 'api_service.dart';
 
 class AuthService {
   static const String _baseUrl = ApiService.authBaseUrl;
+  static const String _baseUserUrl = ApiService.userBaseUrl;
 
   static Future<Map<String, dynamic>?> login(String email, String password, {bool rememberMe = false}) async {
     final url = Uri.parse('$_baseUrl/login');
@@ -31,6 +32,21 @@ class AuthService {
         await prefs.setString('jwt_expires_at', expiresAt.toIso8601String());
         await prefs.setBool('remember_me', rememberMe);
 
+        final meUrl = Uri.parse('$_baseUserUrl/me');
+        final meRes = await http.get(
+          meUrl,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ${data['token']}',
+          },
+        );
+        if (meRes.statusCode == 200) {
+          final userInfo = jsonDecode(meRes.body);
+          await prefs.setString('user_info', jsonEncode(userInfo));
+        } else {
+          await prefs.remove('user_info');
+        }
+
         return data;
       } else {
         return {
@@ -44,6 +60,7 @@ class AuthService {
       return {'error': true, 'message': e.toString()};
     }
   }
+
 
   static Future<bool> isTokenValid() async {
     final prefs = await SharedPreferences.getInstance();
