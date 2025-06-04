@@ -8,35 +8,36 @@ bid-service/
 │       │   └── com/
 │       │       └── bidit/
 │       │           └── bidservice/
-│       │               ├── BidServiceApplication.java
+│       │               ├──  client/
+│       │               │   ├── AuctionServiceClient.java
+│       │               │   └── UserServiceClient.java
 │       │               ├── config/
 │       │               │   ├── WebSocketConfig.java
 │       │               │   └── CorsConfig.java
 │       │               ├── controller/
 │       │               │   ├── BidController.java
 │       │               │   └── WebSocketController.java
+│       │               ├── dto/
+│       │               │   ├── BidRequest.java
+│       │               │   ├── BidResponse.java
+│       │               │   └── BidNotification.java
 │       │               ├── entity/
 │       │               │   └── Bid.java
 │       │               │   └── BidStatus.java
 │       │               ├── repository/
 │       │               │   └── BidRepository.java
-│       │               ├── service/
-│       │               │   ├── BidService.java          (class)
-│       │               │   ├── IBidService.java         (interface)
-│       │               │   └── WebSocketService.java    (class)   // hiện tại chưa có
-│       │               │   └── IWebSocketService.java   (interface)   // hiện tại chưa có
-│       │               ├── dto/
-│       │               │   ├── BidRequest.java
-│       │               │   ├── BidResponse.java
-│       │               │   └── BidNotification.java
-│       │               └── client/
-│       │                   ├── AuctionServiceClient.java
-│       │                   └── UserServiceClient.java
+│       │               ├── scheduler/
+│       │               │   └── AuctionEndScheduler.java
+│       │               └── service/
+│       │                   ├── BidService.java          (class)
+│       │                   ├── IBidService.java         (interface)
+│       │                   └── WebSocketService.java    (class)
+│       │                   └── IWebSocketService.java   (interface)
+│       │               ├── BidServiceApplication.java
 │       └── resources/
 │           ├── application.properties
 │           └── data.sql
 ```
-
 
 1. **pom.xml** - Dependencies
 2. **application.properties** - Cấu hình

@@ -46,8 +46,20 @@ public class BidService implements IBidService {
 
         Bid savedBid = bidRepository.save(newBid);
 
-        // 3. KHÔNG cập nhật các bid cũ và KHÔNG gọi updateWinner
-        // Chỉ cần lưu bid và gửi notification
+        // 3. THÊM: Cập nhật currentBid và bidCount trong auction-service
+        try {
+            // Đếm tổng số bid hiện tại
+            long totalBids = bidRepository.countByAuctionId(auctionId);
+
+            // Cập nhật currentBid và bidCount
+            auctionServiceClient.updateCurrentBid(auctionId, bidAmount, (int) totalBids);
+
+            System.out.println("Updated auction " + auctionId + " with currentBid: " + bidAmount + ", bidCount: " + totalBids);
+
+        } catch (Exception e) {
+            System.err.println("Failed to update current bid in auction service: " + e.getMessage());
+            // Không throw exception để không làm fail toàn bộ bid process
+        }
 
         // 4. Enrich data và gửi notification
         enrichBidWithExternalData(savedBid);
@@ -187,7 +199,6 @@ public class BidService implements IBidService {
             validateUserNotAlreadyHighestBidder(auctionId, userId);
 
             // Kiểm tra bid amount phải lớn hơn hoặc bằng starting bid (with null safety)
-            // Sử dụng getStartingPrice() thay vì getStartingBid()
             BigDecimal startingPrice = auction.getStartingPrice();
             if (startingPrice != null && bidAmount.compareTo(startingPrice) < 0) {
                 throw new RuntimeException("Bid amount must be at least: " + startingPrice);
@@ -222,7 +233,7 @@ public class BidService implements IBidService {
         }
     }
 
-    // Thêm method helper này vào BidService
+    // Validate user không phải là người bid cao nhất hiện tại
     private void validateUserNotAlreadyHighestBidder(Long auctionId, Long userId) {
         // Tìm bid cao nhất hiện tại
         Optional<Bid> highestBid = bidRepository.findHighestBidByAuctionId(auctionId);

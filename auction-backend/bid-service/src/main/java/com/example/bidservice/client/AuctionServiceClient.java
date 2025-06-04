@@ -14,8 +14,15 @@ public interface AuctionServiceClient {
     @GetMapping("/api/auctions/{id}")
     AuctionResponse getAuctionById(@PathVariable("id") Long id);
 
+    @PutMapping("/api/auctions/{id}/current-bid")
+    void updateCurrentBid(@PathVariable("id") Long auctionId,
+                          @RequestParam("currentBid") java.math.BigDecimal currentBid,
+                          @RequestParam("bidCount") Integer bidCount);
+
     @PutMapping("/api/auctions/{id}/winner")
     void updateWinner(@PathVariable("id") Long auctionId, @RequestParam("winnerId") Long winnerId);
+
+
 
     // DTO - chỉ lấy những fields cần thiết cho BidService
     class AuctionResponse {
