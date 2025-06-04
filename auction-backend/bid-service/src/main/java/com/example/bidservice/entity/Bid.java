@@ -3,6 +3,8 @@ package com.example.bidservice.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "bids")
@@ -48,9 +50,10 @@ public class Bid {
 
     // Constructors
     public Bid() {
-        this.bidTime = LocalDateTime.now();
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        LocalDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDateTime();
+        this.bidTime = now;
+        this.createdAt = now;
+        this.updatedAt = now;
     }
 
     public Bid(Long auctionId, Long userId, BigDecimal bidAmount) {
@@ -62,16 +65,17 @@ public class Bid {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        LocalDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDateTime();
+        this.createdAt = now;
+        this.updatedAt = now;
         if (this.bidTime == null) {
-            this.bidTime = LocalDateTime.now();
+            this.bidTime = now;
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDateTime();
     }
 
     // Getters and Setters
