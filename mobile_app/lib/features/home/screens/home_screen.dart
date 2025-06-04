@@ -1,9 +1,8 @@
-// File: home_page.dart
-// Description: Home Page with auto-updating countdown, keyword search, and auction grouping. Hiển thị ảnh đúng logic mediaUrls > thumbnailUrl > default.
-
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/core/constants/app_colors.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
 import 'package:mobile_app/core/models/category_model.dart';
@@ -45,7 +44,10 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(title: 'AuctionHub'),
-      body: _pages[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -70,11 +72,14 @@ class _HomeContentState extends State<HomeContent> {
   final TextEditingController _searchController = TextEditingController();
   String _searchKeyword = '';
   Timer? _countdownTimer;
+  final NumberFormat _vndFormat = NumberFormat("#,##0", "vi_VN");
+  Set<int> watchlistIds = {};
 
   @override
   void initState() {
     super.initState();
     loadData();
+    _loadWatchlistIds();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() {});
     });
@@ -87,14 +92,22 @@ class _HomeContentState extends State<HomeContent> {
     super.dispose();
   }
 
+  Future<int?> _getCurrentUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('user_info');
+    if (userJson == null) return null;
+    final user = Map<String, dynamic>.from(await Future.value(userJson != null ? (userJson.startsWith('{') ? Map<String, dynamic>.from(jsonDecode(userJson)) : {}) : {}));
+    final rawId = user['id'];
+    return rawId is int ? rawId : int.tryParse(rawId.toString());
+  }
+
   Future<void> loadData() async {
     try {
       final fetchedCategories = await CategoryService.fetchCategories();
       final fetchedAuctions = await AuctionService.fetchAuctions();
       final now = DateTime.now();
 
-      final validAuctions =
-      fetchedAuctions.where((a) => a.endTime.isAfter(now)).toList();
+      final validAuctions = fetchedAuctions.where((a) => a.endTime.isAfter(now)).toList();
 
       final ongoing = validAuctions
           .where((a) => now.isAfter(a.startTime) && now.isBefore(a.endTime))
@@ -119,16 +132,79 @@ class _HomeContentState extends State<HomeContent> {
     }
   }
 
-  String getCountdownText(DateTime time) {
-    final now = DateTime.now();
-    final difference = time.difference(now);
-    if (difference.isNegative) return '00:00:00';
-    final hours = difference.inHours;
-    final minutes = difference.inMinutes % 60;
-    final seconds = difference.inSeconds % 60;
-    return '${hours.toString().padLeft(2, '0')}:'
-        '${minutes.toString().padLeft(2, '0')}:'
-        '${seconds.toString().padLeft(2, '0')}';
+  Future<void> _loadWatchlistIds() async {
+    final userId = await _getCurrentUserId();
+    if (userId == null) {
+      setState(() {
+        watchlistIds = {};
+      });
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList('watchlist_$userId') ?? [];
+    setState(() {
+      watchlistIds = list.map((e) => int.tryParse(e) ?? -1).where((id) => id > 0).toSet();
+    });
+  }
+
+  Future<void> _toggleWatchlist(Auction auction) async {
+    final userId = await _getCurrentUserId();
+    if (userId == null) {
+      _showSnackBar("Please log in to use watchlist.");
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'watchlist_$userId';
+    List<String> list = prefs.getStringList(key) ?? [];
+    final id = auction.id.toString();
+    bool added = false;
+    if (watchlistIds.contains(auction.id)) {
+      list.remove(id);
+      added = false;
+    } else {
+      list.add(id);
+      added = true;
+    }
+    await prefs.setStringList(key, list);
+    await _loadWatchlistIds();
+    _showSnackBar(
+      added ? "Added to your watchlist." : "Removed from watchlist.",
+      action: SnackBarAction(
+        label: "View",
+        textColor: Colors.orange,
+        onPressed: () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WatchlistPage()));
+        },
+      ),
+    );
+  }
+
+  void _showSnackBar(String message, {SnackBarAction? action}) {
+    final snackBar = SnackBar(
+      backgroundColor: Colors.white,
+      elevation: 10,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 3),
+      content: Row(
+        children: [
+          Icon(
+            message.contains('Added') ? Icons.favorite : Icons.favorite_border,
+            color: Colors.orange,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+      action: action,
+    );
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   Widget _buildAuctionCard(Auction auction) {
@@ -146,6 +222,9 @@ class _HomeContentState extends State<HomeContent> {
     } else {
       displayImage = null;
     }
+
+    final String startingPrice = _vndFormat.format(auction.startingPrice);
+    final String currentBid = _vndFormat.format(auction.currentBid ?? auction.startingPrice);
 
     return GestureDetector(
       onTap: () {
@@ -192,13 +271,31 @@ class _HomeContentState extends State<HomeContent> {
                   ),
                 ),
                 Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.85),
-                      borderRadius: BorderRadius.circular(20),
+                  top: 10,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap: () async {
+                      await _toggleWatchlist(auction);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.orange.withOpacity(0.08),
+                            blurRadius: 6,
+                          )
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(6),
+                      child: Icon(
+                        watchlistIds.contains(auction.id)
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: Colors.orange,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ),
@@ -243,21 +340,19 @@ class _HomeContentState extends State<HomeContent> {
                   Row(
                     children: [
                       const Text('Starting Price: '),
-                      Text('${auction.startingPrice.toStringAsFixed(0)} đ',
-                          style: const TextStyle(color: Colors.green))
+                      Text('$startingPrice đ', style: const TextStyle(color: Colors.green)),
                     ],
                   ),
                   Row(
                     children: [
                       const Text('Current Bid: '),
-                      Text('${auction.startingPrice.toStringAsFixed(0)} đ',
-                          style: const TextStyle(color: Colors.green))
+                      Text('$currentBid đ', style: const TextStyle(color: Colors.green)),
                     ],
                   ),
                   Row(
                     children: [
                       const Text('Bid Count: '),
-                      Text('0 bids', style: const TextStyle(color: Colors.green))
+                      Text('${auction.bidCount} bids', style: const TextStyle(color: Colors.green)),
                     ],
                   ),
                 ],

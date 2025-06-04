@@ -10,8 +10,13 @@ import com.example.auction.model.AuctionStatus;
 import com.example.auction.repository.AuctionRepository;
 import com.example.auction.service.IAuctionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.time.LocalDateTime;
@@ -126,6 +131,17 @@ public class AuctionService implements IAuctionService{
         return mapToResponseDTO(updated);
     }
 
+    public void updateCurrentBid(Long auctionId, BigDecimal currentBid, Integer bidCount) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new RuntimeException("Auction not found"));
+
+        auction.setCurrentBid(currentBid);
+        auction.setBidCount(bidCount);
+
+        auctionRepository.save(auction);
+
+        System.out.println("Updated auction " + auctionId + " currentBid to: " + currentBid + ", bidCount: " + bidCount);
+    }
 
     // Update Auction STATUS
     public AuctionResponseDTO updateAuctionStatus(Long id, String status, Long requesterId) {
@@ -204,7 +220,7 @@ public class AuctionService implements IAuctionService{
         }
     }
 
-    private AuctionResponseDTO mapToResponseDTO(Auction auction) {
+    public AuctionResponseDTO mapToResponseDTO(Auction auction) {
         UserDTO seller;
         try {
             seller = userClient.getUserById(auction.getSellerId());
@@ -234,5 +250,9 @@ public class AuctionService implements IAuctionService{
                 .deletedAt(auction.getDeletedAt())
                 .user(seller)
                 .build();
+    }
+
+    public Auction save(Auction auction) {
+        return auctionRepository.save(auction);
     }
 }

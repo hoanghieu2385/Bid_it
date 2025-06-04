@@ -153,9 +153,9 @@ services:
     ports:
       - "8085:8085"
     environment:
-      - SPRING_APPLICATION_NAME=bidding-service
+      - SPRING_APPLICATION_NAME=bid-service
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bidding_service
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bid_service
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=123456
       - SERVER_PORT=8085

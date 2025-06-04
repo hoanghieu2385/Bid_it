@@ -3,7 +3,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getAllAuctions, getAuctionDetailById } from '../../../services/auction-api';
 import { getSellerById } from '../../../services/user-api';
-import { placeBid } from '../../../services/bid_api';
+import { createBid } from '../../../services/bid_api';
 import defaultAvatar from '../../../assets/images/default-avatar.png';
 import useToastMessage from '../../../hooks/useToastMessage';
 import { UserContext } from '../../../contexts/UserContext';
@@ -155,7 +155,7 @@ const AuctionDetailPage = () => {
 		};
 
 		try {
-			await placeBid(payload);
+			await createBid(payload);
 			showSuccess('Bid placed successfully!');
 
 			// Refresh auction data
