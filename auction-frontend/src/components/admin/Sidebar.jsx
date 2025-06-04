@@ -152,6 +152,8 @@ const Sidebar = () => {
                     <span>Users</span>
                 </Link>
             </li>
+            
+            <hr className="sidebar-divider d-none d-md-block" />
 
             {/* ✅ Verify Requests */}
             <li className="nav-item">

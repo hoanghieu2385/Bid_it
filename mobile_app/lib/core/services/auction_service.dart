@@ -221,4 +221,25 @@ class AuctionService {
       return null;
     }
   }
+  static Future<Auction?> fetchAuctionById(int auctionId) async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception('Missing token');
+    }
+    final url = Uri.parse('$baseAuctionUrl/auctions/$auctionId');
+    final res = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (res.statusCode == 200) {
+      return Auction.fromJson(jsonDecode(res.body));
+    }
+    return null;
+  }
+  static Future<List<Auction>> fetchWatchlistAuctions(List<int> ids) async {
+    final futures = ids.map(fetchAuctionById);
+    final auctions = await Future.wait(futures);
+    return auctions.whereType<Auction>().toList();
+  }
+
 }

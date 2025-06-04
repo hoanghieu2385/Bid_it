@@ -37,7 +37,7 @@ const Dashboard = () => {
       disputes: { count: 1, status: "Waiting to be resolved" }
     },
     revenue: {
-      current: "1.530.000",
+      current: "1,530,000",
       percentage: 100,
       successfulPayments: { count: 1, percentage: 100 }
     },
@@ -60,8 +60,8 @@ const Dashboard = () => {
         },
         startDate: "23 Jul, 2024 - 02:01",
         endDate: "26 Jul, 2024 - 02:01",
-        currentPrice: "80.000.000",
-        startPrice: "80.500.000",
+        currentPrice: "80,000,000",
+        startPrice: "80,500,000",
         status: "Opened"
       },
       {
@@ -75,7 +75,7 @@ const Dashboard = () => {
         },
         startDate: "23 Jul, 2024 - 02:01",
         endDate: "24 Jul, 2024 - 02:01",
-        currentPrice: "50.000",
+        currentPrice: "50,000",
         startPrice: "0",
         status: "Opened"
       },
@@ -90,7 +90,7 @@ const Dashboard = () => {
         },
         startDate: "23 Jul, 2024 - 02:01",
         endDate: "29 Jul, 2024 - 02:01",
-        currentPrice: "2.500.000",
+        currentPrice: "2,500,000",
         startPrice: "0",
         status: "Opened"
       },
@@ -105,7 +105,7 @@ const Dashboard = () => {
         },
         startDate: "23 Jul, 2024 - 02:01",
         endDate: "27 Jul, 2024 - 02:01",
-        currentPrice: "4.500.000",
+        currentPrice: "4,500,000",
         startPrice: "0",
         status: "Opened"
       },
@@ -120,12 +120,12 @@ const Dashboard = () => {
         },
         startDate: "23 Jul, 2024 - 02:01",
         endDate: "30 Jul, 2024 - 02:01",
-        currentPrice: "700.000",
+        currentPrice: "700,000",
         startPrice: "0",
         status: "Opened"
       },
       {
-        id: 812,
+        id: 813,
         name: "BMW A100D A Class Hatch Premium",
         category: "Motorcycles",
         seller: {
@@ -135,12 +135,12 @@ const Dashboard = () => {
         },
         startDate: "23 Jul, 2024 - 02:01",
         endDate: "26 Jul, 2024 - 02:01",
-        currentPrice: "80.000.000",
-        startPrice: "80.500.000",
+        currentPrice: "80,000,000",
+        startPrice: "80,500,000",
         status: "Opened"
       },
       {
-        id: 811,
+        id: 814,
         name: "Watercolor Special Lighter Collection",
         category: "Jewelry",
         seller: {
@@ -150,12 +150,12 @@ const Dashboard = () => {
         },
         startDate: "23 Jul, 2024 - 02:01",
         endDate: "24 Jul, 2024 - 02:01",
-        currentPrice: "50.000",
+        currentPrice: "50,000",
         startPrice: "0",
         status: "Opened"
       },
       {
-        id: 810,
+        id: 815,
         name: "Michael Korian Gold Special Edition",
         category: "Watches",
         seller: {
@@ -165,12 +165,12 @@ const Dashboard = () => {
         },
         startDate: "23 Jul, 2024 - 02:01",
         endDate: "29 Jul, 2024 - 02:01",
-        currentPrice: "2.500.000",
+        currentPrice: "2,500,000",
         startPrice: "0",
         status: "Opened"
       },
       {
-        id: 809,
+        id: 816,
         name: "Water resist All Variants Available",
         category: "Watches",
         seller: {
@@ -180,12 +180,12 @@ const Dashboard = () => {
         },
         startDate: "23 Jul, 2024 - 02:01",
         endDate: "27 Jul, 2024 - 02:01",
-        currentPrice: "4.500.000",
+        currentPrice: "4,500,000",
         startPrice: "0",
         status: "Sold"
       },
       {
-        id: 808,
+        id: 817,
         name: "Pure leather All Variants Available",
         category: "Clothes",
         seller: {
@@ -195,7 +195,7 @@ const Dashboard = () => {
         },
         startDate: "23 Jul, 2024 - 02:01",
         endDate: "30 Jul, 2024 - 02:01",
-        currentPrice: "700.000",
+        currentPrice: "700,000",
         startPrice: "0",
         status: "Disputed"
       }
@@ -346,7 +346,7 @@ const Dashboard = () => {
           <input
             type="text"
             className="form-control form-control-sm ml-2"
-            placeholder="Tìm kiếm..."
+            placeholder="Search..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
             style={{ width: '150px', display: 'inline-block', marginLeft: '5px' }}
@@ -410,7 +410,7 @@ const Dashboard = () => {
                 <Card className="welcome-card">
                   <Card.Body>
                     <h3>Hello, {dashboardData.username}</h3>
-                    <p>You have {dashboardData.tasks} tasks to pay attention too</p>
+                    <p>You have {dashboardData.tasks} tasks to pay attention to</p>
                     
                     <Row className="mt-4">
                       <Col md={6} className="mb-3">
@@ -469,7 +469,7 @@ const Dashboard = () => {
                     <div className="d-flex justify-content-between align-items-center mb-3">
                       <div>
                         <h5 className="mb-0">Revenue</h5>
-                        <small className="text-muted">Collected fee from succeed seller payments</small>
+                        <small className="text-muted">Collected fee from successful seller payments</small>
                       </div>
                       <div className="time-selector">
                         <ButtonGroup size="sm">
@@ -504,7 +504,7 @@ const Dashboard = () => {
                     <Row className="mt-4">
                       <Col md={6}>
                         <div className="revenue-stats">
-                          <h2 className="revenue-amount">{dashboardData.revenue.current} đ</h2>
+                          <h2 className="revenue-amount">${dashboardData.revenue.current}</h2>
                           <Badge bg="success" className="revenue-badge">
                             +{dashboardData.revenue.percentage}%
                           </Badge>
@@ -517,7 +517,7 @@ const Dashboard = () => {
                           <Badge bg="success" className="revenue-badge">
                             +{dashboardData.revenue.successfulPayments.percentage}%
                           </Badge>
-                          <p className="text-muted">Succeed seller payments</p>
+                          <p className="text-muted">Successful seller payments</p>
                         </div>
                       </Col>
                     </Row>
@@ -547,10 +547,10 @@ const Dashboard = () => {
                         
                         {/* Y-axis labels */}
                         <text x="35" y="170" textAnchor="end" fontSize="10" fill="#9aa0ac">0</text>
-                        <text x="35" y="130" textAnchor="end" fontSize="10" fill="#9aa0ac">400000</text>
-                        <text x="35" y="90" textAnchor="end" fontSize="10" fill="#9aa0ac">800000</text>
-                        <text x="35" y="50" textAnchor="end" fontSize="10" fill="#9aa0ac">1200000</text>
-                        <text x="35" y="10" textAnchor="end" fontSize="10" fill="#9aa0ac">1600000</text>
+                        <text x="35" y="130" textAnchor="end" fontSize="10" fill="#9aa0ac">400K</text>
+                        <text x="35" y="90" textAnchor="end" fontSize="10" fill="#9aa0ac">800K</text>
+                        <text x="35" y="50" textAnchor="end" fontSize="10" fill="#9aa0ac">1.2M</text>
+                        <text x="35" y="10" textAnchor="end" fontSize="10" fill="#9aa0ac">1.6M</text>
                         
                         {/* Revenue line */}
                         <path 
@@ -661,9 +661,9 @@ const Dashboard = () => {
                               </td>
                               <td>
                                 <div className="auction-price">
-                                  <div className="current-price">{auction.currentPrice} đ</div>
+                                  <div className="current-price">${auction.currentPrice}</div>
                                   {auction.startPrice !== "0" && (
-                                    <div className="start-price">{auction.startPrice} đ</div>
+                                    <div className="start-price">${auction.startPrice}</div>
                                   )}
                                 </div>
                               </td>
@@ -740,7 +740,7 @@ const Dashboard = () => {
                         <div key={index} className="category-item mb-4">
                           <div className="d-flex justify-content-between align-items-center mb-2">
                             <div className="category-name">{category.name}</div>
-                            <div className="category-revenue">{category.revenue.toLocaleString()} đ</div>
+                            <div className="category-revenue">${category.revenue.toLocaleString()}</div>
                           </div>
                           <div className="progress" style={{ height: "8px" }}>
                             <div 

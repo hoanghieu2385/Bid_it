@@ -114,7 +114,7 @@ function Login() {
 
 							<div className="d-flex justify-content-between align-items-center mb-3">
 								<div className="form-check">
-									<input className="form-check-input" type="checkbox" id="login-remember" />
+									<input className="form-check-input" type="checkbox" id="login-remember" defaultChecked />
 									<label className="form-check-label" htmlFor="login-remember">
 										Remember me
 									</label>
