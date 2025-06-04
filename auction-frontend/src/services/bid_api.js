@@ -5,7 +5,7 @@ import API_CONFIG from './apiConfig';
 const bidEndpoint = `${API_CONFIG.BID_SERVICE}`;
 
 // Gửi bid mới (đồng bộ)
-export const placeBid = async (bidData) => {
+export const createBid = async (bidData) => {
 	const response = await api.post(`${bidEndpoint}`, bidData);
 	return response.data;
 };
