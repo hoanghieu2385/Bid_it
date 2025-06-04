@@ -84,25 +84,6 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/request-otp")
-    @ResponseBody
-    public ResponseEntity<OtpResponse> requestOtp(@RequestParam String email) {
-        return ResponseEntity.ok(authService.requestLoginOtp(email));
-    }
-
-    @PostMapping("/login-with-otp")
-    @ResponseBody
-    public ResponseEntity<AuthResponse> loginWithOtp(@RequestBody OtpLoginRequest request) {
-        return ResponseEntity.ok(authService.authenticateWithOtp(request));
-    }
-
-    @GetMapping("/generate-token")
-    @ResponseBody
-    public ResponseEntity<String> generateToken(@RequestParam String email) {
-        String token = jwtUtil.generateToken(email);
-        return ResponseEntity.ok(token);
-    }
-
     @PostMapping("/forgot-password")
     @ResponseBody
     public ResponseEntity<ForgotPasswordResponse> forgotPassword(@RequestBody ForgotPasswordRequest request) {
