@@ -204,7 +204,7 @@ public class AuctionService implements IAuctionService{
         }
     }
 
-    private AuctionResponseDTO mapToResponseDTO(Auction auction) {
+    public AuctionResponseDTO mapToResponseDTO(Auction auction) {
         UserDTO seller;
         try {
             seller = userClient.getUserById(auction.getSellerId());
@@ -234,5 +234,9 @@ public class AuctionService implements IAuctionService{
                 .deletedAt(auction.getDeletedAt())
                 .user(seller)
                 .build();
+    }
+
+    public Auction save(Auction auction) {
+        return auctionRepository.save(auction);
     }
 }

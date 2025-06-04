@@ -46,6 +46,9 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
     @Query("SELECT b FROM Bid b WHERE b.auctionId = :auctionId ORDER BY b.createdAt DESC")
     List<Bid> findBidHistoryByAuctionId(@Param("auctionId") Long auctionId);
 
-    // Trong BidRepository.java
-    List<Bid> findByAuctionIdAndIdNotAndStatus(Long auctionId, Long excludeId, BidStatus status);
-}
+    // Lấy danh sách auction IDs có bid
+    @Query("SELECT DISTINCT b.auctionId FROM Bid b")
+    List<Long> findDistinctAuctionIds();
+
+    //Tìm tất cả bid của auction (trừ bid có ID cụ thể)
+    List<Bid> findByAuctionIdAndIdNot(Long auctionId, Long excludeId);}
