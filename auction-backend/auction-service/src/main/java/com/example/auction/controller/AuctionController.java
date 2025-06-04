@@ -80,6 +80,38 @@ public class AuctionController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{id}/winner")
+    public ResponseEntity<AuctionResponseDTO> updateAuctionWinner(
+            @PathVariable Long id,
+            @RequestParam("winnerId") Long winnerId
+    ) {
+        Auction auction = auctionService.getAuctionById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
+
+        // ENFORCE: Chỉ cho cập nhật nếu đã kết thúc
+        boolean ended = auction.getEndTime() != null && auction.getEndTime().isBefore(LocalDateTime.now());
+        boolean statusClosed = auction.getStatus() == AuctionStatus.CLOSED ||
+                auction.getStatus() == AuctionStatus.SOLD ||
+                auction.getStatus() == AuctionStatus.FAILED;
+
+        if (!ended && !statusClosed) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(null); // Hoặc throw exception với message rõ ràng
+        }
+
+        // Log để tracking
+        System.out.println("Updating winner for auction " + id + " to user " + winnerId);
+
+        auction.setWinnerId(winnerId);
+        auction.setStatus(AuctionStatus.SOLD); // Hoặc CLOSED
+        auction.setUpdatedAt(LocalDateTime.now());
+
+        Auction saved = auctionService.save(auction);
+
+        System.out.println("Successfully updated winner for auction " + id);
+        return ResponseEntity.ok(auctionService.mapToResponseDTO(saved));
+    }
+
     // GET Auction by Category
     @GetMapping("/search/category")
     public ResponseEntity<List<AuctionResponseDTO>> searchAuctionsByCategory(

@@ -1,0 +1,49 @@
+# Cấu trúc thư mục bid-service
+
+```
+bid-service/
+├── src/
+│   └── main/
+│       ├── java/
+│       │   └── com/
+│       │       └── bidit/
+│       │           └── bidservice/
+│       │               ├── BidServiceApplication.java
+│       │               ├── config/
+│       │               │   ├── WebSocketConfig.java
+│       │               │   └── CorsConfig.java
+│       │               ├── controller/
+│       │               │   ├── BidController.java
+│       │               │   └── WebSocketController.java
+│       │               ├── entity/
+│       │               │   └── Bid.java
+│       │               │   └── BidStatus.java
+│       │               ├── repository/
+│       │               │   └── BidRepository.java
+│       │               ├── service/
+│       │               │   ├── BidService.java          (class)
+│       │               │   ├── IBidService.java         (interface)
+│       │               │   └── WebSocketService.java    (class)   // hiện tại chưa có
+│       │               │   └── IWebSocketService.java   (interface)   // hiện tại chưa có
+│       │               ├── dto/
+│       │               │   ├── BidRequest.java
+│       │               │   ├── BidResponse.java
+│       │               │   └── BidNotification.java
+│       │               └── client/
+│       │                   ├── AuctionServiceClient.java
+│       │                   └── UserServiceClient.java
+│       └── resources/
+│           ├── application.properties
+│           └── data.sql
+```
+
+
+1. **pom.xml** - Dependencies
+2. **application.properties** - Cấu hình
+3. **BidServiceApplication.java** - Main class
+4. **Entity và DTO** - Data models
+5. **Repository** - Database layer
+6. **Service** - Business logic
+7. **Controller** - API endpoints
+8. **WebSocket** - Realtime functionality
+9. **Dockerfile** - Containerization
