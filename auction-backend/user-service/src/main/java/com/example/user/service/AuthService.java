@@ -117,50 +117,6 @@ public class AuthService {
         return new VerificationResponse("Email verified successfully");
     }
 
-    public OtpResponse requestLoginOtp(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (!user.getVerified()) {
-            throw new RuntimeException("Email not verified");
-        }
-
-        if (user.getLocked()) {
-            throw new RuntimeException("Account is locked");
-        }
-
-        otpService.sendLoginOtp(email);
-        return new OtpResponse("OTP sent to your email");
-    }
-
-    public AuthResponse authenticateWithOtp(OtpLoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        boolean isValid = otpService.verifyOtp(request.getEmail(), request.getOtp(), OtpType.LOGIN);
-        if (!isValid) {
-            throw new RuntimeException("Invalid or expired OTP");
-        }
-
-        String token = jwtUtil.generateToken(user.getEmail());
-
-        List<String> roleNames = user.getRoles().stream()
-                .map(Enum::name)
-                .collect(Collectors.toList());
-
-        return new AuthResponse(
-                token,
-                user.getId(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getPhoneNumber(),
-                user.getAddress(),
-                user.getScore(),
-                roleNames
-        );
-    }
-
     public AuthResponse authenticate(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Email does not exist"));

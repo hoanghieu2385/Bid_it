@@ -1,3 +1,4 @@
+// UserController.java
 package com.example.user.controller;
 
 import com.example.user.Dtos.*;
@@ -5,7 +6,6 @@ import com.example.user.model.OtpType;
 import com.example.user.model.User;
 import com.example.user.service.UserService;
 import com.example.user.service.OtpService;
-import com.example.user.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -47,7 +47,6 @@ public class UserController {
 
         User user = userOpt.get();
 
-        // Only expose necessary info
         var response = new Object() {
             public final Long id = user.getId();
             public final String fullName = user.getFirstName() + " " + user.getLastName();
@@ -84,7 +83,7 @@ public class UserController {
             return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
         }
     }
-    // VERIFY CCCD !!!
+
     @PutMapping("/update-cccd")
     public ResponseEntity<?> updateCCCD(
             @RequestParam("citizenId") String citizenId,
@@ -98,12 +97,12 @@ public class UserController {
             return ResponseEntity.badRequest().body("Failed to upload CCCD: " + e.getMessage());
         }
     }
+
     @GetMapping("/verify-requests")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserCCCDVerifyDto>> getVerifyRequests() {
         return ResponseEntity.ok(userService.getUsersPendingVerification());
     }
-
 
     @PostMapping("/{id}/verify/approve")
     @PreAuthorize("hasRole('ADMIN')")
@@ -116,7 +115,7 @@ public class UserController {
         User user = userOpt.get();
         user.setVerifiedAccount(1);
         user.setUpdatedAt(LocalDateTime.now());
-        userService.saveUser(user); // hoặc userRepository.save(user) nếu bạn muốn nhanh
+        userService.saveUser(user);
         return ResponseEntity.ok("User CCCD approved");
     }
 
@@ -137,7 +136,7 @@ public class UserController {
         userService.saveUser(user);
         return ResponseEntity.ok("User CCCD denied and data cleared");
     }
-    // Get verify status ADMIN
+
     @GetMapping("/{id}/verify-status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getVerificationStatus(@PathVariable Long id) {
@@ -155,37 +154,34 @@ public class UserController {
 
         return ResponseEntity.ok(response);
     }
-// Get verify status USER
-@GetMapping("/me/verify-status")
-public ResponseEntity<VerificationStatusResponse> getMyVerificationStatus() {
-    User user = userService.getCurrentUserProfile();
 
-    String phoneStatus = user.isPhoneVerified() ? "VERIFIED" : "UNVERIFIED";
+    @GetMapping("/me/verify-status")
+    public ResponseEntity<VerificationStatusResponse> getMyVerificationStatus() {
+        User user = userService.getCurrentUserProfile();
 
-    String cccdStatus;
-    if (user.getCitizenId() == null) {
-        cccdStatus = "NOT_SUBMITTED";
-    } else if (user.getVerifiedAccount() == 0) {
-        cccdStatus = "PENDING";
-    } else if (user.getVerifiedAccount() == 1) {
-        cccdStatus = "APPROVED";
-    } else {
-        cccdStatus = "REJECTED";
+        String phoneStatus = user.isPhoneVerified() ? "VERIFIED" : "UNVERIFIED";
+
+        String cccdStatus;
+        if (user.getCitizenId() == null) {
+            cccdStatus = "NOT_SUBMITTED";
+        } else if (user.getVerifiedAccount() == 0) {
+            cccdStatus = "PENDING";
+        } else if (user.getVerifiedAccount() == 1) {
+            cccdStatus = "APPROVED";
+        } else {
+            cccdStatus = "REJECTED";
+        }
+
+        VerificationStatusResponse response = new VerificationStatusResponse(
+                user.isPhoneVerified(),
+                phoneStatus,
+                user.getCitizenId(),
+                cccdStatus
+        );
+
+        return ResponseEntity.ok(response);
     }
 
-    VerificationStatusResponse response = new VerificationStatusResponse(
-            user.isPhoneVerified(),
-            phoneStatus,
-            user.getCitizenId(),
-            cccdStatus
-    );
-
-    return ResponseEntity.ok(response);
-}
-
-
-
-    ///  Verify Phone Number
     @PostMapping("/send-phone-otp")
     public ResponseEntity<String> sendPhoneOtp(@RequestParam String phone) {
         otpService.sendPhoneVerificationOtp(phone);
@@ -193,16 +189,11 @@ public ResponseEntity<VerificationStatusResponse> getMyVerificationStatus() {
     }
 
     @PostMapping("/verify-phone-otp")
-    public ResponseEntity<String> verifyPhoneOtp(@RequestBody VerifyPhoneOtpRequest request) {
-        boolean result = userService.verifyUserPhoneNumber(request.getPhone(), request.getOtp());
+    public ResponseEntity<String> verifyPhoneOtp(@RequestBody VerifyPhoneOtpRequest request, Principal principal) {
+        boolean result = userService.verifyUserPhoneNumberForCurrentUser(request.getPhone(), request.getOtp(), principal);
         if (result) return ResponseEntity.ok("Phone number verified successfully");
         return ResponseEntity.badRequest().body("Invalid or expired OTP");
     }
-
-
-
-
-    ///
 
     @GetMapping("/me")
     public ResponseEntity<User> getCurrentUserProfile() {
@@ -214,7 +205,6 @@ public ResponseEntity<VerificationStatusResponse> getMyVerificationStatus() {
         }
     }
 
-    // New endpoint to update user roles (admin only)
     @PutMapping("/{id}/roles")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateUserRoles(

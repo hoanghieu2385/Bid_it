@@ -11,9 +11,11 @@ import com.example.user.service.CloudinaryService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -26,21 +28,18 @@ public class UserService {
     private final CloudinaryService cloudinaryService;
     private final OtpService otpService;
 
-
     public UserService(UserRepository userRepository, CloudinaryService cloudinaryService, OtpService otpService) {
         this.userRepository = userRepository;
         this.cloudinaryService = cloudinaryService;
         this.otpService = otpService;
     }
 
-    
     private boolean isAdmin() {
         return SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
 
     public List<User> getAllUsers() {
-        // Only admins can get all users
         if (!isAdmin()) {
             throw new AccessDeniedException("Only administrators can access all user data");
         }
@@ -48,7 +47,6 @@ public class UserService {
     }
 
     public Optional<User> getUserById(Long id) {
-        // Check if user is requesting their own data or is an admin
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> requestedUser = userRepository.findById(id);
 
@@ -69,12 +67,10 @@ public class UserService {
     }
 
     public User createUser(User user) {
-        // Only admins can create users
         if (!isAdmin()) {
             throw new AccessDeniedException("Only administrators can create users");
         }
 
-        // Set default role if not specified
         if (user.getRoles() == null || user.getRoles().isEmpty()) {
             Set<Role> roles = new HashSet<>();
             roles.add(Role.USER);
@@ -85,7 +81,6 @@ public class UserService {
     }
 
     public void deleteUser(Long id) {
-        // Only admins can delete users
         if (!isAdmin()) {
             throw new AccessDeniedException("Only administrators can delete users");
         }
@@ -93,19 +88,14 @@ public class UserService {
     }
 
     public User updateUserProfile(Long userId, UserUpdateRequest updateRequest) {
-        // Get the email of the currently authenticated user
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        // Find the user by ID
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Check if the authenticated user is trying to update their own profile or is an admin
         if (!user.getEmail().equals(currentUserEmail) && !isAdmin()) {
             throw new AccessDeniedException("You can only update your own profile");
         }
 
-        // Update user information
         if (updateRequest.getFirstName() != null && !updateRequest.getFirstName().isEmpty()) {
             user.setFirstName(updateRequest.getFirstName());
         }
@@ -115,7 +105,6 @@ public class UserService {
         }
 
         if (updateRequest.getPhoneNumber() != null && !updateRequest.getPhoneNumber().isEmpty()) {
-            // Check if the phone number is already used by another user
             Optional<User> existingUserWithPhone = userRepository.findByPhoneNumber(updateRequest.getPhoneNumber());
             if (existingUserWithPhone.isPresent() && !existingUserWithPhone.get().getId().equals(userId)) {
                 throw new RuntimeException("Phone number already in use");
@@ -127,15 +116,10 @@ public class UserService {
             user.setAddress(updateRequest.getAddress());
         }
 
-        // Update the updatedAt timestamp
         user.setUpdatedAt(LocalDateTime.now());
-
-        // Save and return the updated user
         return userRepository.save(user);
     }
 
-
-    // CCCD!!!
     public User updateCCCD(String email, UpdateCCCDRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -143,11 +127,12 @@ public class UserService {
         user.setCitizenId(request.getCitizenId());
         user.setCitizenIdFrontImage(request.getCitizenIdFrontImage());
         user.setCitizenIdBackImage(request.getCitizenIdBackImage());
-        user.setVerifiedAccount(0); // chờ admin duyệt
+        user.setVerifiedAccount(0);
         user.setUpdatedAt(LocalDateTime.now());
 
         return userRepository.save(user);
     }
+
     public void updateCCCDWithImages(String email, String citizenId, MultipartFile frontImage, MultipartFile backImage) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -158,37 +143,30 @@ public class UserService {
         user.setCitizenId(citizenId);
         user.setCitizenIdFrontImage(frontUrl);
         user.setCitizenIdBackImage(backUrl);
-        user.setVerifiedAccount(0); // reset verify trạng thái
-
+        user.setVerifiedAccount(0);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
     }
 
-
-    // Verify Phone Number
-    public boolean verifyUserPhoneNumber(String phoneNumber, String code) {
-        boolean isValid = otpService.verifyOtp(phoneNumber, code, OtpType.PHONE_VERIFICATION);
+    public boolean verifyUserPhoneNumberForCurrentUser(String phone, String otp, Principal principal) {
+        boolean isValid = otpService.verifyOtp(phone, otp, OtpType.PHONE_VERIFICATION);
         if (isValid) {
-            Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
-            if (optionalUser.isPresent()) {
-                User user = optionalUser.get();
-                user.setPhoneVerified(true);
-                userRepository.save(user);
-                return true;
-            }
+            User user = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+            user.setPhoneNumber(phone);
+            user.setPhoneVerified(true);
+            userRepository.save(user);
+            return true;
         }
         return false;
     }
 
-
-    // Get currently logged-in user's profile
     public User getCurrentUserProfile() {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    // Add method to change user role (admin only)
     public User updateUserRoles(Long userId, Set<Role> roles) {
         if (!isAdmin()) {
             throw new AccessDeniedException("Only administrators can update user roles");
@@ -202,9 +180,11 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
     public void saveUser(User user) {
         userRepository.save(user);
     }
+
     public List<UserCCCDVerifyDto> getUsersPendingVerification() {
         return userRepository.findByVerifiedAccount(0)
                 .stream()
@@ -218,6 +198,4 @@ public class UserService {
                 ))
                 .toList();
     }
-
-
 }
