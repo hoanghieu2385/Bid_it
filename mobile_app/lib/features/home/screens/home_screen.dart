@@ -25,19 +25,35 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  final GlobalKey<HomeContentState> _homeContentKey = GlobalKey<HomeContentState>();
+  final GlobalKey<WatchlistPageState> _watchlistKey = GlobalKey<WatchlistPageState>();
 
-  static const List<Widget> _pages = <Widget>[
-    HomeContent(),
-    SearchPage(),
-    CreateAuctionPage(),
-    WatchlistPage(),
-    UserPage(),
-  ];
+  late final List<Widget> _pages;
 
-  void _onItemTapped(int index) {
+  @override
+  void initState() {
+    super.initState();
+    _pages = <Widget>[
+      HomeContent(key: _homeContentKey),
+      const SearchPage(),
+      const CreateAuctionPage(),
+      WatchlistPage(key: _watchlistKey),
+      const UserPage(),
+    ];
+  }
+
+  void _onItemTapped(int index) async {
     setState(() {
       _selectedIndex = index;
     });
+    if (index == 0) {
+      // Khi về Home, reload watchlist ids
+      await _homeContentKey.currentState?.loadWatchlistIds();
+    }
+    if (index == 3) {
+      // Khi vào Watchlist, reload dữ liệu watchlist
+      await _watchlistKey.currentState?.loadUserAndWatchlist();
+    }
   }
 
   @override
@@ -57,12 +73,12 @@ class _HomePageState extends State<HomePage> {
 }
 
 class HomeContent extends StatefulWidget {
-  const HomeContent({super.key});
+  const HomeContent({Key? key}) : super(key: key);
   @override
-  State<HomeContent> createState() => _HomeContentState();
+  HomeContentState createState() => HomeContentState();
 }
 
-class _HomeContentState extends State<HomeContent> {
+class HomeContentState extends State<HomeContent> {
   List<Category> categories = [];
   List<Auction> ongoingAuctions = [];
   List<Auction> upcomingAuctions = [];
@@ -79,7 +95,7 @@ class _HomeContentState extends State<HomeContent> {
   void initState() {
     super.initState();
     loadData();
-    _loadWatchlistIds();
+    loadWatchlistIds();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() {});
     });
@@ -96,7 +112,7 @@ class _HomeContentState extends State<HomeContent> {
     final prefs = await SharedPreferences.getInstance();
     final userJson = prefs.getString('user_info');
     if (userJson == null) return null;
-    final user = Map<String, dynamic>.from(await Future.value(userJson != null ? (userJson.startsWith('{') ? Map<String, dynamic>.from(jsonDecode(userJson)) : {}) : {}));
+    final user = jsonDecode(userJson);
     final rawId = user['id'];
     return rawId is int ? rawId : int.tryParse(rawId.toString());
   }
@@ -132,7 +148,7 @@ class _HomeContentState extends State<HomeContent> {
     }
   }
 
-  Future<void> _loadWatchlistIds() async {
+  Future<void> loadWatchlistIds() async {
     final userId = await _getCurrentUserId();
     if (userId == null) {
       setState(() {
@@ -166,14 +182,18 @@ class _HomeContentState extends State<HomeContent> {
       added = true;
     }
     await prefs.setStringList(key, list);
-    await _loadWatchlistIds();
+    await loadWatchlistIds();
     _showSnackBar(
       added ? "Added to your watchlist." : "Removed from watchlist.",
       action: SnackBarAction(
         label: "View",
         textColor: Colors.orange,
-        onPressed: () {
-          Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WatchlistPage()));
+        onPressed: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const WatchlistPage()),
+          );
+          await loadWatchlistIds();
+          setState(() {});
         },
       ),
     );
@@ -424,7 +444,10 @@ class _HomeContentState extends State<HomeContent> {
     return isLoading
         ? const Center(child: CircularProgressIndicator())
         : RefreshIndicator(
-      onRefresh: loadData,
+      onRefresh: () async {
+        await loadData();
+        await loadWatchlistIds();
+      },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 16),
