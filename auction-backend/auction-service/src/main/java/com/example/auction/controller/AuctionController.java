@@ -16,6 +16,7 @@ import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -78,6 +79,16 @@ public class AuctionController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}/current-bid")
+    public ResponseEntity<Void> updateCurrentBid(
+            @PathVariable Long id,
+            @RequestParam BigDecimal currentBid,
+            @RequestParam Integer bidCount) {
+
+        auctionService.updateCurrentBid(id, currentBid, bidCount);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/winner")
