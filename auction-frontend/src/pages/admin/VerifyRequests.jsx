@@ -1,5 +1,7 @@
 // src/pages/admin/VerifyRequests.jsx
 import React, { useEffect, useState } from 'react';
+import Sidebar from "../../components/admin/Sidebar";
+import Topbar from "../../components/admin/Topbar";
 import {
     getVerifyRequests,
     approveUserCCCD,
@@ -38,6 +40,16 @@ const VerifyRequests = () => {
     }, []);
 
     return (
+        <div id="wrapper">
+      {/* Sidebar */}
+      <Sidebar />
+      {/* Main Content */}
+      <div
+        id="content-wrapper"
+        className="d-flex flex-column"
+        style={{ flex: 1 }}
+      >
+        <Topbar />
         <div className="container mt-4">
             <h3 className="mb-3">CCCD Verification Requests</h3>
             {loading && <p>Loading...</p>}
@@ -81,6 +93,8 @@ const VerifyRequests = () => {
                 ))}
             </div>
         </div>
+        </div>
+    </div>
     );
 };
 
