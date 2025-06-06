@@ -1,0 +1,53 @@
+auction-service/
+├── src/
+│   └── main/
+│       ├── java/
+│       │   └── com.example.auction/
+│       │       ├── client/
+│       │       │   └── UserClient.java
+│       │       ├── config/
+│       │       │   ├── CloudinaryConfig.java
+│       │       │   ├── FeignClientConfig.java
+│       │       │   ├── RestTemplateConfig.java
+│       │       │   ├── SwaggerConfig.java
+│       │       │   └── WebConfig.java
+│       │       ├── controller/
+│       │       │   ├── AuctionController.java
+│       │       │   └── MediaController.java
+│       │       ├── dto/
+│       │       │   ├── AuctionRequestDTO.java
+│       │       │   ├── AuctionResponseDTO.java
+│       │       │   ├── AuctionStatusUpdateDTO.java
+│       │       │   ├── CategoryDTO.java
+│       │       │   ├── MediaResponseDTO.java
+│       │       │   ├── MediaUploadRequestDTO.java
+│       │       │   └── UserDTO.java
+│       │       ├── exception/
+│       │       │   ├── ErrorResponse.java
+│       │       │   ├── GlobalExceptionHandler.java
+│       │       │   └── ResourceNotFoundException.java
+│       │       ├── mapper/
+│       │       │   └── AuctionMapper.java
+│       │       ├── model/
+│       │       │   ├── Auction.java
+│       │       │   ├── AuctionStatus.java
+│       │       │   └── Media.java
+│       │       ├── repository/
+│       │       │   ├── AuctionRepository.java
+│       │       │   └── MediaRepository.java
+│       │       ├── scheduler/
+│       │       │   └── AuctionStatusScheduler.java
+│       │       ├── service/
+│       │       │   ├── impl/
+│       │       │   │   ├── AuctionService.java
+│       │       │   │   └── MediaService.java
+│       │       │   ├── IAuctionService.java
+│       │       │   └── IMediaService.java (nếu có)
+│       │       ├── validation/
+│       │       │   ├── AuctionDepositValidator.java
+│       │       │   ├── AuctionTimeValidator.java
+│       │       │   ├── ValidAuctionDeposit.java
+│       │       │   └── ValidAuctionTime.java
+│       │       └── AuctionServiceApplication.java
+│       └── resources/
+           └── application.properties
