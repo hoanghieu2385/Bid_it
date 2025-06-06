@@ -32,17 +32,15 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
     // Lấy bid của user trong một auction cụ thể
     List<Bid> findByAuctionIdAndUserIdOrderByCreatedAtDesc(Long auctionId, Long userId);
 
+    List<Bid> findByAuctionId(Long auctionId);
+
     // Đếm số lượng bid trong một auction
     long countByAuctionId(Long auctionId);
 
     // Kiểm tra user đã bid trong auction chưa
     boolean existsByAuctionIdAndUserId(Long auctionId, Long userId);
 
-    // Lấy 10 bid gần nhất của một auction
-    @Query("SELECT b FROM Bid b WHERE b.auctionId = :auctionId ORDER BY b.createdAt DESC")
-    List<Bid> findTop10ByAuctionIdOrderByCreatedAtDesc(@Param("auctionId") Long auctionId);
-
-    // Lấy lịch sử bid của auction (phân trang)
+    // Lấy lịch sử bid của auction (toàn bộ bid history) - UPDATED
     @Query("SELECT b FROM Bid b WHERE b.auctionId = :auctionId ORDER BY b.createdAt DESC")
     List<Bid> findBidHistoryByAuctionId(@Param("auctionId") Long auctionId);
 
@@ -50,5 +48,6 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
     @Query("SELECT DISTINCT b.auctionId FROM Bid b")
     List<Long> findDistinctAuctionIds();
 
-    //Tìm tất cả bid của auction (trừ bid có ID cụ thể)
-    List<Bid> findByAuctionIdAndIdNot(Long auctionId, Long excludeId);}
+    // Tìm tất cả bid của auction (trừ bid có ID cụ thể)
+    List<Bid> findByAuctionIdAndIdNot(Long auctionId, Long excludeId);
+}

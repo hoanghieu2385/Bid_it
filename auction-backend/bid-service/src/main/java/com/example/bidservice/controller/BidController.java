@@ -1,8 +1,8 @@
 package com.example.bidservice.controller;
 
 import com.example.bidservice.entity.Bid;
+import com.example.bidservice.repository.BidRepository;
 import com.example.bidservice.service.IBidService;
-import com.example.bidservice.service.IWebSocketService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
@@ -13,16 +13,16 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/bids")
 public class BidController {
+    @Autowired
+    private BidRepository bidRepository;
 
     @Autowired
     private IBidService bidService;
-
-    @Autowired
-    private IWebSocketService webSocketService;
 
     /**
      * Tạo bid mới qua REST API
@@ -82,6 +82,31 @@ public class BidController {
     }
 
     /**
+     * Endpoint để auction-service gọi lấy thông tin winner
+     */
+    @GetMapping("/auction/{auctionId}/winner")
+    public ResponseEntity<WinnerResponse> getWinnerByAuctionId(@PathVariable Long auctionId) {
+        try {
+            Optional<Bid> highestBid = bidRepository.findHighestBidByAuctionId(auctionId);
+
+            if (highestBid.isPresent()) {
+                Bid winningBid = highestBid.get();
+                WinnerResponse response = new WinnerResponse(
+                        winningBid.getUserId(),
+                        winningBid.getBidAmount().toString(),
+                        winningBid.getBidTime().toString()
+                );
+                return ResponseEntity.ok(response);
+            } else {
+                // Không có bid nào
+                return ResponseEntity.ok(new WinnerResponse(null, null, null));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
      * Lấy thống kê bid của auction
      */
     @GetMapping("/auction/{auctionId}/statistics")
@@ -124,49 +149,6 @@ public class BidController {
     }
 
     /**
-     * THÊM: Test WebSocket manually - để debug
-     */
-    @PostMapping("/test/websocket/{auctionId}")
-    public ResponseEntity<ApiResponse<String>> testWebSocket(@PathVariable Long auctionId) {
-        try {
-            // Test gửi statistics
-            IBidService.BidStatistics stats = bidService.getBidStatistics(auctionId);
-            webSocketService.sendBidStatistics(auctionId, stats);
-
-            // Test gửi notification
-            webSocketService.sendGeneralNotification("/topic/auction/" + auctionId + "/test",
-                    "Test message at " + LocalDateTime.now());
-
-            return ResponseEntity.ok(new ApiResponse<>("WebSocket test sent successfully", "OK"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>("WebSocket test failed: " + e.getMessage(), null));
-        }
-    }
-
-    /**
-     * THÊM: Trigger manual bid notification - để testing
-     */
-    @PostMapping("/trigger/notification")
-    public ResponseEntity<ApiResponse<String>> triggerNotification(@RequestBody TriggerNotificationRequest request) {
-        try {
-            // Tạo mock bid response để test
-            MockBidResponse mockBid = new MockBidResponse(
-                    request.getAuctionId(),
-                    request.getUserId(),
-                    request.getBidAmount()
-            );
-
-            webSocketService.sendGeneralNotification("/topic/auction/" + request.getAuctionId() + "/bids", mockBid);
-
-            return ResponseEntity.ok(new ApiResponse<>("Notification triggered successfully", "OK"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>("Failed to trigger notification: " + e.getMessage(), null));
-        }
-    }
-
-    /**
      * Health check endpoint
      */
     @GetMapping("/health")
@@ -188,12 +170,6 @@ public class BidController {
 
         public CreateBidRequest() {}
 
-        public CreateBidRequest(Long auctionId, Long userId, BigDecimal bidAmount) {
-            this.auctionId = auctionId;
-            this.userId = userId;
-            this.bidAmount = bidAmount;
-        }
-
         // Getters and setters
         public Long getAuctionId() { return auctionId; }
         public void setAuctionId(Long auctionId) { this.auctionId = auctionId; }
@@ -203,44 +179,6 @@ public class BidController {
 
         public BigDecimal getBidAmount() { return bidAmount; }
         public void setBidAmount(BigDecimal bidAmount) { this.bidAmount = bidAmount; }
-    }
-
-    public static class TriggerNotificationRequest {
-        private Long auctionId;
-        private Long userId;
-        private BigDecimal bidAmount;
-
-        public TriggerNotificationRequest() {}
-
-        // Getters and setters
-        public Long getAuctionId() { return auctionId; }
-        public void setAuctionId(Long auctionId) { this.auctionId = auctionId; }
-
-        public Long getUserId() { return userId; }
-        public void setUserId(Long userId) { this.userId = userId; }
-
-        public BigDecimal getBidAmount() { return bidAmount; }
-        public void setBidAmount(BigDecimal bidAmount) { this.bidAmount = bidAmount; }
-    }
-
-    public static class MockBidResponse {
-        private Long auctionId;
-        private Long userId;
-        private BigDecimal bidAmount;
-        private LocalDateTime timestamp;
-
-        public MockBidResponse(Long auctionId, Long userId, BigDecimal bidAmount) {
-            this.auctionId = auctionId;
-            this.userId = userId;
-            this.bidAmount = bidAmount;
-            this.timestamp = LocalDateTime.now();
-        }
-
-        // Getters
-        public Long getAuctionId() { return auctionId; }
-        public Long getUserId() { return userId; }
-        public BigDecimal getBidAmount() { return bidAmount; }
-        public LocalDateTime getTimestamp() { return timestamp; }
     }
 
     public static class HighestBidResponse {
@@ -267,6 +205,48 @@ public class BidController {
 
         public LocalDateTime getTimestamp() { return timestamp; }
         public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    }
+
+    /**
+     * DTO Response cho winner info
+     */
+    public static class WinnerResponse {
+        private Long userId;
+        private String bidAmount;
+        private String bidTime;
+
+        public WinnerResponse() {}
+
+        public WinnerResponse(Long userId, String bidAmount, String bidTime) {
+            this.userId = userId;
+            this.bidAmount = bidAmount;
+            this.bidTime = bidTime;
+        }
+
+        // Getters and Setters
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
+        public String getBidAmount() {
+            return bidAmount;
+        }
+
+        public void setBidAmount(String bidAmount) {
+            this.bidAmount = bidAmount;
+        }
+
+        public String getBidTime() {
+            return bidTime;
+        }
+
+        public void setBidTime(String bidTime) {
+            this.bidTime = bidTime;
+        }
     }
 
     public static class ApiResponse<T> {
