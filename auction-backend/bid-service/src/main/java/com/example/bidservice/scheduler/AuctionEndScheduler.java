@@ -30,34 +30,24 @@ public class AuctionEndScheduler {
     /**
      * Chạy mỗi phút để check auction nào đã kết thúc
      */
-    @Scheduled(fixedRate = 60000) // 1 phút
+    @Scheduled(fixedRate = 10000)
     public void checkEndedAuctions() {
         try {
             System.out.println("Checking for ended auctions at: " + LocalDateTime.now());
 
-            // Lấy danh sách auction IDs có bid nhưng chưa được xử lý
             List<Long> auctionIdsWithBids = bidRepository.findDistinctAuctionIds();
 
             for (Long auctionId : auctionIdsWithBids) {
-                // Skip nếu đã xử lý rồi
+
                 if (processedAuctions.contains(auctionId)) {
                     continue;
                 }
 
                 try {
-                    // Lấy thông tin auction
-                    AuctionServiceClient.AuctionResponse auction =
-                            auctionServiceClient.getAuctionById(auctionId);
+                    AuctionServiceClient.AuctionResponse auction = auctionServiceClient.getAuctionById(auctionId);
+                    if (auction == null) continue;
 
-                    if (auction == null) {
-                        continue;
-                    }
-
-                    // Check nếu auction đã kết thúc
-                    boolean isEnded = auction.getEndTime() != null &&
-                            auction.getEndTime().isBefore(LocalDateTime.now());
-
-                    // Hoặc check theo status
+                    boolean isEnded = auction.getEndTime() != null && auction.getEndTime().isBefore(LocalDateTime.now());
                     boolean isClosedStatus = "CLOSED".equals(auction.getStatus()) ||
                             "ENDED".equals(auction.getStatus()) ||
                             "FAILED".equals(auction.getStatus());
@@ -65,13 +55,19 @@ public class AuctionEndScheduler {
                     if (isEnded || isClosedStatus) {
                         System.out.println("Found ended auction: " + auctionId);
 
-                        // Xử lý kết thúc auction
+                        // Gọi processAuctionEnd để cập nhật winner
                         bidService.processAuctionEnd(auctionId);
 
-                        // Đánh dấu đã xử lý
-                        processedAuctions.add(auctionId);
+                        // Gọi lại auction sau khi cập nhật
+                        AuctionServiceClient.AuctionResponse updatedAuction = auctionServiceClient.getAuctionById(auctionId);
 
-                        System.out.println("Processed auction end for: " + auctionId);
+                        // Chỉ đánh dấu đã xử lý nếu có winner
+                        if (updatedAuction.getWinnerId() != null) {
+                            processedAuctions.add(auctionId);
+                            System.out.println("Winner updated -> marked auction " + auctionId + " as processed");
+                        } else {
+                            System.out.println("Auction " + auctionId + " still missing winnerId, will retry later.");
+                        }
                     }
 
                 } catch (Exception e) {

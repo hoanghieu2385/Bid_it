@@ -3,6 +3,7 @@ package com.example.auction.controller;
 import com.example.auction.dto.AuctionRequestDTO;
 import com.example.auction.dto.AuctionResponseDTO;
 import com.example.auction.dto.AuctionStatusUpdateDTO;
+import com.example.auction.dto.WinnerUpdateDTO;
 import com.example.auction.exception.ResourceNotFoundException;
 import com.example.auction.mapper.AuctionMapper;
 import com.example.auction.model.Auction;
@@ -83,35 +84,31 @@ public class AuctionController {
         return ResponseEntity.ok().build();
     }
 
+    // Update Auction Winner
     @PutMapping("/{id}/winner")
     public ResponseEntity<AuctionResponseDTO> updateAuctionWinner(
             @PathVariable Long id,
-            @RequestParam("winnerId") Long winnerId
+            @RequestBody WinnerUpdateDTO dto
     ) {
+        Long winnerId = dto.getWinnerId();
+
         Auction auction = auctionService.getAuctionById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
 
-        // ENFORCE: Chỉ cho cập nhật nếu đã kết thúc
         boolean ended = auction.getEndTime() != null && auction.getEndTime().isBefore(LocalDateTime.now());
         boolean statusClosed = auction.getStatus() == AuctionStatus.CLOSED ||
                 auction.getStatus() == AuctionStatus.SOLD ||
                 auction.getStatus() == AuctionStatus.FAILED;
 
         if (!ended && !statusClosed) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(null); // Hoặc throw exception với message rõ ràng
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
 
-        // Log để tracking
-        System.out.println("Updating winner for auction " + id + " to user " + winnerId);
-
         auction.setWinnerId(winnerId);
-        auction.setStatus(AuctionStatus.SOLD); // Hoặc CLOSED
+        auction.setStatus(AuctionStatus.SOLD);
         auction.setUpdatedAt(LocalDateTime.now());
 
         Auction saved = auctionService.save(auction);
-
-        System.out.println("Successfully updated winner for auction " + id);
         return ResponseEntity.ok(auctionMapper.mapToResponseDTO(saved));
     }
 
