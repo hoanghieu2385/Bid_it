@@ -5,33 +5,31 @@ import com.example.auction.dto.AuctionRequestDTO;
 import com.example.auction.dto.AuctionResponseDTO;
 import com.example.auction.dto.UserDTO;
 import com.example.auction.exception.ResourceNotFoundException;
+import com.example.auction.mapper.AuctionMapper;
 import com.example.auction.model.Auction;
 import com.example.auction.model.AuctionStatus;
 import com.example.auction.repository.AuctionRepository;
 import com.example.auction.service.IAuctionService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 
 @Service
-public class AuctionService implements IAuctionService{
+public class AuctionService implements IAuctionService {
 
     private final AuctionRepository auctionRepository;
     private final UserClient userClient;
+    private final AuctionMapper auctionMapper;
 
     @Autowired
-    public AuctionService(AuctionRepository auctionRepository, UserClient userClient) {
+    public AuctionService(AuctionRepository auctionRepository, UserClient userClient, AuctionMapper auctionMapper) {
         this.auctionRepository = auctionRepository;
         this.userClient = userClient;
+        this.auctionMapper = auctionMapper;
     }
 
     // Create Auction
@@ -52,7 +50,7 @@ public class AuctionService implements IAuctionService{
         Auction auction = new Auction();
         auction.setTitle(request.getTitle());
         auction.setDescription(request.getDescription());
-        auction.setSellerId(requesterId); // here’s the important change
+        auction.setSellerId(requesterId);
         auction.setCategoryId(request.getCategoryId());
         auction.setStartTime(request.getStartTime());
         auction.setEndTime(request.getEndTime());
@@ -76,7 +74,7 @@ public class AuctionService implements IAuctionService{
         }
 
         Auction saved = auctionRepository.save(auction);
-        return mapToResponseDTO(saved);
+        return auctionMapper.mapToResponseDTO(saved);
     }
 
     // Update Auction
@@ -128,7 +126,7 @@ public class AuctionService implements IAuctionService{
         }
 
         Auction updated = auctionRepository.save(auction);
-        return mapToResponseDTO(updated);
+        return auctionMapper.mapToResponseDTO(updated);
     }
 
     public void updateCurrentBid(Long auctionId, BigDecimal currentBid, Integer bidCount) {
@@ -166,10 +164,10 @@ public class AuctionService implements IAuctionService{
         }
 
         Auction updated = auctionRepository.save(auction);
-        return mapToResponseDTO(updated);
+        return auctionMapper.mapToResponseDTO(updated);
     }
 
-    // Get All Auction
+    // Get All Auction - returns raw entities for Controller to use mapper
     public List<Auction> getAllAuctions() {
         return auctionRepository.findAll();
     }
@@ -189,13 +187,16 @@ public class AuctionService implements IAuctionService{
         return auctionRepository.findByStatus(status);
     }
 
-    // Get Auction by UserID
+    // Return raw entities for Controller to use mapper
+    public List<Auction> getAuctionsBySellerIdRaw(Long sellerId) {
+        return auctionRepository.findBySellerId(sellerId);
+    }
+
+    // Keep old method for interface compatibility
     @Override
     public List<AuctionResponseDTO> getAuctionsBySellerId(Long sellerId) {
         List<Auction> auctions = auctionRepository.findBySellerId(sellerId);
-        return auctions.stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
+        return auctionMapper.mapToResponseDTOList(auctions);
     }
 
     // SOFT Delete Auction by AuctionID
@@ -211,45 +212,11 @@ public class AuctionService implements IAuctionService{
         auctionRepository.delete(auction);
     }
 
-    // Get Seller info via UserID
-    public UserDTO getSellerInfo(Long sellerId) {
-        try {
-            return userClient.getUserById(sellerId);
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
+    // Keep old mapToResponseDTO method for compatibility (but uses mapper)
+    @Deprecated // Recommend using AuctionMapper instead
     public AuctionResponseDTO mapToResponseDTO(Auction auction) {
-        UserDTO seller;
-        try {
-            seller = userClient.getUserById(auction.getSellerId());
-        } catch (Exception e) {
-            seller = null;
-        }
-
-        return new AuctionResponseDTO.Builder()
-                .id(auction.getId())
-                .title(auction.getTitle())
-                .description(auction.getDescription())
-                .startingPrice(auction.getStartingPrice())
-                .incrementAmount(auction.getIncrementAmount())
-                .startTime(auction.getStartTime())
-                .endTime(auction.getEndTime())
-                .categoryId(auction.getCategoryId())
-                .sellerId(auction.getSellerId())
-                .requiresDeposit(auction.getRequiresDeposit())
-                .securityDeposit(auction.getSecurityDeposit())
-                .status(auction.getStatus().name())
-                .bidCount(auction.getBidCount())
-                .winnerId(auction.getWinnerId())
-                .winnerPaymentDeadline(auction.getWinnerPaymentDeadline())
-                .disputeRequestDeadline(auction.getDisputeRequestDeadline())
-                .createdAt(auction.getCreatedAt())
-                .updatedAt(auction.getUpdatedAt())
-                .deletedAt(auction.getDeletedAt())
-                .user(seller)
-                .build();
+        return auctionMapper.mapToResponseDTO(auction);
     }
 
     public Auction save(Auction auction) {
