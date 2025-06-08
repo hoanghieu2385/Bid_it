@@ -42,11 +42,23 @@ public class BidService implements IBidService {
 
         // 2. Cập nhật tất cả các bid cũ thành OUTBID và isWinning = false
         List<Bid> oldBids = bidRepository.findByAuctionId(auctionId);
-        for (Bid bid : oldBids) {
-            bid.setStatus(BidStatus.OUTBID);
-            bid.setIsWinning(false);
+
+        for (Bid oldBid : oldBids) {
+            if (!oldBid.getUserId().equals(userId)) {
+                // Gửi notification đến user bị outbid
+                try {
+                    webSocketService.sendOutbidNotification(oldBid.getUserId(), auctionId, bidAmount);
+                } catch (Exception e) {
+                    System.err.println("Failed to send outbid notification: " + e.getMessage());
+                }
+            }
+
+            // Cập nhật trạng thái bid cũ
+            oldBid.setStatus(BidStatus.OUTBID);
+            oldBid.setIsWinning(false);
         }
-        bidRepository.saveAll(oldBids);
+
+        bidRepository.saveAll(oldBids); // Lúc này đã có dữ liệu mới nên sẽ có hiệu lực
 
         // 3. Tạo bid mới với trạng thái ACTIVE và là người đang dẫn đầu
         Bid newBid = new Bid(auctionId, userId, bidAmount);
@@ -155,13 +167,10 @@ public class BidService implements IBidService {
         try {
             BidResponse bidResponse = mapToBidResponse(winningBid);
 
-            // Gửi notification về winner
-            webSocketService.sendGeneralNotification(
-                    "/topic/auction/" + winningBid.getAuctionId() + "/winner",
-                    bidResponse
-            );
+            // Gửi BidNotification dạng AUCTION_END
+            webSocketService.sendAuctionEndNotification(bidResponse);
 
-            // Cập nhật statistics cuối cùng
+            // Gửi thống kê
             IBidService.BidStatistics finalStats = getBidStatistics(winningBid.getAuctionId());
             webSocketService.sendBidStatistics(winningBid.getAuctionId(), finalStats);
 

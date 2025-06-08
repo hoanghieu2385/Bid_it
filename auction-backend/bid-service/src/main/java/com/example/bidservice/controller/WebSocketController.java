@@ -36,16 +36,17 @@ public class WebSocketController {
             logger.info("Received bid via WebSocket: auction={}, user={}, amount={}",
                     auctionId, bidMessage.getUserId(), bidMessage.getBidAmount());
 
-            // Tạo bid mới - BidService sẽ tự động gửi WebSocket notifications
             bidService.createBid(auctionId, bidMessage.getUserId(), bidMessage.getBidAmount());
 
         } catch (Exception e) {
             logger.error("Failed to create bid via WebSocket: {}", e.getMessage());
 
-            // Gửi error message cho user cụ thể
-            String userDestination = "/user/" + bidMessage.getUserId() + "/queue/errors";
-            webSocketService.sendGeneralNotification(userDestination,
-                    new ErrorResponse("Failed to create bid: " + e.getMessage()));
+            // Gửi BID_FAILED qua WebSocket
+            webSocketService.sendBidFailed(
+                    bidMessage.getUserId(),
+                    auctionId,
+                    e.getMessage()
+            );
         }
     }
 
