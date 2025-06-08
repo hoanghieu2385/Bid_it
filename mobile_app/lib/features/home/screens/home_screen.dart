@@ -244,7 +244,7 @@ class HomeContentState extends State<HomeContent> {
     }
 
     final String startingPrice = _vndFormat.format(auction.startingPrice);
-    final String currentBid = _vndFormat.format(auction.currentBid ?? auction.startingPrice);
+    final String currentBid = _vndFormat.format(auction.currentBid ?? 0);
 
     return GestureDetector(
       onTap: () {

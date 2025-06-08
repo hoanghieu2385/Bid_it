@@ -1,6 +1,3 @@
-// File: auction_model.dart
-// Description: Định nghĩa model Auction với các trường thông tin phiên đấu giá, bao gồm thời gian tạo (createdAt)
-
 class Auction {
   final int id;
   final String title;
@@ -16,8 +13,8 @@ class Auction {
   final int categoryId;
   final int sellerId;
   final bool requiresDeposit;
-  final int bidCount;
-  final double? currentBid;
+  int bidCount;
+  double? currentBid;
   final int? winnerId;
   final DateTime? winnerPaymentDeadline;
   final DateTime? disputeRequestDeadline;
@@ -70,7 +67,9 @@ class Auction {
       winnerPaymentDeadline: json['winnerPaymentDeadline'] != null ? DateTime.tryParse(json['winnerPaymentDeadline']) : null,
       disputeRequestDeadline: json['disputeRequestDeadline'] != null ? DateTime.tryParse(json['disputeRequestDeadline']) : null,
       thumbnailUrl: json['thumbnailUrl'],
-      mediaUrls: json['media'] != null ? List<String>.from((json['media'] as List).map((m) => m['url'] ?? '')) : [],
+      mediaUrls: json['media'] != null
+          ? List<String>.from((json['media'] as List).map((m) => m['url'] ?? ''))
+          : [],
     );
   }
 }

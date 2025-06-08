@@ -8,6 +8,12 @@ import 'package:mobile_app/core/services/api_service.dart';
 class UserService {
   static const String _baseUrl = ApiService.userBaseUrl;
   static const String baseUrlAuth = ApiService.authBaseUrl;
+
+  static Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    return (token != null && token.isNotEmpty) ? token : null;
+  }
   static Future<Map<String, dynamic>?> getCurrentUser() async {
     final isValid = await AuthService.isTokenValid();
     if (!isValid) {
@@ -73,11 +79,6 @@ class UserService {
     await prefs.remove('remember_me');
   }
 
-  static Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
-    return (token != null && token.isNotEmpty) ? token : null;
-  }
   static Future<bool> changePassword(String currentPassword, String newPassword) async {
     final token = await _getToken();
     if (token == null) return false;
@@ -103,5 +104,29 @@ class UserService {
       return false;
     }
   }
+  static Future<int?> getUserIdFromToken(String token) async {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
 
+      final payload = _decodeBase64(parts[1]);
+      final payloadMap = json.decode(payload);
+
+      if (payloadMap is! Map<String, dynamic>) return null;
+
+      return payloadMap['userId'] as int?;
+    } catch (e) {
+      print('Error decoding token: $e');
+      return null;
+    }
+  }
+
+  static String _decodeBase64(String str) {
+    String output = str.replaceAll('-', '+').replaceAll('_', '/');
+    while (output.length % 4 != 0) {
+      output += '=';
+    }
+    return utf8.decode(base64Url.decode(output));
+  }
+  static Future<String?> getToken() => _getToken();
 }
