@@ -2,7 +2,6 @@
 import api from './api';
 import API_CONFIG from './apiConfig';
 import Cookies from "js-cookie";
-import axios from "axios";
 
 // Lấy danh sách tất cả người dùng (Admin only)
 export const getAllUsers = async () => {
