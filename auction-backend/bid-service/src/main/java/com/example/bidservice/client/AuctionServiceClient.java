@@ -25,6 +25,7 @@ public interface AuctionServiceClient {
         private Long id;
         private String title;                               // Dùng trong enrichBidWithExternalData()
         private java.math.BigDecimal startingPrice;         // Dùng trong validateBid()
+        private java.math.BigDecimal incrementAmount;       // Dùng trong validateBid()
         private java.time.LocalDateTime startTime;          // Dùng trong validateBid()
         private java.time.LocalDateTime endTime;            // Dùng trong validateBid()
         private String status;                              // Dùng trong validateBid()
@@ -34,7 +35,7 @@ public interface AuctionServiceClient {
         // Constructors
         public AuctionResponse() {}
 
-        // Getters and Setters - chỉ cho những fields cần thiết
+        // Getters and Setters
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
 
@@ -43,6 +44,9 @@ public interface AuctionServiceClient {
 
         public java.math.BigDecimal getStartingPrice() { return startingPrice; }
         public void setStartingPrice(java.math.BigDecimal startingPrice) { this.startingPrice = startingPrice; }
+
+        public java.math.BigDecimal getIncrementAmount() { return incrementAmount; }
+        public void setIncrementAmount(java.math.BigDecimal incrementAmount) { this.incrementAmount = incrementAmount; }
 
         public java.time.LocalDateTime getStartTime() { return startTime; }
         public void setStartTime(java.time.LocalDateTime startTime) { this.startTime = startTime; }

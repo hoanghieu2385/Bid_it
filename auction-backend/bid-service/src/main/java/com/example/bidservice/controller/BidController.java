@@ -53,7 +53,7 @@ public class BidController {
     }
 
     /**
-     * Lấy bid history của auction (10 bid gần nhất)
+     * Lấy bid history của auction
      */
     @GetMapping("/auction/{auctionId}/history")
     public ResponseEntity<ApiResponse<List<Bid>>> getBidHistory(@PathVariable Long auctionId) {
