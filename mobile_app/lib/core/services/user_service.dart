@@ -128,5 +128,15 @@ class UserService {
     }
     return utf8.decode(base64Url.decode(output));
   }
+  static Future<Map<String, dynamic>> getSellerById(int id) async {
+    final url = Uri.parse("$_baseUrl/seller/$id");
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception("Error when load user's information: ${response.statusCode}");
+    }
+  }
   static Future<String?> getToken() => _getToken();
 }
