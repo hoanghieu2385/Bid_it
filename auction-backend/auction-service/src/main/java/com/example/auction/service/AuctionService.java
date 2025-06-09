@@ -167,6 +167,67 @@ public class AuctionService implements IAuctionService {
         return auctionMapper.mapToResponseDTO(updated);
     }
 
+    public AuctionResponseDTO updateWinner(Long auctionId, Long winnerId) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + auctionId));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        boolean ended = auction.getEndTime() != null && auction.getEndTime().isBefore(now);
+        boolean statusClosed = auction.getStatus() == AuctionStatus.CLOSED ||
+                auction.getStatus() == AuctionStatus.SOLD ||
+                auction.getStatus() == AuctionStatus.FAILED;
+
+        if (!ended && !statusClosed) {
+            throw new IllegalStateException("Cannot update winner until auction ends.");
+        }
+
+        auction.setWinnerId(winnerId);
+        auction.setWinnerPaymentDeadline(now.plusDays(3));
+        auction.setStatus(AuctionStatus.SOLD);
+        auction.setUpdatedAt(now);
+
+        Auction saved = auctionRepository.save(auction);
+        return auctionMapper.mapToResponseDTO(saved);
+    }
+
+    /**
+     * Xác nhận thanh toán thành công - chuyển từ CLOSED sang SOLD
+     */
+    public AuctionResponseDTO confirmPayment(Long auctionId, String paymentId) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + auctionId));
+
+        // Chỉ cho phép confirm payment nếu status là CLOSED
+        if (auction.getStatus() != AuctionStatus.CLOSED) {
+            throw new IllegalStateException("Can only confirm payment for CLOSED auctions. Current status: " + auction.getStatus());
+        }
+
+        // Kiểm tra có winner không
+        if (auction.getWinnerId() == null) {
+            throw new IllegalStateException("Cannot confirm payment - no winner found");
+        }
+
+        // Kiểm tra payment deadline
+        LocalDateTime now = LocalDateTime.now();
+        if (auction.getWinnerPaymentDeadline() != null && auction.getWinnerPaymentDeadline().isBefore(now)) {
+            throw new IllegalStateException("Payment deadline has passed");
+        }
+
+        // Update status và thông tin thanh toán
+        auction.setStatus(AuctionStatus.SOLD);
+        auction.setUpdatedAt(now);
+        // Có thể thêm field paymentId nếu cần
+        // auction.setPaymentId(paymentId);
+
+        Auction saved = auctionRepository.save(auction);
+
+        System.out.println("Payment confirmed for auction " + auctionId +
+                " - Status changed to SOLD (PaymentId: " + paymentId + ")");
+
+        return auctionMapper.mapToResponseDTO(saved);
+    }
+
     // Get All Auction - returns raw entities for Controller to use mapper
     public List<Auction> getAllAuctions() {
         return auctionRepository.findAll();

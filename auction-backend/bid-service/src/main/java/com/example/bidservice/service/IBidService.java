@@ -39,7 +39,7 @@ public interface IBidService {
     List<Bid> getBidsByAuction(Long auctionId);
 
     /**
-     * Lấy lịch sử bid gần nhất của auction (10 bid gần nhất)
+     * Lấy lịch sử bid gần nhất của auction
      * @param auctionId ID của auction
      * @return Danh sách bid gần nhất
      */

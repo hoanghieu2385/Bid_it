@@ -42,11 +42,23 @@ public class BidService implements IBidService {
 
         // 2. Cập nhật tất cả các bid cũ thành OUTBID và isWinning = false
         List<Bid> oldBids = bidRepository.findByAuctionId(auctionId);
-        for (Bid bid : oldBids) {
-            bid.setStatus(BidStatus.OUTBID);
-            bid.setIsWinning(false);
+
+        for (Bid oldBid : oldBids) {
+            if (!oldBid.getUserId().equals(userId)) {
+                // Gửi notification đến user bị outbid
+                try {
+                    webSocketService.sendOutbidNotification(oldBid.getUserId(), auctionId, bidAmount);
+                } catch (Exception e) {
+                    System.err.println("Failed to send outbid notification: " + e.getMessage());
+                }
+            }
+
+            // Cập nhật trạng thái bid cũ
+            oldBid.setStatus(BidStatus.OUTBID);
+            oldBid.setIsWinning(false);
         }
-        bidRepository.saveAll(oldBids);
+
+        bidRepository.saveAll(oldBids); // Lúc này đã có dữ liệu mới nên sẽ có hiệu lực
 
         // 3. Tạo bid mới với trạng thái ACTIVE và là người đang dẫn đầu
         Bid newBid = new Bid(auctionId, userId, bidAmount);
@@ -155,13 +167,10 @@ public class BidService implements IBidService {
         try {
             BidResponse bidResponse = mapToBidResponse(winningBid);
 
-            // Gửi notification về winner
-            webSocketService.sendGeneralNotification(
-                    "/topic/auction/" + winningBid.getAuctionId() + "/winner",
-                    bidResponse
-            );
+            // Gửi BidNotification dạng AUCTION_END
+            webSocketService.sendAuctionEndNotification(bidResponse);
 
-            // Cập nhật statistics cuối cùng
+            // Gửi thống kê
             IBidService.BidStatistics finalStats = getBidStatistics(winningBid.getAuctionId());
             webSocketService.sendBidStatistics(winningBid.getAuctionId(), finalStats);
 
@@ -214,21 +223,44 @@ public class BidService implements IBidService {
                 throw new RuntimeException("Auction has ended. End time: " + auction.getEndTime());
             }
 
-            // Kiểm tra bid amount phải lớn hơn current bid (with null safety)
+            // Lấy current highest bid
             BigDecimal currentHighest = getCurrentHighestBid(auctionId);
+
+            // Kiểm tra bid amount phải lớn hơn current bid
             if (currentHighest != null && bidAmount.compareTo(currentHighest) <= 0) {
                 throw new RuntimeException("Bid amount must be higher than current highest bid: " + currentHighest);
             }
 
-            // THÊM VALIDATION: Kiểm tra user đã có bid cao nhất chưa
+            // Kiểm tra increment amount
+            BigDecimal incrementAmount = auction.getIncrementAmount();
+            if (incrementAmount != null && incrementAmount.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal requiredMinimum;
+
+                if (currentHighest != null) {
+                    // Nếu đã có bid, bid mới phải >= currentHighest + incrementAmount
+                    requiredMinimum = currentHighest.add(incrementAmount);
+                    if (bidAmount.compareTo(requiredMinimum) < 0) {
+                        throw new RuntimeException("Bid amount must be at least " + requiredMinimum +
+                                " (current highest: " + currentHighest + " + minimum increment: " + incrementAmount + ")");
+                    }
+                } else {
+                    // Nếu chưa có bid nào, bid đầu tiên phải >= startingPrice + incrementAmount (hoặc chỉ >= startingPrice)
+                    // Thông thường bid đầu tiên chỉ cần >= startingPrice
+                    BigDecimal startingPrice = auction.getStartingPrice();
+                    if (startingPrice != null && bidAmount.compareTo(startingPrice) < 0) {
+                        throw new RuntimeException("First bid must be at least the starting price: " + startingPrice);
+                    }
+                }
+            }
+
+            // Kiểm tra user đã có bid cao nhất chưa
             validateUserNotAlreadyHighestBidder(auctionId, userId);
 
-            // Kiểm tra bid amount phải lớn hơn hoặc bằng starting bid (with null safety)
+            // Kiểm tra bid amount phải lớn hơn hoặc bằng starting bid (với null safety)
             BigDecimal startingPrice = auction.getStartingPrice();
             if (startingPrice != null && bidAmount.compareTo(startingPrice) < 0) {
                 throw new RuntimeException("Bid amount must be at least: " + startingPrice);
             } else if (startingPrice == null) {
-                // If starting price is null, we might want to set a default minimum
                 System.err.println("Warning: Starting price is null for auction " + auctionId);
             }
 
