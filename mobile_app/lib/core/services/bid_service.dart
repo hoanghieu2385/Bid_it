@@ -21,15 +21,16 @@ class BidService {
       body: jsonEncode({
         'auctionId': auctionId,
         'userId': userId,
-        'bidAmount': bidAmount.toInt(),
+        'bidAmount': bidAmount,
       }),
     );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return jsonDecode(response.body);
+
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return decoded;
     } else {
-      print(response);
-      throw Exception('Failed to place bid: ${response.body}');
+      throw decoded;
     }
   }
 }

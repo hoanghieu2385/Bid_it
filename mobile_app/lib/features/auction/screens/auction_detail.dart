@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
 
+import '../../../core/services/auction_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/bid_service.dart';
 import '../../../core/services/user_service.dart';
@@ -31,10 +32,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
   @override
   void initState() {
     super.initState();
-    fadeInController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..forward();
+    fadeInController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..forward();
     updateRemaining();
     countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) => updateRemaining());
     _pageController = PageController(viewportFraction: 0.95, initialPage: 0);
@@ -49,6 +47,20 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
     setState(() {
       remaining = end.isAfter(now) ? end.difference(now) : Duration.zero;
     });
+  }
+
+  Future<void> fetchAuctionDetail() async {
+    try {
+      final updatedAuction = await AuctionService.fetchAuctionById(widget.auction.id);
+      if (updatedAuction != null) {
+        setState(() {
+          widget.auction.currentBid = updatedAuction.currentBid;
+          widget.auction.bidCount = updatedAuction.bidCount;
+        });
+      }
+    } catch (e) {
+      print('Error fetching auction: $e');
+    }
   }
 
   void _handleBidInput() {
@@ -100,11 +112,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
     final snackBar = SnackBar(
       content: Row(
         children: [
-          Icon(
-            added ? Icons.favorite : Icons.favorite_border,
-            color: Colors.white,
-            size: 24,
-          ),
+          Icon(added ? Icons.favorite : Icons.favorite_border, color: Colors.white, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -148,19 +156,15 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
         },
         onError: (err) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('WebSocket Error: ${err['message']}')),
+            SnackBar(
+              content: Text('WebSocket Error: ${(['message'] ?? 'Unknown error').toString()}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
           );
         },
       );
     }
-  }
-
-  void _leaveWebSocket() async {
-    final user = await UserService.getCurrentUser();
-    if (user != null) {
-      WebSocketService().leaveAuction(widget.auction.id, user['id'], user['username'] ?? 'anonymous');
-    }
-    WebSocketService().disconnect();
   }
 
   @override
@@ -169,7 +173,6 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
     fadeInController.dispose();
     _pageController.dispose();
     bidController.dispose();
-    _leaveWebSocket();
     super.dispose();
   }
 
@@ -548,31 +551,58 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                                 );
                                                 return;
                                               }
-
                                               try {
+                                                final user = await UserService.getCurrentUser();
+                                                final token = await UserService.getToken() ?? '';
+
+                                                if (user == null || token.isEmpty) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text('You must be logged in to place a bid.'),
+                                                      backgroundColor: Colors.red,
+                                                    ),
+                                                  );
+                                                  return;
+                                                }
+
+                                                final userId = user['id'] as int;
+
                                                 final response = await BidService.placeBid(
                                                   auctionId: widget.auction.id,
-                                                  userId: (await UserService.getCurrentUser())?['id'],
+                                                  userId: userId,
                                                   bidAmount: bidAmount,
                                                   token: token,
                                                 );
+                                                await fetchAuctionDetail();
+
+                                                final message = response['message'] ?? 'Bid placed successfully';
                                                 final data = response['data'];
+
                                                 setState(() {
                                                   widget.auction.currentBid = (data['currentHighestBid'] as num).toDouble();
                                                   widget.auction.bidCount += 1;
                                                   bidController.clear();
                                                   bidSuggestions = [];
                                                 });
+
                                                 ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Bid placed successfully'),
+                                                  SnackBar(
+                                                    content: Text(message),
                                                     backgroundColor: Colors.green,
                                                   ),
                                                 );
                                               } catch (e) {
+                                                String errorMsg;
+
+                                                if (e is Map && e.containsKey('message')) {
+                                                  errorMsg = e['message'];
+                                                } else {
+                                                  errorMsg = 'An error occurred while placing your bid.';
+                                                }
+
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   SnackBar(
-                                                    content: Text('Error placing bid: $e'),
+                                                    content: Text(errorMsg),
                                                     backgroundColor: Colors.red,
                                                   ),
                                                 );
