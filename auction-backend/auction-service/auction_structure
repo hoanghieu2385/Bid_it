@@ -39,15 +39,14 @@ auction-service/
 │       │       │   └── AuctionStatusScheduler.java
 │       │       ├── service/
 │       │       │   ├── impl/
-│       │       │   │   ├── AuctionService.java
-│       │       │   │   └── MediaService.java
+│       │       │   │    └── IMediaService.java
+│       │       │   ├── AuctionService.java
+│       │       │   ├── MediaService.java
 │       │       │   ├── IAuctionService.java
-│       │       │   └── IMediaService.java (nếu có)
 │       │       ├── validation/
 │       │       │   ├── AuctionDepositValidator.java
 │       │       │   ├── AuctionTimeValidator.java
 │       │       │   ├── ValidAuctionDeposit.java
 │       │       │   └── ValidAuctionTime.java
-│       │       └── AuctionServiceApplication.java
 │       └── resources/
-           └── application.properties
+            └── application.properties
