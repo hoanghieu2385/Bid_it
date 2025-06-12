@@ -33,4 +33,15 @@ class BidService {
       throw decoded;
     }
   }
+  static Future<List<Map<String, dynamic>>> fetchBidHistory(int auctionId) async {
+    final url = Uri.parse('$bidbaseUrl/bids/auction/$auctionId/bid');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to load bid history');
+    }
+  }
 }

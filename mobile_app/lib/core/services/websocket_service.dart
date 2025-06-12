@@ -33,6 +33,7 @@ class WebSocketService {
     void Function(Map<String, dynamic>)? onInit,
   }) {
     if (_stompClient != null && _stompClient!.connected) return;
+
     _auctionId = auctionId;
     _userId = userId;
     _username = username;
@@ -42,56 +43,29 @@ class WebSocketService {
     _onConnected = onConnected;
     _onDisconnected = onDisconnected;
 
+    print('[WebSocket] Connecting to server...');
+
     _stompClient = StompClient(
       config: StompConfig.SockJS(
         url: 'http://10.0.2.2:8085/ws',
-        onConnect: (StompFrame frame) {
-          isConnected = true;
-          _retryCount = 0;
-          _onConnected?.call();
-
-          _stompClient!.subscribe(
-            destination: '/topic/auction/$_auctionId',
-            callback: (frame) {
-              if (frame.body != null) {
-                try {
-                  final data = jsonDecode(frame.body!);
-                  switch (data['type']) {
-                    case 'NEW_BID':
-                      _onActivity(data);
-                      break;
-                    case 'INIT':
-                      _onInit?.call(data);
-                      break;
-                  }
-                } catch (e) {
-                  _onError('Error parsing message: $e');
-                }
-              }
-            },
-          );
-
-          _stompClient!.send(
-            destination: '/auction/$_auctionId/init',
-            body: jsonEncode({
-              'userId': _userId,
-              'username': _username,
-            }),
-          );
-        },
+        onConnect: _onConnectHandler,
         beforeConnect: () async {
+          print('[WebSocket] Preparing connection...');
           await Future.delayed(const Duration(milliseconds: 300));
         },
         onWebSocketError: (dynamic error) {
           isConnected = false;
+          print('[WebSocket] Error: $error');
           _onError(error.toString());
           _tryReconnect();
         },
         onStompError: (StompFrame frame) {
+          print('[WebSocket] STOMP error: ${frame.body}');
           _onError(frame.body ?? 'Unknown STOMP error');
           _tryReconnect();
         },
         onDisconnect: (_) {
+          print('[WebSocket] Disconnected.');
           isConnected = false;
           _onDisconnected?.call();
           _tryReconnect();
@@ -105,14 +79,56 @@ class WebSocketService {
     _stompClient!.activate();
   }
 
+  void _onConnectHandler(StompFrame frame) {
+    isConnected = true;
+    _retryCount = 0;
+    print('[WebSocket] Connected successfully.');
+    _onConnected?.call();
+
+    _stompClient!.subscribe(
+      destination: '/topic/auction/$_auctionId',
+      callback: (frame) {
+        if (frame.body != null) {
+          try {
+            final data = jsonDecode(frame.body!);
+            print('[WebSocket] Message received: $data');
+            switch (data['type']) {
+              case 'NEW_BID':
+                _onActivity(data);
+                break;
+              case 'INIT':
+                _onInit?.call(data);
+                break;
+              default:
+                _onError('Unknown message type: ${data['type']}');
+            }
+          } catch (e) {
+            print('[WebSocket] Error decoding message: $e');
+            _onError('Error parsing message: $e');
+          }
+        }
+      },
+    );
+
+    _stompClient!.send(
+      destination: '/auction/$_auctionId/init',
+      body: jsonEncode({
+        'userId': _userId,
+        'username': _username,
+      }),
+    );
+  }
+
   void _tryReconnect() {
     if (_retryCount >= _maxRetry) {
+      print('[WebSocket] Max retry reached. Stopping reconnection.');
       _onError('Max retry attempts reached. Could not reconnect.');
       return;
     }
 
     _retryCount++;
     final delay = Duration(seconds: 2 * _retryCount);
+    print('[WebSocket] Reconnecting in ${delay.inSeconds}s (attempt: $_retryCount)...');
     Future.delayed(delay, () {
       connect(
         auctionId: _auctionId!,
@@ -133,6 +149,7 @@ class WebSocketService {
     required double bidAmount,
   }) {
     if (_stompClient?.connected ?? false) {
+      print('[WebSocket] Sending bid: user=$userId, amount=$bidAmount');
       _stompClient!.send(
         destination: '/auction/$auctionId/bid',
         body: jsonEncode({
@@ -140,10 +157,13 @@ class WebSocketService {
           'bidAmount': bidAmount,
         }),
       );
+    } else {
+      print('[WebSocket] Cannot send bid: not connected.');
     }
   }
 
   void disconnect() {
+    print('[WebSocket] Disconnecting...');
     _stompClient?.deactivate();
     isConnected = false;
   }
