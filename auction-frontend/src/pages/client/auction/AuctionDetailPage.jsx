@@ -2,8 +2,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getAllAuctions, getAuctionDetailById } from '../../../services/auction-api';
-import { getBidsByAuctionId } from '../../../services/bid_api';
-import { createBid } from '../../../services/bid_api';
+import { createBid, getBidsByAuctionId } from '../../../services/bid_api';
 import defaultAvatar from '../../../assets/images/default-avatar.png';
 import useToastMessage from '../../../hooks/useToastMessage';
 import { UserContext } from '../../../contexts/UserContext';
@@ -63,12 +62,21 @@ const AuctionDetailPage = () => {
 	const fetchBids = async () => {
 		try {
 			const wrapper = await getBidsByAuctionId(id);
-			const bids = Array.isArray(wrapper)
-				? wrapper
-				: Array.isArray(wrapper.data)
-					? wrapper.data
-					: [];
+			console.log('Bid data received:', wrapper); // Debug log
 
+			// Handle different response structures
+			let bids = [];
+			if (Array.isArray(wrapper)) {
+				bids = wrapper;
+			} else if (wrapper && Array.isArray(wrapper.data)) {
+				bids = wrapper.data;
+			} else if (wrapper && wrapper.data && Array.isArray(wrapper.data.data)) {
+				bids = wrapper.data.data;
+			}
+
+			console.log('Processed bids:', bids); // Debug log
+
+			// Sort by bid time (newest first)
 			bids.sort((a, b) => new Date(b.bidTime) - new Date(a.bidTime));
 			setBidHistory(bids);
 		} catch (err) {
@@ -134,7 +142,7 @@ const AuctionDetailPage = () => {
 		setBidAmount(e.target.value);
 	};
 
-	// Handle bid submission
+// Update the handlePlaceBid function
 	const handlePlaceBid = async (e) => {
 		e.preventDefault();
 		const bidValue = parseInt(bidAmount);
@@ -168,25 +176,35 @@ const AuctionDetailPage = () => {
 			return;
 		}
 
-		// Prepare bid payload
+		// Prepare bid payload - match your Spring controller's CreateBidRequest
 		const payload = {
 			auctionId: auction.id,
-			bidderId: user.id,
-			amount: bidValue,
+			userId: user.id,  // Changed from bidderId to userId to match your Spring controller
+			bidAmount: bidValue,  // Changed from amount to bidAmount
 		};
 
 		try {
-			await createBid(payload);
-			showSuccess('Bid placed successfully!');
+			const result = await createBid(payload);
+			console.log('Bid result:', result); // For debugging
 
-			// Refresh auction data
-			const updatedAuction = await getAuctionDetailById(auction.id);
-			setAuction(updatedAuction);
-			await fetchBids();
+			// Check if the result has the expected structure
+			if (result && (result.success !== false)) {
+				showSuccess('Bid placed successfully!');
+
+				// Refresh auction data
+				const updatedAuction = await getAuctionDetailById(auction.id);
+				setAuction(updatedAuction);
+				await fetchBids();
+			} else {
+				showError(result?.message || 'Failed to place bid');
+			}
 		} catch (err) {
 			console.error('Bid error:', err);
 			const errorMessage =
-				err?.response?.data?.message || err?.response?.data || 'Failed to place bid. Please try again.';
+				err?.response?.data?.message ||
+				err?.response?.data ||
+				err?.message ||
+				'Failed to place bid. Please try again.';
 			showError(errorMessage);
 		}
 	};
@@ -274,19 +292,33 @@ const AuctionDetailPage = () => {
 						<div className="bg-white mt-3 p-2 rounded shadow-sm border">
 							<h6 className="fw-bold mb-2">Bid History</h6>
 							<ul className="list-group list-group-flush small">
-								{bidHistory.map((bid, index) => (
-									<li key={index}
-										className="list-group-item px-2 py-1 d-flex justify-content-between align-items-center">
-										<div>
-											<strong>{bid.bidderName}</strong>
-											<br/>
-											<small
-												className="text-muted">{new Date(bid.bidTime).toLocaleString('vi-VN')}</small>
-										</div>
-										<span
-											className="fw-bold text-success">{Number(bid.amount).toLocaleString('vi-VN')} ₫</span>
-									</li>
-								))}
+								{bidHistory.map((bid, index) => {
+									console.log('Rendering bid:', bid); // Debug log
+
+									// Handle different bid data structures
+									const bidderName = bid.bidderName || bid.userName || bid.user?.name || 'Anonymous';
+									const bidAmount = bid.amount || bid.bidAmount || 0;
+									const bidTime = bid.bidTime || bid.createdAt || bid.timestamp;
+
+									return (
+										<li key={bid.id || index}
+											className="list-group-item px-2 py-1 d-flex justify-content-between align-items-center">
+											<div>
+												<strong>{bidderName}</strong>
+												<br/>
+												<small className="text-muted">
+													{bidTime ? new Date(bidTime).toLocaleString('vi-VN') : 'Unknown time'}
+												</small>
+											</div>
+											<span className="fw-bold text-success">
+                            {bidAmount && !isNaN(bidAmount)
+								? Number(bidAmount).toLocaleString('vi-VN') + ' ₫'
+								: '0 ₫'
+							}
+                        </span>
+										</li>
+									);
+								})}
 							</ul>
 						</div>
 					)}
