@@ -90,27 +90,37 @@ public class AuctionController {
             @PathVariable Long id,
             @RequestBody WinnerUpdateDTO dto
     ) {
-        Long winnerId = dto.getWinnerId();
-
-        Auction auction = auctionService.getAuctionById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
-
-        boolean ended = auction.getEndTime() != null && auction.getEndTime().isBefore(LocalDateTime.now());
-        boolean statusClosed = auction.getStatus() == AuctionStatus.CLOSED ||
-                auction.getStatus() == AuctionStatus.SOLD ||
-                auction.getStatus() == AuctionStatus.FAILED;
-
-        if (!ended && !statusClosed) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+        try {
+            AuctionResponseDTO updated = auctionService.updateWinner(id, dto.getWinnerId());
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().build();
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-
-        auction.setWinnerId(winnerId);
-        auction.setStatus(AuctionStatus.SOLD);
-        auction.setUpdatedAt(LocalDateTime.now());
-
-        Auction saved = auctionService.save(auction);
-        return ResponseEntity.ok(auctionMapper.mapToResponseDTO(saved));
     }
+
+    /**
+     * API để Payment Service gọi khi thanh toán thành công
+     * CLOSED → SOLD
+     */
+    @PutMapping("/{id}/confirm-payment")
+    public ResponseEntity<AuctionResponseDTO> confirmPayment(
+            @PathVariable Long id,
+            @RequestParam("paymentId") String paymentId) {
+
+        try {
+            AuctionResponseDTO updated = auctionService.confirmPayment(id, paymentId);
+            return ResponseEntity.ok(updated);
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
 
     // GET Auction by Category
     @GetMapping("/search/category")

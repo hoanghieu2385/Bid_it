@@ -16,6 +16,7 @@ import 'package:mobile_app/features/auction/screens/watchlist_screen.dart';
 import 'package:mobile_app/features/profile/screens/user_screen.dart';
 import 'package:mobile_app/features/search/screens/search_screen.dart';
 import 'package:mobile_app/features/auction/screens/auction_detail.dart';
+import 'package:mobile_app/core/services/websocket_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,14 +26,15 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  final WebSocketService _webSocketService = WebSocketService();
   final GlobalKey<HomeContentState> _homeContentKey = GlobalKey<HomeContentState>();
   final GlobalKey<WatchlistPageState> _watchlistKey = GlobalKey<WatchlistPageState>();
-
   late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+
     _pages = <Widget>[
       HomeContent(key: _homeContentKey),
       const SearchPage(),
@@ -51,7 +53,6 @@ class _HomePageState extends State<HomePage> {
       await _homeContentKey.currentState?.loadWatchlistIds();
     }
     if (index == 3) {
-      // Khi vào Watchlist, reload dữ liệu watchlist
       await _watchlistKey.currentState?.loadUserAndWatchlist();
     }
   }
@@ -85,6 +86,8 @@ class HomeContentState extends State<HomeContent> {
   List<Auction> allAuctions = [];
   bool isLoading = true;
 
+  late final WebSocketService _webSocketService;
+
   final TextEditingController _searchController = TextEditingController();
   String _searchKeyword = '';
   Timer? _countdownTimer;
@@ -94,6 +97,8 @@ class HomeContentState extends State<HomeContent> {
   @override
   void initState() {
     super.initState();
+    _webSocketService = WebSocketService();
+    _initWebSocket();
     loadData();
     loadWatchlistIds();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -104,6 +109,7 @@ class HomeContentState extends State<HomeContent> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _webSocketService.disconnect();
     _searchController.dispose();
     super.dispose();
   }
@@ -161,6 +167,38 @@ class HomeContentState extends State<HomeContent> {
     setState(() {
       watchlistIds = list.map((e) => int.tryParse(e) ?? -1).where((id) => id > 0).toSet();
     });
+  }
+
+  Future<void> _initWebSocket() async {
+    final userId = await _getCurrentUserId();
+    if (userId == null) return;
+
+    WebSocketService().connect(
+      auctionId: -1,
+      userId: userId,
+      username: 'User$userId',
+      onActivity: (data) {
+        if (data['type'] == 'NEW_BID') {
+          final int auctionId = data['auctionId'];
+          final double newBid = data['bidAmount']?.toDouble() ?? 0;
+          final int bidCount = data['bidCount'] ?? 0;
+
+          setState(() {
+            for (var auction in allAuctions) {
+              if (auction.id == auctionId) {
+                auction.currentBid = newBid;
+                auction.bidCount = bidCount;
+                print('📡 Received bid: ${data['bidAmount']}');
+                break;
+              }
+            }
+          });
+        }
+      },
+      onError: (err) {
+        debugPrint('WebSocket error: $err');
+      },
+    );
   }
 
   Future<void> _toggleWatchlist(Auction auction) async {
@@ -244,7 +282,7 @@ class HomeContentState extends State<HomeContent> {
     }
 
     final String startingPrice = _vndFormat.format(auction.startingPrice);
-    final String currentBid = _vndFormat.format(auction.currentBid ?? auction.startingPrice);
+    final String currentBid = _vndFormat.format(auction.currentBid ?? 0);
 
     return GestureDetector(
       onTap: () {

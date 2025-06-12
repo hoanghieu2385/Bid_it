@@ -7,7 +7,6 @@ export const getAllAuctions = async () => {
 	return response.data;
 };
 
-
 // Create new auction
 export const createAuction = async (formData, requesterId) => {
 	const token = Cookies.get('jwt');
@@ -61,9 +60,79 @@ export const getAuctionsByStatus = async (status) => {
 	return response.data;
 };
 
-
 // Get auction details by ID 
 export const getAuctionDetailById = async (auctionId) => {
 	const response = await api.get(`/auction-service/api/auctions/${auctionId}`);
 	return response.data;
+};
+
+export const getParticipatedAuctions = async (userId) => {
+	const token = Cookies.get('jwt');
+	try {
+		// First, get all bids by user from bid service
+		const bidsResponse = await api.get(`/bid-service/api/bids/user/${userId}`, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		});
+		
+		console.log('Bids response:', bidsResponse.data); // Debug log
+		
+		// Handle different response formats
+		let bidsData = bidsResponse.data;
+		
+		// If response is wrapped in another object (e.g., { bids: [...] } or { data: [...] })
+		if (bidsData && typeof bidsData === 'object' && !Array.isArray(bidsData)) {
+			// Try common property names
+			bidsData = bidsData.bids || bidsData.data || bidsData.content || [];
+		}
+		
+		// Ensure bidsData is an array
+		if (!Array.isArray(bidsData)) {
+			console.warn('Bids data is not an array:', bidsData);
+			return []; // Return empty array if no valid bids data
+		}
+		
+		// If no bids found, return empty array
+		if (bidsData.length === 0) {
+			return [];
+		}
+		
+		// Extract unique auction IDs from bids
+		const auctionIds = [...new Set(bidsData.map(bid => bid.auctionId))];
+		
+		// Get auction details for each auction ID
+		const auctionPromises = auctionIds.map(id => 
+			api.get(`/auction-service/api/auctions/${id}`)
+		);
+		
+		const auctionResponses = await Promise.all(auctionPromises);
+		const auctions = auctionResponses.map(response => response.data);
+		
+		// Add user's highest bid for each auction
+		const auctionsWithBids = auctions.map(auction => {
+			const userBids = bidsData.filter(bid => bid.auctionId === auction.id);
+			const highestUserBid = Math.max(...userBids.map(bid => bid.amount));
+			const bidCount = userBids.length;
+			
+			return {
+				...auction,
+				userHighestBid: highestUserBid,
+				userBidCount: bidCount,
+				userBids: userBids
+			};
+		});
+		
+		return auctionsWithBids;
+	} catch (error) {
+		console.error('Error fetching participated auctions:', error);
+		
+		// Check if it's a 404 (no bids found) or other specific errors
+		if (error.response?.status === 404) {
+			console.log('No bids found for user');
+			return []; // Return empty array instead of throwing error
+		}
+		
+		throw error;
+	}
 };

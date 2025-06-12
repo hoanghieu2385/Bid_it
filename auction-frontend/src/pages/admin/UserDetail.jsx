@@ -11,6 +11,7 @@ import {
   updateUserRoles,
   resetUserPassword,
 } from "../../services/admin-user-api";
+import adminAuctionAPI from "../../services/admin-auction-api";
 import {
   FaEdit,
   FaTrash,
@@ -30,6 +31,16 @@ const UserDetail = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [userStats, setUserStats] = useState({
+    totalAuctions: 0,
+    totalBids: 0,
+    bidsWon: 0,
+    auctionEarnings: 0,
+    totalPaid: 0,
+    activeAuctions: 0,
+    completedAuctions: 0,
+    draftAuctions: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState(false);
@@ -48,6 +59,7 @@ const UserDetail = () => {
   useEffect(() => {
     if (userId) {
       fetchUserData();
+      fetchUserStats();
     }
   }, [userId]);
 
@@ -78,6 +90,49 @@ const UserDetail = () => {
       setError("Unable to load user information. Please try again later.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserStats = async () => {
+    try {
+      console.log("Fetching user stats for ID:", userId);
+      
+      // Fetch auctions by seller ID
+      const userAuctions = await adminAuctionAPI.getAuctionsBySeller(userId);
+      console.log("User auctions:", userAuctions);
+      
+      // Calculate stats from auctions
+      const stats = {
+        totalAuctions: userAuctions.length,
+        activeAuctions: userAuctions.filter(auction => auction.status === 'OPENED').length,
+        completedAuctions: userAuctions.filter(auction => auction.status === 'COMPLETED').length,
+        draftAuctions: userAuctions.filter(auction => auction.status === 'DRAFT').length,
+        // Calculate total earnings from completed auctions
+        auctionEarnings: userAuctions
+          .filter(auction => auction.status === 'COMPLETED' && auction.currentBid)
+          .reduce((total, auction) => total + (auction.currentBid || 0), 0),
+        // Calculate total bids count
+        totalBids: userAuctions.reduce((total, auction) => total + (auction.bidCount || 0), 0),
+        // For now, set default values for data we don't have from auction API
+        bidsWon: 0, // This would need bid service integration
+        totalPaid: 0, // This would need payment/transaction service integration
+      };
+
+      setUserStats(stats);
+      console.log("Calculated user stats:", stats);
+    } catch (err) {
+      console.error("Error fetching user stats:", err);
+      // Don't set error here, just log it as stats are not critical
+      setUserStats({
+        totalAuctions: 0,
+        totalBids: 0,
+        bidsWon: 0,
+        auctionEarnings: 0,
+        totalPaid: 0,
+        activeAuctions: 0,
+        completedAuctions: 0,
+        draftAuctions: 0
+      });
     }
   };
 
@@ -623,7 +678,7 @@ const UserDetail = () => {
                   </div>
                 </form>
 
-                {/* User Stats and Activity - Using data from Spring Boot User model */}
+                {/* User Stats and Activity - Now using real data from API */}
                 <div className="form-section">
                   <h2>Usage Statistics</h2>
                   <div className="stats-grid">
@@ -639,27 +694,39 @@ const UserDetail = () => {
                     <div className="stat-card">
                       <div className="stat-title">Auctions Posted</div>
                       <div className="stat-value">
-                        {user?.totalAuctions || 0}
+                        {userStats.totalAuctions}
                       </div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-title">Bids Placed</div>
-                      <div className="stat-value">{user?.totalBids || 0}</div>
+                      <div className="stat-title">Active Auctions</div>
+                      <div className="stat-value">{userStats.activeAuctions}</div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-title">Auctions Won</div>
-                      <div className="stat-value">{user?.bidsWon || 0}</div>
+                      <div className="stat-title">Completed Auctions</div>
+                      <div className="stat-value">{userStats.completedAuctions}</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-title">Draft Auctions</div>
+                      <div className="stat-value">{userStats.draftAuctions}</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-title">Total Bids Received</div>
+                      <div className="stat-value">{userStats.totalBids}</div>
                     </div>
                     <div className="stat-card">
                       <div className="stat-title">Auction Earnings</div>
                       <div className="stat-value">
-                        {formatMoney(user?.auctionEarnings || 0)}
+                        {formatMoney(userStats.auctionEarnings)}
                       </div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-title">Bids Won</div>
+                      <div className="stat-value">{userStats.bidsWon}</div>
                     </div>
                     <div className="stat-card">
                       <div className="stat-title">Total Amount Spent</div>
                       <div className="stat-value">
-                        {formatMoney(user?.totalPaid || 0)}
+                        {formatMoney(userStats.totalPaid)}
                       </div>
                     </div>
                   </div>

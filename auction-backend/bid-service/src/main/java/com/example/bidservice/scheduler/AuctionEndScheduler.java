@@ -28,9 +28,9 @@ public class AuctionEndScheduler {
     private final Set<Long> processedAuctions = new HashSet<>();
 
     /**
-     * Chạy mỗi phút để check auction nào đã kết thúc
+     * Chạy mỗi 8s để check auction nào đã kết thúc
      */
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 8000)
     public void checkEndedAuctions() {
         try {
             System.out.println("Checking for ended auctions at: " + LocalDateTime.now());

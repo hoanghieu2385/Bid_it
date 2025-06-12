@@ -4,6 +4,12 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
 
+import '../../../core/services/auction_service.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/bid_service.dart';
+import '../../../core/services/user_service.dart';
+import '../../../core/services/websocket_service.dart';
+
 class AuctionDetailPage extends StatefulWidget {
   final Auction auction;
   const AuctionDetailPage({super.key, required this.auction});
@@ -11,8 +17,7 @@ class AuctionDetailPage extends StatefulWidget {
   State<AuctionDetailPage> createState() => _AuctionDetailPageState();
 }
 
-class _AuctionDetailPageState extends State<AuctionDetailPage>
-    with SingleTickerProviderStateMixin {
+class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTickerProviderStateMixin {
   late Duration remaining;
   Timer? countdownTimer;
   bool isDescriptionExpanded = false;
@@ -27,15 +32,13 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
   @override
   void initState() {
     super.initState();
-    fadeInController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..forward();
+    fadeInController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..forward();
     updateRemaining();
     countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) => updateRemaining());
-    _pageController = PageController(viewportFraction: 0.92, initialPage: 0);
+    _pageController = PageController(viewportFraction: 0.95, initialPage: 0);
     bidController.addListener(_handleBidInput);
     _checkWatchlist();
+    _initWebSocket();
   }
 
   void updateRemaining() {
@@ -44,6 +47,20 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
     setState(() {
       remaining = end.isAfter(now) ? end.difference(now) : Duration.zero;
     });
+  }
+
+  Future<void> fetchAuctionDetail() async {
+    try {
+      final updatedAuction = await AuctionService.fetchAuctionById(widget.auction.id);
+      if (updatedAuction != null) {
+        setState(() {
+          widget.auction.currentBid = updatedAuction.currentBid;
+          widget.auction.bidCount = updatedAuction.bidCount;
+        });
+      }
+    } catch (e) {
+      print('Error fetching auction: $e');
+    }
   }
 
   void _handleBidInput() {
@@ -90,35 +107,73 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
   }
 
   void _showWatchlistSnack(bool added) {
-    ScaffoldMessenger.of(context).clearSnackBars();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.clearSnackBars();
     final snackBar = SnackBar(
       content: Row(
         children: [
-          Icon(
-            added ? Icons.favorite : Icons.favorite_border,
-            color: Colors.white,
-          ),
-          const SizedBox(width: 14),
+          Icon(added ? Icons.favorite : Icons.favorite_border, color: Colors.white, size: 24),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              added
-                  ? 'Added to Watchlist!'
-                  : 'Removed from Watchlist.',
-              style: const TextStyle(fontSize: 15),
+              added ? 'Added to Watchlist' : 'Removed from Watchlist',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
             ),
           ),
         ],
       ),
-      backgroundColor: added ? Colors.orange : Colors.grey[700],
+      backgroundColor: added ? const Color(0xFF1E88E5) : Colors.grey[800],
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      margin: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-      duration: const Duration(seconds: 2),
-      elevation: 10,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      duration: const Duration(seconds: 3),
+      elevation: 8,
     );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    scaffoldMessenger.showSnackBar(snackBar);
+  }
+
+  void _initWebSocket() async {
+    final user = await UserService.getCurrentUser();
+    if (user != null) {
+      WebSocketService().connect(
+        auctionId: widget.auction.id,
+        userId: user['id'],
+        username: user['username'] ?? 'anonymous',
+        onInit: (data) {
+          setState(() {
+            widget.auction.currentBid = (data['currentHighestBid'] as num?)?.toDouble();
+            widget.auction.bidCount = data['totalBids'] ?? 0;
+          });
+        },
+        onActivity: (data) {
+          debugPrint('[WebSocket] Received: \$data');
+          if (data.containsKey('bidAmount')) {
+            setState(() {
+              widget.auction.currentBid = (data['bidAmount'] as num).toDouble();
+              widget.auction.bidCount += 1;
+            });
+          }
+        },
+        onError: (err) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('WebSocket Error: \${err.toString()}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        },
+      );
+
+      Timer.periodic(const Duration(seconds: 1), (timer) async {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        await fetchAuctionDetail();
+      });
+    }
   }
 
 
@@ -417,147 +472,199 @@ class _AuctionDetailPageState extends State<AuctionDetailPage>
                             const SizedBox(height: 14),
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.grey[50],
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const Text("Starting Price",
-                                                style: TextStyle(fontSize: 13, color: Colors.grey)),
-                                            Text(
-                                              "${numberFormat.format(auction.startingPrice)} đ",
-                                              style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.orange),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const Text("Increment",
-                                                style: TextStyle(fontSize: 13, color: Colors.grey)),
-                                            Text(
-                                              "${numberFormat.format(auction.incrementAmount)} đ",
-                                              style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.blue),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 7),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const Text("Deposit",
-                                                style: TextStyle(fontSize: 13, color: Colors.grey)),
-                                            Text(
-                                              "${numberFormat.format(auction.securityDeposit)} đ",
-                                              style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.deepPurple),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const Text("Bids",
-                                                style: TextStyle(fontSize: 13, color: Colors.grey)),
-                                            Text(
-                                              auction.bidCount.toString(),
-                                              style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.teal),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(height: 14),
-
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: TextField(
-                                    controller: bidController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: InputDecoration(
-                                      hintText: 'Your bid...',
-                                      prefixIcon: const Icon(Icons.edit, size: 20),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                      contentPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Place Your Bid',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF22223B),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  flex: 1,
-                                  child: SizedBox(
-                                    height: 44,
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFFF97316),
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10)),
-                                        elevation: 0,
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 2,
+                                        child: TextField(
+                                          controller: bidController,
+                                          keyboardType: TextInputType.number,
+                                          decoration: InputDecoration(
+                                            hintText: 'Enter your bid amount',
+                                            prefixIcon: const Icon(
+                                              Icons.monetization_on,
+                                              color: Color(0xFFF97316),
+                                              size: 20,
+                                            ),
+                                            filled: true,
+                                            fillColor: Colors.grey[100],
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            contentPadding: const EdgeInsets.symmetric(
+                                              vertical: 16,
+                                              horizontal: 12,
+                                            ),
+                                            hintStyle: TextStyle(
+                                              color: Colors.grey[500],
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
                                       ),
-                                      onPressed: (!hasStarted || hasEnded) ? null : () {
-                                        // handle bid submit
-                                      },
-                                      child: const Text("Bid", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (bidController.text.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 6.0, left: 2),
-                                child: Wrap(
-                                  spacing: 10,
-                                  children: bidSuggestions.map((price) => ActionChip(
-                                    label: Text(
-                                      numberFormat.format(price) + ' đ',
-                                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
-                                    ),
-                                    onPressed: () {
-                                      bidController.text = price.toString();
-                                      bidController.selection = TextSelection.fromPosition(TextPosition(offset: bidController.text.length));
-                                    },
-                                    backgroundColor: Colors.orange.withOpacity(0.15),
-                                  )).toList(),
-                                ),
-                              ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        flex: 1,
+                                        child: SizedBox(
+                                          height: 48,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFFF97316),
+                                              foregroundColor: Colors.white,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              elevation: 2,
+                                              padding: const EdgeInsets.symmetric(vertical: 12),
+                                            ),
+                                            onPressed: (!hasStarted || hasEnded) ? null : () async {
+                                              FocusScope.of(context).unfocus();
+                                              final input = bidController.text.replaceAll('.', '').replaceAll(',', '');
+                                              final bidAmount = int.tryParse(input);
+                                              if (bidAmount == null || bidAmount <= 0) return;
+                                              final token = await UserService.getToken() ?? '';
+                                              if (token.isEmpty) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('You must be logged in to place a bid.'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+                                              try {
+                                                final user = await UserService.getCurrentUser();
+                                                final token = await UserService.getToken() ?? '';
 
+                                                if (user == null || token.isEmpty) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text('You must be logged in to place a bid.'),
+                                                      backgroundColor: Colors.red,
+                                                    ),
+                                                  );
+                                                  return;
+                                                }
+
+                                                final userId = user['id'] as int;
+
+                                                final response = await BidService.placeBid(
+                                                  auctionId: widget.auction.id,
+                                                  userId: userId,
+                                                  bidAmount: bidAmount,
+                                                  token: token,
+                                                );
+                                                await fetchAuctionDetail();
+
+                                                final message = response['message'] ?? 'Bid placed successfully';
+                                                final data = response['data'];
+
+                                                setState(() {
+                                                  widget.auction.currentBid = (data['currentHighestBid'] as num).toDouble();
+                                                  widget.auction.bidCount += 1;
+                                                  bidController.clear();
+                                                  bidSuggestions = [];
+                                                });
+
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(message),
+                                                    backgroundColor: Colors.green,
+                                                  ),
+                                                );
+                                              } catch (e) {
+                                                String errorMsg;
+
+                                                if (e is Map && e.containsKey('message')) {
+                                                  errorMsg = e['message'];
+                                                } else {
+                                                  errorMsg = 'An error occurred while placing your bid.';
+                                                }
+
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(errorMsg),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            child: const Text(
+                                              'Place Bid',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (bidSuggestions.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 12),
+                                      child: Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: bidSuggestions.map((price) => ActionChip(
+                                          label: Text(
+                                            '${numberFormat.format(price)} đ',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                              color: Color(0xFFF97316),
+                                            ),
+                                          ),
+                                          onPressed: (!hasStarted || hasEnded) ? null : () {
+                                            bidController.text = price.toString();
+                                            _handleBidInput();
+                                          },
+                                          backgroundColor: const Color(0xFFFFF3E8),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                            side: const BorderSide(color: Color(0xFFF97316), width: 1),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                        )).toList(),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                             const SizedBox(height: 10),
                             if (!hasStarted)
                               Container(

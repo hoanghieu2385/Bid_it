@@ -21,6 +21,14 @@ public class BidNotification {
         return notification;
     }
 
+    public static BidNotification bidFailed(Long auctionId, String errorMessage) {
+        BidNotification notification = new BidNotification();
+        notification.setType("BID_FAILED");
+        notification.setAuctionId(auctionId);
+        notification.setMessage(errorMessage);
+        return notification;
+    }
+
     public static BidNotification outbid(Long auctionId, BigDecimal newHighestBid) {
         BidNotification notification = new BidNotification();
         notification.setType("OUTBID");
