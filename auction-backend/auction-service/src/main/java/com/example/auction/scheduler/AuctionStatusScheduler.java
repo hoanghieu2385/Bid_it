@@ -28,7 +28,7 @@ public class AuctionStatusScheduler {
         this.bidServiceClient = bidServiceClient;
     }
 
-    @Scheduled(fixedRate = 10000) // reload every 10 seconds
+    @Scheduled(fixedRate = 2000) // reload every 2 seconds
     @Transactional
     public void updateAuctionStatuses() {
         LocalDateTime now = LocalDateTime.now();

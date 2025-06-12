@@ -27,10 +27,8 @@ public class AuctionEndScheduler {
     // Set để track những auction đã được xử lý
     private final Set<Long> processedAuctions = new HashSet<>();
 
-    /**
-     * Chạy mỗi 8s để check auction nào đã kết thúc
-     */
-    @Scheduled(fixedRate = 8000)
+    // Chạy mỗi 1.5s để tìm auction đã kết thúc
+    @Scheduled(fixedRate = 1500)
     public void checkEndedAuctions() {
         try {
             System.out.println("Checking for ended auctions at: " + LocalDateTime.now());
@@ -80,9 +78,7 @@ public class AuctionEndScheduler {
         }
     }
 
-    /**
-     * Dọn dẹp processed auctions mỗi giờ để tránh memory leak
-     */
+    // Dọn bộ nhớ cache processedAuctions mỗi giờ
     @Scheduled(fixedRate = 3600000) // 1 giờ
     public void cleanupProcessedAuctions() {
         try {

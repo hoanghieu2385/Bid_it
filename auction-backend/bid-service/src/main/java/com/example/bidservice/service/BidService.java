@@ -18,6 +18,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * BidService - xử lý toàn bộ nghiệp vụ đặt giá.
+ * Gồm:
+ * - Validate bid
+ * - Cập nhật trạng thái các bid
+ * - Lưu DB
+ * - Gọi auction-service & user-service
+ * - Gửi WebSocket notification
+ */
 @Service
 @Transactional
 public class BidService implements IBidService {
@@ -34,7 +43,7 @@ public class BidService implements IBidService {
     @Autowired
     private IWebSocketService webSocketService;
 
-    // KHÔNG cập nhật winner ngay lập tức
+    // Tạo bid mới (dùng trong WebSocket)
     @Override
     public Bid createBid(Long auctionId, Long userId, BigDecimal bidAmount) {
         // 1. Validate bid
@@ -87,98 +96,17 @@ public class BidService implements IBidService {
         return savedBid;
     }
 
-    // method để xử lý khi auction kết thúc
-    @Override
-    @Transactional
-    public void processAuctionEnd(Long auctionId) {
-        try {
-            // Kiểm tra auction đã thực sự kết thúc chưa
-            AuctionServiceClient.AuctionResponse auction = auctionServiceClient.getAuctionById(auctionId);
-            if (auction == null) {
-                throw new RuntimeException("Auction not found: " + auctionId);
-            }
+    // Validate user không phải là người bid cao nhất hiện tại
+    private void validateUserNotAlreadyHighestBidder(Long auctionId, Long userId) {
+        // Tìm bid cao nhất hiện tại
+        Optional<Bid> highestBid = bidRepository.findHighestBidByAuctionId(auctionId);
 
-            LocalDateTime now = LocalDateTime.now();
-
-            // Kiểm tra auction đã kết thúc chưa (cả về thời gian và status)
-            boolean isEndedByTime = auction.getEndTime() != null && auction.getEndTime().isBefore(now);
-            boolean isEndedByStatus = "CLOSED".equals(auction.getStatus()) || "ENDED".equals(auction.getStatus());
-
-            if (!isEndedByTime && !isEndedByStatus) {
-                System.out.println("Auction " + auctionId + " has not ended yet. Status: " +
-                        auction.getStatus() + ", End time: " + auction.getEndTime());
-                return;
-            }
-
-            // Tìm bid cao nhất
-            Optional<Bid> highestBidOpt = bidRepository.findHighestBidByAuctionId(auctionId);
-
-            if (highestBidOpt.isPresent()) {
-                Bid winningBid = highestBidOpt.get();
-
-                System.out.println("Processing auction end for auction " + auctionId +
-                        ", winning bid: " + winningBid.getBidAmount() +
-                        " by user " + winningBid.getUserId());
-
-                // Cập nhật bid thắng cuộc
-                winningBid.setStatus(BidStatus.WINNING);
-                winningBid.setIsWinning(true);
-                bidRepository.save(winningBid);
-
-                // Cập nhật tất cả bid khác thành OUTBID
-                updateAllOtherBidsToOutbid(auctionId, winningBid.getId());
-
-                // Bây giờ mới cập nhật winner vào auction-service
-                WinnerUpdateDTO dto = new WinnerUpdateDTO(winningBid.getUserId());
-                auctionServiceClient.updateWinner(auctionId, dto);
-
-                // Gửi notification về winner
-                sendWinnerNotification(winningBid);
-
-            } else {
-                System.out.println("No bids found for auction " + auctionId);
-                // Có thể cập nhật auction status thành NO_BIDS hoặc EXPIRED
-            }
-
-        } catch (Exception e) {
-            System.err.println("Failed to process auction end for auction " + auctionId + ": " + e.getMessage());
-            throw new RuntimeException("Failed to process auction end", e);
+        if (highestBid.isPresent() && highestBid.get().getUserId().equals(userId)) {
+            throw new RuntimeException("You already have the highest bid. Please wait for others to bid higher before placing another bid.");
         }
     }
 
-    // Helper method để cập nhật tất cả bid khác thành OUTBID
-    private void updateAllOtherBidsToOutbid(Long auctionId, Long winningBidId) {
-        List<Bid> otherBids = bidRepository.findByAuctionIdAndIdNot(auctionId, winningBidId);
-
-        for (Bid bid : otherBids) {
-            if (bid.getStatus() == BidStatus.ACTIVE) { // Chỉ update những bid ACTIVE
-                bid.setStatus(BidStatus.OUTBID);
-                bid.setIsWinning(false);
-            }
-        }
-
-        if (!otherBids.isEmpty()) {
-            bidRepository.saveAll(otherBids);
-        }
-    }
-
-    // Method gửi notification về winner
-    private void sendWinnerNotification(Bid winningBid) {
-        try {
-            BidResponse bidResponse = mapToBidResponse(winningBid);
-
-            // Gửi BidNotification dạng AUCTION_END
-            webSocketService.sendAuctionEndNotification(bidResponse);
-
-            // Gửi thống kê
-            IBidService.BidStatistics finalStats = getBidStatistics(winningBid.getAuctionId());
-            webSocketService.sendBidStatistics(winningBid.getAuctionId(), finalStats);
-
-        } catch (Exception e) {
-            System.err.println("Failed to send winner notification: " + e.getMessage());
-        }
-    }
-
+    // Validate các điều kiện trước khi bid
     @Override
     public void validateBid(Long auctionId, Long userId, BigDecimal bidAmount) {
         // Null check for parameters
@@ -290,17 +218,99 @@ public class BidService implements IBidService {
         }
     }
 
-    // Validate user không phải là người bid cao nhất hiện tại
-    private void validateUserNotAlreadyHighestBidder(Long auctionId, Long userId) {
-        // Tìm bid cao nhất hiện tại
-        Optional<Bid> highestBid = bidRepository.findHighestBidByAuctionId(auctionId);
+    // Helper method để cập nhật tất cả bid khác thành OUTBID
+    private void updateAllOtherBidsToOutbid(Long auctionId, Long winningBidId) {
+        List<Bid> otherBids = bidRepository.findByAuctionIdAndIdNot(auctionId, winningBidId);
 
-        if (highestBid.isPresent() && highestBid.get().getUserId().equals(userId)) {
-            throw new RuntimeException("You already have the highest bid. Please wait for others to bid higher before placing another bid.");
+        for (Bid bid : otherBids) {
+            if (bid.getStatus() == BidStatus.ACTIVE) { // Chỉ update những bid ACTIVE
+                bid.setStatus(BidStatus.OUTBID);
+                bid.setIsWinning(false);
+            }
+        }
+
+        if (!otherBids.isEmpty()) {
+            bidRepository.saveAll(otherBids);
         }
     }
 
-    //  getCurrentHighestBid để không phụ thuộc vào status
+    // Xử lý khi phiên đấu giá kết thúc
+    @Override
+    @Transactional
+    public void processAuctionEnd(Long auctionId) {
+        try {
+            // Kiểm tra auction đã thực sự kết thúc chưa
+            AuctionServiceClient.AuctionResponse auction = auctionServiceClient.getAuctionById(auctionId);
+            if (auction == null) {
+                throw new RuntimeException("Auction not found: " + auctionId);
+            }
+
+            LocalDateTime now = LocalDateTime.now();
+
+            // Kiểm tra auction đã kết thúc chưa (cả về thời gian và status)
+            boolean isEndedByTime = auction.getEndTime() != null && auction.getEndTime().isBefore(now);
+            boolean isEndedByStatus = "CLOSED".equals(auction.getStatus()) || "ENDED".equals(auction.getStatus());
+
+            if (!isEndedByTime && !isEndedByStatus) {
+                System.out.println("Auction " + auctionId + " has not ended yet. Status: " +
+                        auction.getStatus() + ", End time: " + auction.getEndTime());
+                return;
+            }
+
+            // Tìm bid cao nhất
+            Optional<Bid> highestBidOpt = bidRepository.findHighestBidByAuctionId(auctionId);
+
+            if (highestBidOpt.isPresent()) {
+                Bid winningBid = highestBidOpt.get();
+
+                System.out.println("Processing auction end for auction " + auctionId +
+                        ", winning bid: " + winningBid.getBidAmount() +
+                        " by user " + winningBid.getUserId());
+
+                // Cập nhật bid thắng cuộc
+                winningBid.setStatus(BidStatus.WINNING);
+                winningBid.setIsWinning(true);
+                bidRepository.save(winningBid);
+
+                // Cập nhật tất cả bid khác thành OUTBID
+                updateAllOtherBidsToOutbid(auctionId, winningBid.getId());
+
+                // Bây giờ mới cập nhật winner vào auction-service
+                WinnerUpdateDTO dto = new WinnerUpdateDTO(winningBid.getUserId());
+                auctionServiceClient.updateWinner(auctionId, dto);
+
+                // Gửi notification về winner
+                sendWinnerNotification(winningBid);
+
+            } else {
+                System.out.println("No bids found for auction " + auctionId);
+                // Có thể cập nhật auction status thành NO_BIDS hoặc EXPIRED
+            }
+
+        } catch (Exception e) {
+            System.err.println("Failed to process auction end for auction " + auctionId + ": " + e.getMessage());
+            throw new RuntimeException("Failed to process auction end", e);
+        }
+    }
+
+    // Method gửi notification về winner
+    private void sendWinnerNotification(Bid winningBid) {
+        try {
+            BidResponse bidResponse = mapToBidResponse(winningBid);
+
+            // Gửi BidNotification dạng AUCTION_END
+            webSocketService.sendAuctionEndNotification(bidResponse);
+
+            // Gửi thống kê
+            IBidService.BidStatistics finalStats = getBidStatistics(winningBid.getAuctionId());
+            webSocketService.sendBidStatistics(winningBid.getAuctionId(), finalStats);
+
+        } catch (Exception e) {
+            System.err.println("Failed to send winner notification: " + e.getMessage());
+        }
+    }
+
+    // Lấy giá cao nhất hiện tại (không phân biệt trạng thái)
     @Override
     public BigDecimal getCurrentHighestBid(Long auctionId) {
         if (auctionId == null) {
@@ -345,6 +355,7 @@ public class BidService implements IBidService {
         );
     }
 
+    // Enrich dữ liệu bid bằng thông tin user & auction
     @Override
     public Bid enrichBidWithExternalData(Bid bid) {
         if (bid == null) {
@@ -397,6 +408,7 @@ public class BidService implements IBidService {
         }
     }
 
+    // Lấy các bid theo auctionId
     @Override
     public List<Bid> getBidsByAuction(Long auctionId) {
         List<Bid> bids = bidRepository.findByAuctionIdOrderByBidAmountDesc(auctionId);
@@ -404,6 +416,7 @@ public class BidService implements IBidService {
         return bids;
     }
 
+    // Lấy các bid theo lịch sử
     @Override
     public List<Bid> getBidHistory(Long auctionId) {
         List<Bid> bids = bidRepository.findBidHistoryByAuctionId(auctionId);
@@ -411,6 +424,7 @@ public class BidService implements IBidService {
         return bids;
     }
 
+    // Lấy các bid theo userId
     @Override
     public List<Bid> getBidsByUser(Long userId) {
         List<Bid> bids = bidRepository.findByUserIdOrderByCreatedAtDesc(userId);
@@ -418,6 +432,7 @@ public class BidService implements IBidService {
         return bids;
     }
 
+    // Trả về thống kê bid
     @Override
     public IBidService.BidStatistics getBidStatistics(Long auctionId) {
         long totalBids = bidRepository.countByAuctionId(auctionId);
