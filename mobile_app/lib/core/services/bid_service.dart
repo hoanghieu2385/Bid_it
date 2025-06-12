@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mobile_app/core/services/api_service.dart';
+import 'package:mobile_app/core/services/user_service.dart';
 
 class BidService {
   static const String bidbaseUrl = ApiService.bidBaseUrl;
@@ -33,15 +34,28 @@ class BidService {
       throw decoded;
     }
   }
-  static Future<List<Map<String, dynamic>>> fetchBidHistory(int auctionId) async {
-    final url = Uri.parse('$bidbaseUrl/bids/auction/$auctionId/bid');
-    final response = await http.get(url);
+  static Future<List<Map<String, dynamic>>> fetchAllUserBids(int userId, {required String token}) async {
+    final url = Uri.parse('$bidbaseUrl/bids/user/$userId');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.cast<Map<String, dynamic>>();
+      final decoded = jsonDecode(response.body);
+      final List<dynamic> data = decoded['data'] ?? [];
+      final bids = data.cast<Map<String, dynamic>>();
+      bids.sort((a, b) {
+        final aTime = DateTime.tryParse(a['createdAt'] ?? a['bidTime'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bTime = DateTime.tryParse(b['createdAt'] ?? b['bidTime'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bTime.compareTo(aTime);
+      });
+      return bids;
     } else {
-      throw Exception('Failed to load bid history');
+      throw Exception('Failed to load user bids');
     }
   }
 }
