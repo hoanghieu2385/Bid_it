@@ -147,6 +147,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
           });
         },
         onActivity: (data) {
+          debugPrint('[WebSocket] Received: \$data');
           if (data.containsKey('bidAmount')) {
             setState(() {
               widget.auction.currentBid = (data['bidAmount'] as num).toDouble();
@@ -157,15 +158,24 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
         onError: (err) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('WebSocket Error: ${(['message'] ?? 'Unknown error').toString()}'),
+              content: Text('WebSocket Error: \${err.toString()}'),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 3),
             ),
           );
         },
       );
+
+      Timer.periodic(const Duration(seconds: 1), (timer) async {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        await fetchAuctionDetail();
+      });
     }
   }
+
 
   @override
   void dispose() {
