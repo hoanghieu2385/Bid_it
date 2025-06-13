@@ -1,11 +1,9 @@
 package com.example.bidservice.client;
 
 import com.example.bidservice.config.FeignClientConfig;
+import com.example.bidservice.dto.WinnerUpdateDTO;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 // Auction Service Client
 @FeignClient(name = "auction-service", url = "${app.services.auction-service}", configuration = FeignClientConfig.class)
@@ -19,19 +17,19 @@ public interface AuctionServiceClient {
                           @RequestParam("currentBid") java.math.BigDecimal currentBid,
                           @RequestParam("bidCount") Integer bidCount);
 
-    @PutMapping("/api/auctions/{id}/winner")
-    void updateWinner(@PathVariable("id") Long auctionId, @RequestParam("winnerId") Long winnerId);
-
-
+    @PutMapping("/api/auctions/{auctionId}/winner")
+    void updateWinner(@PathVariable Long auctionId, @RequestBody WinnerUpdateDTO dto);
 
     // DTO - chỉ lấy những fields cần thiết cho BidService
     class AuctionResponse {
         private Long id;
-        private String title;                              // Dùng trong enrichBidWithExternalData()
-        private java.math.BigDecimal startingPrice;       // Dùng trong validateBid()
-        private java.time.LocalDateTime endTime;          // Dùng trong validateBid()
-        private String status;                            // Dùng trong validateBid()
-        private Long sellerId;                            // Dùng trong validateBid()
+        private String title;                               // Dùng trong enrichBidWithExternalData()
+        private java.math.BigDecimal startingPrice;         // Dùng trong validateBid()
+        private java.time.LocalDateTime startTime;          // Dùng trong validateBid()
+        private java.time.LocalDateTime endTime;            // Dùng trong validateBid()
+        private String status;                              // Dùng trong validateBid()
+        private Long sellerId;                              // Dùng trong validateBid()
+        private Long winnerId;
 
         // Constructors
         public AuctionResponse() {}
@@ -46,6 +44,9 @@ public interface AuctionServiceClient {
         public java.math.BigDecimal getStartingPrice() { return startingPrice; }
         public void setStartingPrice(java.math.BigDecimal startingPrice) { this.startingPrice = startingPrice; }
 
+        public java.time.LocalDateTime getStartTime() { return startTime; }
+        public void setStartTime(java.time.LocalDateTime startTime) { this.startTime = startTime; }
+
         public java.time.LocalDateTime getEndTime() { return endTime; }
         public void setEndTime(java.time.LocalDateTime endTime) { this.endTime = endTime; }
 
@@ -54,5 +55,8 @@ public interface AuctionServiceClient {
 
         public Long getSellerId() { return sellerId; }
         public void setSellerId(Long sellerId) { this.sellerId = sellerId; }
+
+        public Long getWinnerId() { return winnerId; }
+        public void setWinnerId(Long winnerId) { this.winnerId = winnerId; }
     }
 }

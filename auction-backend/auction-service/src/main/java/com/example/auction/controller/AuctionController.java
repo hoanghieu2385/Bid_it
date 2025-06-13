@@ -3,15 +3,13 @@ package com.example.auction.controller;
 import com.example.auction.dto.AuctionRequestDTO;
 import com.example.auction.dto.AuctionResponseDTO;
 import com.example.auction.dto.AuctionStatusUpdateDTO;
-import com.example.auction.dto.MediaResponseDTO;
-import com.example.auction.dto.UserDTO;
+import com.example.auction.dto.WinnerUpdateDTO;
 import com.example.auction.exception.ResourceNotFoundException;
+import com.example.auction.mapper.AuctionMapper;
 import com.example.auction.model.Auction;
 import com.example.auction.model.AuctionStatus;
 import com.example.auction.service.AuctionService;
-import com.example.auction.service.MediaService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Validated
 @RestController
@@ -27,11 +24,11 @@ import java.util.stream.Collectors;
 public class AuctionController {
 
     private final AuctionService auctionService;
-    private final MediaService mediaService;
+    private final AuctionMapper auctionMapper;
 
-    public AuctionController(AuctionService auctionService, MediaService mediaService) {
+    public AuctionController(AuctionService auctionService, AuctionMapper auctionMapper) {
         this.auctionService = auctionService;
-        this.mediaService = mediaService;
+        this.auctionMapper = auctionMapper;
     }
 
     // CREATE Auction
@@ -47,10 +44,9 @@ public class AuctionController {
     // GET ALL Auctions
     @GetMapping
     public ResponseEntity<List<AuctionResponseDTO>> getAuctions() {
-        List<AuctionResponseDTO> auctions = auctionService.getAllAuctions().stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(auctions);
+        List<Auction> auctions = auctionService.getAllAuctions();
+        List<AuctionResponseDTO> response = auctionMapper.mapToResponseDTOList(auctions);
+        return ResponseEntity.ok(response);
     }
 
     // GET Auction by AuctionID
@@ -58,7 +54,7 @@ public class AuctionController {
     public ResponseEntity<AuctionResponseDTO> getAuction(@PathVariable Long id) {
         Auction auction = auctionService.getAuctionById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
-        return ResponseEntity.ok(mapToResponseDTO(auction));
+        return ResponseEntity.ok(auctionMapper.mapToResponseDTO(auction));
     }
 
     // GET Auction by AuctionStatus
@@ -74,10 +70,7 @@ public class AuctionController {
             return ResponseEntity.badRequest().build();
         }
 
-        List<AuctionResponseDTO> response = auctions.stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
-
+        List<AuctionResponseDTO> response = auctionMapper.mapToResponseDTOList(auctions);
         return ResponseEntity.ok(response);
     }
 
@@ -91,36 +84,32 @@ public class AuctionController {
         return ResponseEntity.ok().build();
     }
 
+    // Update Auction Winner
     @PutMapping("/{id}/winner")
     public ResponseEntity<AuctionResponseDTO> updateAuctionWinner(
             @PathVariable Long id,
-            @RequestParam("winnerId") Long winnerId
+            @RequestBody WinnerUpdateDTO dto
     ) {
+        Long winnerId = dto.getWinnerId();
+
         Auction auction = auctionService.getAuctionById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
 
-        // ENFORCE: Chỉ cho cập nhật nếu đã kết thúc
         boolean ended = auction.getEndTime() != null && auction.getEndTime().isBefore(LocalDateTime.now());
         boolean statusClosed = auction.getStatus() == AuctionStatus.CLOSED ||
                 auction.getStatus() == AuctionStatus.SOLD ||
                 auction.getStatus() == AuctionStatus.FAILED;
 
         if (!ended && !statusClosed) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(null); // Hoặc throw exception với message rõ ràng
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
 
-        // Log để tracking
-        System.out.println("Updating winner for auction " + id + " to user " + winnerId);
-
         auction.setWinnerId(winnerId);
-        auction.setStatus(AuctionStatus.SOLD); // Hoặc CLOSED
+        auction.setStatus(AuctionStatus.SOLD);
         auction.setUpdatedAt(LocalDateTime.now());
 
         Auction saved = auctionService.save(auction);
-
-        System.out.println("Successfully updated winner for auction " + id);
-        return ResponseEntity.ok(auctionService.mapToResponseDTO(saved));
+        return ResponseEntity.ok(auctionMapper.mapToResponseDTO(saved));
     }
 
     // GET Auction by Category
@@ -129,18 +118,18 @@ public class AuctionController {
             @RequestParam Long categoryId) {
 
         List<Auction> auctions = auctionService.findAuctionsByCategory(categoryId);
-
-        List<AuctionResponseDTO> response = auctions.stream()
-                .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
-
+        List<AuctionResponseDTO> response = auctionMapper.mapToResponseDTOList(auctions);
         return ResponseEntity.ok(response);
     }
 
-    // GET Auction by UserID
+    // GET Auction by UserID - FIXED: Now uses mapper consistently
     @GetMapping("/seller/{sellerId}")
     public ResponseEntity<List<AuctionResponseDTO>> getAuctionsBySellerId(@PathVariable Long sellerId) {
-        List<AuctionResponseDTO> response = auctionService.getAuctionsBySellerId(sellerId);
+        // Sử dụng method trả về raw entities
+        List<Auction> auctions = auctionService.getAuctionsBySellerIdRaw(sellerId);
+
+        // Sử dụng mapper để đảm bảo mapping nhất quán với media và user data
+        List<AuctionResponseDTO> response = auctionMapper.mapToResponseDTOList(auctions);
 
         return ResponseEntity.ok(response);
     }
@@ -174,44 +163,5 @@ public class AuctionController {
         return ResponseEntity.noContent().build();
     }
 
-
-    // Helper method to map Auction entity to AuctionResponseDTO
-    private AuctionResponseDTO mapToResponseDTO(Auction auction) {
-
-        List<MediaResponseDTO> mediaList = mediaService.getMediaByAuctionId(auction.getId());
-
-        String thumbnailUrl = mediaList.stream()
-                .filter(media -> Boolean.TRUE.equals(media.getIsThumbnail()))
-                .map(MediaResponseDTO::getUrl)
-                .findFirst()
-                .orElse(null);
-
-        UserDTO seller = auctionService.getSellerInfo(auction.getSellerId()); // new helper to add in service
-
-        return new AuctionResponseDTO.Builder()
-                .id(auction.getId())
-                .title(auction.getTitle())
-                .description(auction.getDescription())
-                .sellerId(auction.getSellerId())
-                .categoryId(auction.getCategoryId())
-                .startTime(auction.getStartTime())
-                .endTime(auction.getEndTime())
-                .startingPrice(auction.getStartingPrice())
-                .incrementAmount(auction.getIncrementAmount())
-                .currentBid(auction.getCurrentBid())
-                .requiresDeposit(auction.getRequiresDeposit())
-                .securityDeposit(auction.getSecurityDeposit())
-                .status(auction.getStatus().name())
-                .bidCount(auction.getBidCount())
-                .winnerId(auction.getWinnerId())
-                .winnerPaymentDeadline(auction.getWinnerPaymentDeadline())
-                .disputeRequestDeadline(auction.getDisputeRequestDeadline())
-                .createdAt(auction.getCreatedAt())
-                .updatedAt(auction.getUpdatedAt())
-                .deletedAt(auction.getDeletedAt())
-                .media(mediaList)
-                .thumbnailUrl(thumbnailUrl)
-                .user(seller)
-                .build();
-    }
+    // Removed the old mapToResponseDTO method since we now use AuctionMapper
 }

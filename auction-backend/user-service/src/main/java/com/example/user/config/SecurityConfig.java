@@ -59,7 +59,7 @@ public class SecurityConfig {
                                 "/api/users/send-phone-otp"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/seller/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll() // Not "/{id}"
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -110,7 +110,6 @@ export const getSellerById = async (sellerId) => {
     return response.data;
 };
 
-// Get user verification status
 export const getVerificationStatus = async () => {
     const response = await api.get(`${API_CONFIG.USER_API}/me/verify-status`);
     return response.data;

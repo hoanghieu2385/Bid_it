@@ -3,6 +3,7 @@ package com.example.bidservice.service;
 import com.example.bidservice.client.AuctionServiceClient;
 import com.example.bidservice.client.UserServiceClient;
 import com.example.bidservice.dto.BidResponse;
+import com.example.bidservice.dto.WinnerUpdateDTO;
 import com.example.bidservice.entity.Bid;
 import com.example.bidservice.entity.BidStatus;
 import com.example.bidservice.repository.BidRepository;
@@ -39,19 +40,25 @@ public class BidService implements IBidService {
         // 1. Validate bid
         validateBid(auctionId, userId, bidAmount);
 
-        // 2. Tạo bid mới với trạng thái ACTIVE (chưa xác định winner)
+        // 2. Cập nhật tất cả các bid cũ thành OUTBID và isWinning = false
+        List<Bid> oldBids = bidRepository.findByAuctionId(auctionId);
+        for (Bid bid : oldBids) {
+            bid.setStatus(BidStatus.OUTBID);
+            bid.setIsWinning(false);
+        }
+        bidRepository.saveAll(oldBids);
+
+        // 3. Tạo bid mới với trạng thái ACTIVE và là người đang dẫn đầu
         Bid newBid = new Bid(auctionId, userId, bidAmount);
         newBid.setStatus(BidStatus.ACTIVE);
-        newBid.setIsWinning(false); // Chưa phải winner, sẽ xác định sau khi auction kết thúc
+        newBid.setIsWinning(true); // Đặt là người thắng tạm thời
 
         Bid savedBid = bidRepository.save(newBid);
 
-        // 3. THÊM: Cập nhật currentBid và bidCount trong auction-service
+        // 4. Cập nhật currentBid và bidCount trong auction-service
         try {
-            // Đếm tổng số bid hiện tại
             long totalBids = bidRepository.countByAuctionId(auctionId);
 
-            // Cập nhật currentBid và bidCount
             auctionServiceClient.updateCurrentBid(auctionId, bidAmount, (int) totalBids);
 
             System.out.println("Updated auction " + auctionId + " with currentBid: " + bidAmount + ", bidCount: " + totalBids);
@@ -61,7 +68,7 @@ public class BidService implements IBidService {
             // Không throw exception để không làm fail toàn bộ bid process
         }
 
-        // 4. Enrich data và gửi notification
+        // 5. Enrich data và gửi notification
         enrichBidWithExternalData(savedBid);
         sendRealtimeBidUpdate(savedBid);
 
@@ -79,12 +86,15 @@ public class BidService implements IBidService {
                 throw new RuntimeException("Auction not found: " + auctionId);
             }
 
-            // Chỉ xử lý nếu auction đã kết thúc
-            boolean isEnded = auction.getEndTime() != null &&
-                    auction.getEndTime().isBefore(LocalDateTime.now());
+            LocalDateTime now = LocalDateTime.now();
 
-            if (!isEnded) {
-                System.out.println("Auction " + auctionId + " has not ended yet");
+            // Kiểm tra auction đã kết thúc chưa (cả về thời gian và status)
+            boolean isEndedByTime = auction.getEndTime() != null && auction.getEndTime().isBefore(now);
+            boolean isEndedByStatus = "CLOSED".equals(auction.getStatus()) || "ENDED".equals(auction.getStatus());
+
+            if (!isEndedByTime && !isEndedByStatus) {
+                System.out.println("Auction " + auctionId + " has not ended yet. Status: " +
+                        auction.getStatus() + ", End time: " + auction.getEndTime());
                 return;
             }
 
@@ -107,7 +117,8 @@ public class BidService implements IBidService {
                 updateAllOtherBidsToOutbid(auctionId, winningBid.getId());
 
                 // Bây giờ mới cập nhật winner vào auction-service
-                auctionServiceClient.updateWinner(auctionId, winningBid.getUserId());
+                WinnerUpdateDTO dto = new WinnerUpdateDTO(winningBid.getUserId());
+                auctionServiceClient.updateWinner(auctionId, dto);
 
                 // Gửi notification về winner
                 sendWinnerNotification(winningBid);
@@ -179,14 +190,28 @@ public class BidService implements IBidService {
                 throw new RuntimeException("Auction not found");
             }
 
-            // Kiểm tra auction status
-            if ("ENDED".equals(auction.getStatus()) || "CANCELLED".equals(auction.getStatus())) {
-                throw new RuntimeException("Auction is not active");
+            // Kiểm tra auction status - CHỈ CHO PHÉP BID KHI STATUS LÀ "OPENED"
+            if (!"OPENED".equals(auction.getStatus())) {
+                if ("UPCOMING".equals(auction.getStatus())) {
+                    throw new RuntimeException("Auction has not started yet");
+                } else if ("ENDED".equals(auction.getStatus()) || "CLOSED".equals(auction.getStatus())) {
+                    throw new RuntimeException("Auction has ended");
+                } else if ("CANCELLED".equals(auction.getStatus())) {
+                    throw new RuntimeException("Auction has been cancelled");
+                } else {
+                    throw new RuntimeException("Auction is not available for bidding");
+                }
             }
 
-            // Kiểm tra thời gian auction
-            if (auction.getEndTime() != null && auction.getEndTime().isBefore(LocalDateTime.now())) {
-                throw new RuntimeException("Auction has ended");
+            LocalDateTime now = LocalDateTime.now();
+
+            // Kiểm tra thời gian auction - phải nằm trong khoảng startTime đến endTime
+            if (auction.getStartTime() != null && auction.getStartTime().isAfter(now)) {
+                throw new RuntimeException("Auction has not started yet. Start time: " + auction.getStartTime());
+            }
+
+            if (auction.getEndTime() != null && auction.getEndTime().isBefore(now)) {
+                throw new RuntimeException("Auction has ended. End time: " + auction.getEndTime());
             }
 
             // Kiểm tra bid amount phải lớn hơn current bid (with null safety)
@@ -324,13 +349,13 @@ public class BidService implements IBidService {
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 100))
     public void sendRealtimeBidUpdate(Bid bid) {
         try {
-            // Tạo BidResponse để gửi qua WebSocket
+            // 1. Map entity Bid sang DTO BidResponse
             BidResponse bidResponse = mapToBidResponse(bid);
 
-            // Gửi notification qua WebSocketService
+            // 2. Gửi notification bid mới
             webSocketService.sendNewBidNotification(bidResponse);
 
-            // Gửi thông tin statistics update
+            // 3. Gửi thông tin thống kê
             IBidService.BidStatistics stats = getBidStatistics(bid.getAuctionId());
             webSocketService.sendBidStatistics(bid.getAuctionId(), stats);
 
@@ -349,7 +374,7 @@ public class BidService implements IBidService {
 
     @Override
     public List<Bid> getBidHistory(Long auctionId) {
-        List<Bid> bids = bidRepository.findTop10ByAuctionIdOrderByCreatedAtDesc(auctionId);
+        List<Bid> bids = bidRepository.findBidHistoryByAuctionId(auctionId);
         bids.forEach(this::enrichBidWithExternalData);
         return bids;
     }
@@ -392,30 +417,11 @@ public class BidService implements IBidService {
         return stats;
     }
 
-    // Helper methods
-    public boolean hasUserBidOnAuction(Long auctionId, Long userId) {
-        if (auctionId == null || userId == null) {
-            return false;
-        }
-        return bidRepository.existsByAuctionIdAndUserId(auctionId, userId);
-    }
-
     public Optional<Bid> getLastBidByUserAndAuction(Long auctionId, Long userId) {
         if (auctionId == null || userId == null) {
             return Optional.empty();
         }
         List<Bid> userBids = bidRepository.findByAuctionIdAndUserIdOrderByCreatedAtDesc(auctionId, userId);
         return userBids.isEmpty() ? Optional.empty() : Optional.of(userBids.get(0));
-    }
-
-    public long getUniqueBiddersCount(Long auctionId) {
-        if (auctionId == null) {
-            return 0;
-        }
-        return bidRepository.findByAuctionIdOrderByBidAmountDesc(auctionId)
-                .stream()
-                .map(Bid::getUserId)
-                .distinct()
-                .count();
     }
 }

@@ -1,6 +1,3 @@
-# Cấu trúc thư mục bid-service
-
-```
 bid-service/
 ├── src/
 │   └── main/
@@ -12,15 +9,16 @@ bid-service/
 │       │               │   ├── AuctionServiceClient.java
 │       │               │   └── UserServiceClient.java
 │       │               ├── config/
-│       │               │   ├── WebSocketConfig.java
-│       │               │   └── CorsConfig.java
+│       │               │   ├── FeignClient.java
+│       │               │   ├── SecurityConfig.java
+│       │               │   └── WebSocketConfig.java
 │       │               ├── controller/
 │       │               │   ├── BidController.java
 │       │               │   └── WebSocketController.java
 │       │               ├── dto/
+│       │               │   ├── BidNotification.java
 │       │               │   ├── BidRequest.java
-│       │               │   ├── BidResponse.java
-│       │               │   └── BidNotification.java
+│       │               │   └── BidResponse.java
 │       │               ├── entity/
 │       │               │   └── Bid.java
 │       │               │   └── BidStatus.java
@@ -28,23 +26,11 @@ bid-service/
 │       │               │   └── BidRepository.java
 │       │               ├── scheduler/
 │       │               │   └── AuctionEndScheduler.java
-│       │               └── service/
-│       │                   ├── BidService.java          (class)
-│       │                   ├── IBidService.java         (interface)
-│       │                   └── WebSocketService.java    (class)
-│       │                   └── IWebSocketService.java   (interface)
-│       │               ├── BidServiceApplication.java
+│       │               ├── service/
+│       │               │   ├── BidService.java          (class)
+│       │               │   ├── IBidService.java         (interface)
+│       │               │   ├── WebSocketService.java    (class)
+│       │               │   └── IWebSocketService.java   (interface)
+│       │               └── BidServiceApplication.java
 │       └── resources/
-│           ├── application.properties
-│           └── data.sql
-```
-
-1. **pom.xml** - Dependencies
-2. **application.properties** - Cấu hình
-3. **BidServiceApplication.java** - Main class
-4. **Entity và DTO** - Data models
-5. **Repository** - Database layer
-6. **Service** - Business logic
-7. **Controller** - API endpoints
-8. **WebSocket** - Realtime functionality
-9. **Dockerfile** - Containerization
+│           └── application.properties
