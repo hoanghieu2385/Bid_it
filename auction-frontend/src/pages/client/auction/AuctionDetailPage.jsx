@@ -1,5 +1,4 @@
-// src/pages/client/auction/AuctionDetailPage.jsx
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getAllAuctions, getAuctionDetailById } from '../../../services/auction-api';
 import { getBidsByAuctionId } from '../../../services/bid_api';
@@ -7,13 +6,46 @@ import { createBid } from '../../../services/bid_api';
 import defaultAvatar from '../../../assets/images/default-avatar.png';
 import useToastMessage from '../../../hooks/useToastMessage';
 import { UserContext } from '../../../contexts/UserContext';
-import {getSellerById} from "../../../services/user-api.js";
+import { getSellerById } from "../../../services/user-api.js";
+import { Client } from '@stomp/stompjs';
 
+// Connection Status Component
+const ConnectionStatusBadge = ({ status }) => {
+	const statusConfig = {
+		connecting: { color: 'warning', text: 'Connecting to live updates...', icon: '🔄' },
+		connected: { color: 'success', text: 'Live updates active', icon: '🟢' },
+		disconnected: { color: 'secondary', text: 'Live updates disconnected', icon: '🔴' },
+		error: { color: 'danger', text: 'Connection error - refreshing page recommended', icon: '❌' }
+	};
+
+	const config = statusConfig[status] || statusConfig.connecting;
+
+	return (
+		<div className={`alert alert-${config.color} d-flex align-items-center py-2 mb-3`}>
+			<span className="me-2">{config.icon}</span>
+			<small>{config.text}</small>
+			{status === 'error' && (
+				<button
+					className="btn btn-sm btn-outline-primary ms-auto"
+					onClick={() => window.location.reload()}
+				>
+					Refresh Page
+				</button>
+			)}
+		</div>
+	);
+};
 
 const AuctionDetailPage = () => {
 	// React router and user context
-	const {id} = useParams();
-	const {user} = useContext(UserContext);
+	const { id } = useParams();
+	const { user } = useContext(UserContext);
+
+	// WebSocket client ref
+	const stompClientRef = useRef(null);
+	const reconnectTimeoutRef = useRef(null);
+	const connectionAttemptsRef = useRef(0);
+	const maxAttempts = 5;
 
 	// Local state management
 	const [auction, setAuction] = useState(null);
@@ -26,10 +58,10 @@ const AuctionDetailPage = () => {
 	const [relatedAuctions, setRelatedAuctions] = useState([]);
 	const [bidAmount, setBidAmount] = useState('');
 	const [bidHistory, setBidHistory] = useState([]);
-
+	const [connectionStatus, setConnectionStatus] = useState('connecting');
 
 	// Toast message hook
-	const {showSuccess, showError} = useToastMessage();
+	const { showSuccess, showError } = useToastMessage();
 
 	// Calculate minimum bid amount
 	const getMinimumBid = () => {
@@ -63,24 +95,208 @@ const AuctionDetailPage = () => {
 	const fetchBids = async () => {
 		try {
 			const wrapper = await getBidsByAuctionId(id);
-			const bids = Array.isArray(wrapper)
-				? wrapper
-				: Array.isArray(wrapper.data)
-					? wrapper.data
-					: [];
 
-			bids.sort((a, b) => new Date(b.bidTime) - new Date(a.bidTime));
-			setBidHistory(bids);
+			// Handle different response structures
+			let bids = [];
+			if (Array.isArray(wrapper)) {
+				bids = wrapper;
+			} else if (wrapper && Array.isArray(wrapper.data)) {
+				bids = wrapper.data;
+			} else if (wrapper && wrapper.data && Array.isArray(wrapper.data.data)) {
+				bids = wrapper.data.data;
+			}
+
+			// Sort by bid time (newest first) and remove duplicates
+			const uniqueBids = bids.filter((bid, index, self) =>
+				index === self.findIndex(b => b.id === bid.id)
+			);
+
+			uniqueBids.sort((a, b) => {
+				const timeA = new Date(a.bidTime || a.createdAt || a.timestamp || 0);
+				const timeB = new Date(b.bidTime || b.createdAt || b.timestamp || 0);
+				return timeB - timeA;
+			});
+
+			setBidHistory(uniqueBids);
 		} catch (err) {
 			console.error('Failed to load bid history', err);
 		}
 	};
+
+	// WebSocket connection với API Gateway support
 	useEffect(() => {
-		const init = async () => {
-			await fetchAuction();
-			await fetchBids();
+		const connectWebSocket = () => {
+			if (connectionAttemptsRef.current >= maxAttempts) {
+				console.error('❌ Max connection attempts reached. Giving up.');
+				setConnectionStatus('error');
+				return;
+			}
+
+			// API Gateway WebSocket endpoints
+			const endpoints = [
+				'ws://localhost:8080/bid-service/ws-native',  // Through API Gateway
+				'ws://localhost:8080/ws-native',               // Direct service
+				'ws://localhost:8081/ws-native',               // Bid service direct port
+				'ws://127.0.0.1:8080/bid-service/ws-native',  // IP variant
+				'ws://127.0.0.1:8081/ws-native'               // Direct IP
+			];
+
+			const currentEndpoint = endpoints[connectionAttemptsRef.current % endpoints.length];
+			console.log(`🔄 Attempting to connect to: ${currentEndpoint} (attempt ${connectionAttemptsRef.current + 1})`);
+
+			try {
+				const client = new Client({
+					brokerURL: currentEndpoint,
+					reconnectDelay: 5000,
+					heartbeatIncoming: 10000,
+					heartbeatOutgoing: 10000,
+					connectionTimeout: 10000,
+					debug: (str) => {
+						console.log('🔧 STOMP Debug:', str);
+					},
+					onConnect: (frame) => {
+						console.log('✅ Connected to WebSocket', frame);
+						setConnectionStatus('connected');
+						connectionAttemptsRef.current = 0; // Reset counter on successful connection
+
+						// Subscribe to auction bid updates
+						const subscription = client.subscribe(`/topic/auction/${id}/bids`, (message) => {
+							try {
+								const newBid = JSON.parse(message.body);
+								console.log('📥 Received new bid:', newBid);
+
+								// Update bid history
+								setBidHistory((prev) => {
+									const existingBid = prev.find(bid =>
+										bid.id === newBid.id ||
+										(bid.userId === newBid.userId &&
+											Math.abs((bid.bidAmount || bid.amount) - (newBid.bidAmount || newBid.amount)) < 0.01)
+									);
+
+									if (existingBid) {
+										return prev;
+									}
+
+									return [newBid, ...prev];
+								});
+
+								// Update current bid
+								setAuction((prev) => ({
+									...prev,
+									currentBid: newBid.bidAmount || newBid.amount || prev.currentBid
+								}));
+
+								// Show notification
+								showSuccess(`New bid: ${(newBid.bidAmount || newBid.amount || 0).toLocaleString('vi-VN')} ₫`);
+							} catch (err) {
+								console.error('❌ Failed to parse bid from WebSocket:', err);
+							}
+						});
+
+						// Subscribe to auction statistics updates
+						client.subscribe(`/topic/auction/${id}/stats`, (message) => {
+							try {
+								const stats = JSON.parse(message.body);
+								console.log('📊 Received auction stats:', stats);
+
+								setAuction((prev) => ({
+									...prev,
+									currentBid: stats.currentBid || prev.currentBid,
+									bidCount: stats.bidCount || prev.bidCount
+								}));
+							} catch (err) {
+								console.error('❌ Failed to parse stats from WebSocket:', err);
+							}
+						});
+
+						console.log('🎯 Subscribed to auction updates:', subscription);
+
+						// Send join message
+						client.publish({
+							destination: `/app/auction/${id}/join`,
+							body: JSON.stringify({
+								userId: user?.id || 'anonymous',
+								username: user?.username || user?.fullName || 'Anonymous'
+							})
+						});
+					},
+					onStompError: (frame) => {
+						console.error('❌ STOMP error:', frame.headers['message']);
+						console.error('Error details:', frame.body);
+						setConnectionStatus('error');
+						tryReconnect();
+					},
+					onWebSocketError: (error) => {
+						console.error('❌ WebSocket error:', error);
+						setConnectionStatus('error');
+						tryReconnect();
+					},
+					onDisconnect: (frame) => {
+						console.log('🔌 Disconnected from WebSocket:', frame);
+						setConnectionStatus('disconnected');
+						tryReconnect();
+					}
+				});
+
+				stompClientRef.current = client;
+				client.activate();
+
+			} catch (error) {
+				console.error('❌ Failed to create WebSocket connection:', error);
+				setConnectionStatus('error');
+				tryReconnect();
+			}
 		};
-		init();
+
+		const tryReconnect = () => {
+			connectionAttemptsRef.current++;
+
+			if (connectionAttemptsRef.current < maxAttempts) {
+				reconnectTimeoutRef.current = setTimeout(() => {
+					console.log('🔄 Attempting to reconnect...');
+					setConnectionStatus('connecting');
+					connectWebSocket();
+				}, Math.min(3000 * connectionAttemptsRef.current, 15000)); // Exponential backoff, max 15s
+			} else {
+				console.error('❌ All connection attempts failed.');
+				setConnectionStatus('error');
+			}
+		};
+
+		// Initial connection
+		connectWebSocket();
+
+		// Cleanup function
+		return () => {
+			console.log('🛑 Cleaning up WebSocket connection...');
+
+			if (reconnectTimeoutRef.current) {
+				clearTimeout(reconnectTimeoutRef.current);
+			}
+
+			if (stompClientRef.current && stompClientRef.current.connected) {
+				// Send leave message before disconnect
+				try {
+					stompClientRef.current.publish({
+						destination: `/app/auction/${id}/leave`,
+						body: JSON.stringify({
+							userId: user?.id || 'anonymous',
+							username: user?.username || user?.fullName || 'Anonymous'
+						})
+					});
+				} catch (err) {
+					console.log('Could not send leave message:', err);
+				}
+
+				stompClientRef.current.deactivate();
+			}
+		};
+	}, [id, user]); // Re-run when auction ID or user changes
+
+	// Load initial data
+	useEffect(() => {
+		fetchAuction();
+		fetchBids();
 	}, [id]);
 
 	// Fetch seller info
@@ -93,7 +309,7 @@ const AuctionDetailPage = () => {
 		}
 	};
 
-	// Fetch related auctions (same category, different ID)
+	// Fetch related auctions
 	const fetchRelatedAuctions = async (currentAuction) => {
 		try {
 			const all = await getAllAuctions();
@@ -171,22 +387,46 @@ const AuctionDetailPage = () => {
 		// Prepare bid payload
 		const payload = {
 			auctionId: auction.id,
-			bidderId: user.id,
-			amount: bidValue,
+			userId: user.id,
+			bidAmount: bidValue,
 		};
 
 		try {
-			await createBid(payload);
-			showSuccess('Bid placed successfully!');
+			// Option 1: Use WebSocket for real-time bidding (if connected)
+			if (stompClientRef.current && stompClientRef.current.connected && connectionStatus === 'connected') {
+				stompClientRef.current.publish({
+					destination: `/app/auction/${auction.id}/bid`,
+					body: JSON.stringify({
+						userId: user.id,
+						bidAmount: bidValue,
+						timestamp: new Date().toISOString()
+					})
+				});
 
-			// Refresh auction data
-			const updatedAuction = await getAuctionDetailById(auction.id);
-			setAuction(updatedAuction);
-			await fetchBids();
+				// Don't show success immediately, wait for WebSocket confirmation
+				console.log('📤 Bid sent via WebSocket');
+			} else {
+				// Option 2: Fallback to REST API
+				const result = await createBid(payload);
+
+				if (result && (result.success !== false)) {
+					showSuccess('Bid placed successfully!');
+
+					// Refresh auction data
+					const updatedAuction = await getAuctionDetailById(auction.id);
+					setAuction(updatedAuction);
+					await fetchBids();
+				} else {
+					showError(result?.message || 'Failed to place bid');
+				}
+			}
 		} catch (err) {
 			console.error('Bid error:', err);
 			const errorMessage =
-				err?.response?.data?.message || err?.response?.data || 'Failed to place bid. Please try again.';
+				err?.response?.data?.message ||
+				err?.response?.data ||
+				err?.message ||
+				'Failed to place bid. Please try again.';
 			showError(errorMessage);
 		}
 	};
@@ -202,6 +442,9 @@ const AuctionDetailPage = () => {
 
 	return (
 		<div className="container py-4">
+			{/* Connection Status */}
+			<ConnectionStatusBadge status={connectionStatus} />
+
 			<div className="row g-4">
 				{/* Left: Image + Description + Bid History */}
 				<div className="col-lg-7">
@@ -259,7 +502,7 @@ const AuctionDetailPage = () => {
 					{/* Description */}
 					<div className="mt-3">
 						<label className="form-label fw-bold">Description:</label>
-						<p style={{whiteSpace: 'pre-wrap'}} className="border rounded p-3 bg-white">
+						<p style={{ whiteSpace: 'pre-wrap' }} className="border rounded p-3 bg-white">
 							{truncatedDesc}
 						</p>
 						{auction.description?.length > 1000 && (
@@ -269,24 +512,40 @@ const AuctionDetailPage = () => {
 						)}
 					</div>
 
-					{/* ✅ Bid History - nằm dưới mô tả, không lấn sang phải */}
+					{/* Bid History */}
 					{bidHistory.length > 0 && (
 						<div className="bg-white mt-3 p-2 rounded shadow-sm border">
-							<h6 className="fw-bold mb-2">Bid History</h6>
+							<h6 className="fw-bold mb-2 d-flex align-items-center">
+								Bid History ({bidHistory.length} bids)
+								{connectionStatus === 'connected' && (
+									<span className="badge bg-success ms-2">Live</span>
+								)}
+							</h6>
 							<ul className="list-group list-group-flush small">
-								{bidHistory.map((bid, index) => (
-									<li key={index}
-										className="list-group-item px-2 py-1 d-flex justify-content-between align-items-center">
-										<div>
-											<strong>{bid.bidderName}</strong>
-											<br/>
-											<small
-												className="text-muted">{new Date(bid.bidTime).toLocaleString('vi-VN')}</small>
-										</div>
-										<span
-											className="fw-bold text-success">{Number(bid.amount).toLocaleString('vi-VN')} ₫</span>
-									</li>
-								))}
+								{bidHistory.map((bid, index) => {
+									const bidderName = bid.bidderName || bid.userName || bid.user?.name || 'Anonymous';
+									const bidAmount = bid.amount || bid.bidAmount || 0;
+									const bidTime = bid.bidTime || bid.createdAt || bid.timestamp;
+
+									return (
+										<li key={bid.id || `bid-${index}`}
+											className="list-group-item px-2 py-1 d-flex justify-content-between align-items-center">
+											<div>
+												<strong>{bidderName}</strong>
+												<br />
+												<small className="text-muted">
+													{bidTime ? new Date(bidTime).toLocaleString('vi-VN') : 'Unknown time'}
+												</small>
+											</div>
+											<span className="fw-bold text-success">
+												{bidAmount && !isNaN(bidAmount)
+													? Number(bidAmount).toLocaleString('vi-VN') + ' ₫'
+													: '0 ₫'
+												}
+											</span>
+										</li>
+									);
+								})}
 							</ul>
 						</div>
 					)}
@@ -303,7 +562,7 @@ const AuctionDetailPage = () => {
 								src={defaultAvatar}
 								alt="Seller"
 								className="rounded-circle me-3"
-								style={{width: '50px', height: '50px', objectFit: 'cover'}}
+								style={{ width: '50px', height: '50px', objectFit: 'cover' }}
 							/>
 							<div className="flex-grow-1">
 								<div className="fw-semibold">Seller: {seller.fullName}</div>
@@ -311,7 +570,7 @@ const AuctionDetailPage = () => {
 							</div>
 							<div className="text-end">
 								<span className="badge bg-success rounded-pill fs-6">{seller.score || 1}</span>
-								<br/>
+								<br />
 								<small className="text-muted">Very Good</small>
 							</div>
 						</div>
@@ -323,10 +582,10 @@ const AuctionDetailPage = () => {
 						<div className="d-flex justify-content-between mb-2">
 							<span><strong>Current Bid:</strong></span>
 							<span className="text-success fw-bold">
-							{auction.currentBid ? Number(auction.currentBid).toLocaleString('vi-VN') : '0'} ₫
-						</span>
+								{auction.currentBid ? Number(auction.currentBid).toLocaleString('vi-VN') : '0'} ₫
+							</span>
 						</div>
-						<hr className="my-2"/>
+						<hr className="my-2" />
 						<div className="d-flex justify-content-between mb-1">
 							<span>Starting Price:</span>
 							<span>{Number(auction.startingPrice).toLocaleString('vi-VN')} ₫</span>
@@ -342,8 +601,7 @@ const AuctionDetailPage = () => {
 
 						{/* Bid form */}
 						{new Date() < new Date(auction.startTime) ? (
-							<div className="alert alert-info text-center py-2 mb-2">Auction hasn't started yet. Please
-								wait...</div>
+							<div className="alert alert-info text-center py-2 mb-2">Auction hasn't started yet. Please wait...</div>
 						) : new Date() >= new Date(auction.endTime) ? (
 							<div className="alert alert-secondary text-center py-2 mb-2">This auction has ended.</div>
 						) : (
@@ -365,9 +623,9 @@ const AuctionDetailPage = () => {
 										<span className="input-group-text rounded-end bg-light fw-bold">₫</span>
 									</div>
 									<div className="mt-2">
-										<button type="submit" className="btn btn-success fw-semibold py-2"
+										<button type="submit" className="btn btn-success fw-semibold py-2 w-100"
 												disabled={!user}>
-											{user ? 'Place Bid' : 'Login to Bid'}
+											{user ? (connectionStatus === 'connected' ? '⚡ Place Bid (Live)' : '📤 Place Bid') : 'Login to Bid'}
 										</button>
 									</div>
 								</div>
@@ -436,7 +694,7 @@ const AuctionDetailPage = () => {
 											<small
 												className="text-muted">Starting: {new Date(item.startTime).toLocaleString('vi-VN')}</small>
 											<small className="text-muted">
-												<br/>End: {new Date(item.endTime).toLocaleString('vi-VN')}
+												<br />End: {new Date(item.endTime).toLocaleString('vi-VN')}
 											</small>
 										</div>
 									</div>
