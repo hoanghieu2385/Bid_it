@@ -277,7 +277,12 @@ public class BidService implements IBidService {
 
                 // Bây giờ mới cập nhật winner vào auction-service
                 WinnerUpdateDTO dto = new WinnerUpdateDTO(winningBid.getUserId());
-                auctionServiceClient.updateWinner(auctionId, dto);
+                try {
+                    auctionServiceClient.updateWinner(auctionId, dto);
+                    System.out.println("Successfully updated winner for auction " + auctionId);
+                } catch (Exception e) {
+                    System.err.println("Failed to update winner in auction-service: " + e.getMessage());
+                }
 
                 // Gửi notification về winner
                 sendWinnerNotification(winningBid);
