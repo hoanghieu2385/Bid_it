@@ -28,7 +28,7 @@ public class AuctionStatusScheduler {
         this.bidServiceClient = bidServiceClient;
     }
 
-    @Scheduled(fixedRate = 2000) // reload every 2 seconds
+    @Scheduled(fixedRate = 7000) // reload every 7 seconds
     @Transactional
     public void updateAuctionStatuses() {
         LocalDateTime now = LocalDateTime.now();
@@ -68,17 +68,20 @@ public class AuctionStatusScheduler {
     }
 
     private void updateOpenedToClosed(LocalDateTime now) {
-        List<Auction> toClose = auctionRepository.findByStatusAndEndTimeBefore(AuctionStatus.OPENED, now);
+        LocalDateTime bufferTime = now.minusSeconds(5);
+
+        List<Auction> toClose = auctionRepository.findByStatusAndEndTimeBefore(AuctionStatus.OPENED, bufferTime);
 
         if (!toClose.isEmpty()) {
             toClose.forEach(auction -> {
                 auction.setStatus(AuctionStatus.CLOSED);
                 auction.setUpdatedAt(now);
 
-                // Set payment deadline (3 days from now) - sẽ được cập nhật winner bởi bid-service
+                // Set payment deadline (3 days from now)
                 auction.setWinnerPaymentDeadline(now.plusDays(3));
 
-                logger.info("Auction {} moved from OPENED to CLOSED (winner will be updated by bid-service)", auction.getId());
+                logger.info("Auction {} moved from OPENED to CLOSED (with 5s buffer, winner will be updated by bid-service)",
+                        auction.getId());
             });
 
             auctionRepository.saveAll(toClose);

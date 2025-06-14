@@ -27,8 +27,8 @@ public class AuctionEndScheduler {
     // Set để track những auction đã được xử lý
     private final Set<Long> processedAuctions = new HashSet<>();
 
-    // Chạy mỗi 1.5s để tìm auction đã kết thúc
-    @Scheduled(fixedRate = 1500)
+    // Chạy mỗi 5s để tìm auction đã kết thúc
+    @Scheduled(fixedRate = 5000)
     public void checkEndedAuctions() {
         try {
             System.out.println("Checking for ended auctions at: " + LocalDateTime.now());
@@ -45,26 +45,37 @@ public class AuctionEndScheduler {
                     AuctionServiceClient.AuctionResponse auction = auctionServiceClient.getAuctionById(auctionId);
                     if (auction == null) continue;
 
-                    boolean isEnded = auction.getEndTime() != null && auction.getEndTime().isBefore(LocalDateTime.now());
-                    boolean isClosedStatus = "CLOSED".equals(auction.getStatus()) ||
-                            "ENDED".equals(auction.getStatus()) ||
-                            "FAILED".equals(auction.getStatus());
+                    boolean isEndedByTime = auction.getEndTime() != null && auction.getEndTime().isBefore(LocalDateTime.now());
+                    boolean isClosedStatus = "CLOSED".equals(auction.getStatus());
+                    boolean isEndedStatus = "ENDED".equals(auction.getStatus());
+                    boolean isFailedStatus = "FAILED".equals(auction.getStatus());
 
-                    if (isEnded || isClosedStatus) {
-                        System.out.println("Found ended auction: " + auctionId);
+                    if (isEndedByTime || isClosedStatus || isEndedStatus || isFailedStatus) {
+                        System.out.println("Found ended auction: " + auctionId +
+                                " (time ended: " + isEndedByTime +
+                                ", status: " + auction.getStatus() + ")");
 
-                        // Gọi processAuctionEnd để cập nhật winner
-                        bidService.processAuctionEnd(auctionId);
+                        // Chỉ xử lý winner nếu auction có bid và chưa có winner
+                        if (auction.getWinnerId() == null) {
+                            System.out.println("Processing winner for auction " + auctionId);
 
-                        // Gọi lại auction sau khi cập nhật
-                        AuctionServiceClient.AuctionResponse updatedAuction = auctionServiceClient.getAuctionById(auctionId);
+                            // Gọi processAuctionEnd để cập nhật winner
+                            bidService.processAuctionEnd(auctionId);
 
-                        // Chỉ đánh dấu đã xử lý nếu có winner
-                        if (updatedAuction.getWinnerId() != null) {
-                            processedAuctions.add(auctionId);
-                            System.out.println("Winner updated -> marked auction " + auctionId + " as processed");
+                            // Kiểm tra lại sau khi cập nhật
+                            AuctionServiceClient.AuctionResponse updatedAuction = auctionServiceClient.getAuctionById(auctionId);
+
+                            if (updatedAuction != null && updatedAuction.getWinnerId() != null) {
+                                processedAuctions.add(auctionId);
+                                System.out.println("Successfully updated winner for auction " + auctionId +
+                                        " -> winner: " + updatedAuction.getWinnerId());
+                            } else {
+                                System.out.println("Failed to update winner for auction " + auctionId + ", will retry");
+                            }
                         } else {
-                            System.out.println("Auction " + auctionId + " still missing winnerId, will retry later.");
+                            // Đã có winner rồi, đánh dấu đã xử lý
+                            processedAuctions.add(auctionId);
+                            System.out.println("Auction " + auctionId + " already has winner: " + auction.getWinnerId());
                         }
                     }
 
