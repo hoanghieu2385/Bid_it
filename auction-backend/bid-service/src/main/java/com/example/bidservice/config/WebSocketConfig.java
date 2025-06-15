@@ -6,17 +6,18 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${app.websocket.allowed-origins}")
+    @Value("${app.websocket.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}")
     private String allowedOrigins;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Enable simple broker cho các topic
+        // Enable simple broker cho các topic và queue
         config.enableSimpleBroker("/topic", "/queue");
 
         // Set application destination prefix
@@ -28,13 +29,28 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // WebSocket endpoint
-        registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns(allowedOrigins.split(","))
-                .withSockJS();
+        // ✅ Native WebSocket endpoint với CORS configuration chi tiết
+        registry.addEndpoint("/ws-native")
+                .setAllowedOriginPatterns("*") // Cho phép tất cả origins trong development
+                .setAllowedOrigins("http://localhost:3000", "http://127.0.0.1:3000");
 
-        // Backup endpoint without SockJS
-        registry.addEndpoint("/ws-direct")
-                .setAllowedOriginPatterns(allowedOrigins.split(","));
+        // ✅ Backup endpoint với SockJS
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*")
+                .setAllowedOrigins("http://localhost:3000", "http://127.0.0.1:3000")
+                .withSockJS()
+                .setHeartbeatTime(25000)
+                .setDisconnectDelay(5000)
+                .setHttpMessageCacheSize(1000)
+                .setStreamBytesLimit(128 * 1024);
+    }
+
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration
+                .setSendTimeLimit(15 * 1000)
+                .setSendBufferSizeLimit(512 * 1024)
+                .setMessageSizeLimit(128 * 1024)
+                .setTimeToFirstMessage(30 * 1000);
     }
 }

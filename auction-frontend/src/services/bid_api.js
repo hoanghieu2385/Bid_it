@@ -7,22 +7,12 @@ const bidEndpoint = `${API_CONFIG.BID_SERVICE}`;
 // Remove the duplicate axios instance - use the main api instance instead
 // This ensures consistent headers and interceptors
 
-console.log('BID_SERVICE endpoint:', API_CONFIG.BID_SERVICE);
-
+// Gửi bid mới (đồng bộ)
 export const createBid = async (bidData) => {
-	console.log('Creating bid with data:', bidData);
-	console.log('Full endpoint:', `${bidEndpoint}`);
-
-	try {
-		const response = await api.post(`${bidEndpoint}`, bidData);
-		console.log('Bid response:', response);
-		return response.data;
-	} catch (error) {
-		console.error('Bid creation error:', error);
-		console.error('Error response:', error.response);
-		throw error;
-	}
+	const response = await api.post(`${bidEndpoint}`, bidData);
+	return response.data;
 };
+
 // Gửi bid bất đồng bộ (kafka, message queue)
 export const placeBidAsync = async (bidMessage) => {
 	const response = await api.post(`${bidEndpoint}/async`, bidMessage);
