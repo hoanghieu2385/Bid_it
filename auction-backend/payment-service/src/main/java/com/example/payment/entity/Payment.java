@@ -11,15 +11,18 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
 @Entity
-@Table(name = "payments")
+@Table(name = "payments",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_idempotency_key", columnNames = "idempotency_key"),
+                @UniqueConstraint(name = "uk_user_auction_type_active",
+                        columnNames = {"user_id", "auction_id", "payment_type"})
+        })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Payment {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -60,6 +63,10 @@ public class Payment {
 
     @Column(name = "description")
     private String description;
+
+    // Idempotency key để tránh duplicate requests
+    @Column(name = "idempotency_key", unique = true, length = 100)
+    private String idempotencyKey;
 
     @Column(name = "created_at", nullable = false)
     @Builder.Default

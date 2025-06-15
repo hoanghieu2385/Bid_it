@@ -55,4 +55,14 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     // Đếm số payment thành công của user
     @Query("SELECT COUNT(p) FROM Payment p WHERE p.userId = :userId AND p.status = 'COMPLETED'")
     long countCompletedPaymentsByUser(@Param("userId") Long userId);
+
+    Optional<Payment> findByIdempotencyKey(String idempotencyKey);
+
+    @Query("SELECT p FROM Payment p WHERE p.userId = :userId AND p.auctionId = :auctionId " +
+            "AND p.paymentType = :paymentType AND p.status IN ('PENDING', 'COMPLETED') " +
+            "ORDER BY p.createdAt DESC")
+    Optional<Payment> findActivePaymentByUserAuctionType(@Param("userId") Long userId,
+                                                         @Param("auctionId") Long auctionId,
+                                                         @Param("paymentType") PaymentType paymentType);
+
 }

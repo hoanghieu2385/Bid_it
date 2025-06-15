@@ -11,13 +11,17 @@ import com.example.payment.enums.PaymentType;
 import com.example.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,51 +40,120 @@ public class PaymentService implements IPaymentService {
         log.info("Creating payment for user: {}, auction: {}, amount: {}",
                 request.getUserId(), request.getAuctionId(), request.getAmount());
 
+        // Generate idempotency key if not provided
+        String idempotencyKey = StringUtils.hasText(request.getIdempotencyKey())
+                ? request.getIdempotencyKey()
+                : generateIdempotencyKey(request);
+
+        // Check for existing payment with same idempotency key
+        Optional<Payment> existingPayment = paymentRepository.findByIdempotencyKey(idempotencyKey);
+        if (existingPayment.isPresent()) {
+            log.info("Payment with idempotency key {} already exists, returning existing payment", idempotencyKey);
+            Payment payment = existingPayment.get();
+            String approvalUrl = null;
+
+            // If payment is pending and PayPal, try to get approval URL
+            if (payment.getStatus() == PaymentStatus.PENDING &&
+                    payment.getPaymentMethod() == PaymentMethod.PAYPAL &&
+                    StringUtils.hasText(payment.getExternalOrderId())) {
+                try {
+                    approvalUrl = payPalService.getApprovalUrl(payment.getExternalOrderId());
+                } catch (Exception e) {
+                    log.warn("Failed to get approval URL for existing payment: {}", e.getMessage());
+                }
+            }
+
+            return convertToResponseDto(payment, approvalUrl);
+        }
+
+        // Check for active payment (same user, auction, type)
+        Optional<Payment> activePayment = paymentRepository.findActivePaymentByUserAuctionType(
+                request.getUserId(), request.getAuctionId(), request.getPaymentType());
+
+        if (activePayment.isPresent()) {
+            Payment payment = activePayment.get();
+            log.info("Active payment already exists for user: {}, auction: {}, type: {}",
+                    request.getUserId(), request.getAuctionId(), request.getPaymentType());
+
+            String approvalUrl = null;
+            // If payment is pending and PayPal, try to get approval URL
+            if (payment.getStatus() == PaymentStatus.PENDING &&
+                    payment.getPaymentMethod() == PaymentMethod.PAYPAL &&
+                    StringUtils.hasText(payment.getExternalOrderId())) {
+                try {
+                    approvalUrl = payPalService.getApprovalUrl(payment.getExternalOrderId());
+                } catch (Exception e) {
+                    log.warn("Failed to get approval URL for active payment: {}", e.getMessage());
+                }
+            }
+
+            return convertToResponseDto(payment, approvalUrl);
+        }
+
         // Validate business rules
         validatePaymentRequest(request);
 
-        // Tạo payment entity
-        Payment payment = new Payment();
-        payment.setUserId(request.getUserId());
-        payment.setAuctionId(request.getAuctionId());
-        payment.setAmount(request.getAmount());
-        payment.setPaymentType(request.getPaymentType());
-        payment.setPaymentMethod(request.getPaymentMethod());
-        payment.setStatus(PaymentStatus.PENDING);
-        payment.setDescription(request.getDescription());
+        // Create payment entity
+        Payment payment = Payment.builder()
+                .userId(request.getUserId())
+                .auctionId(request.getAuctionId())
+                .amount(request.getAmount())
+                .paymentType(request.getPaymentType())
+                .paymentMethod(request.getPaymentMethod())
+                .status(PaymentStatus.PENDING)
+                .description(request.getDescription())
+                .idempotencyKey(idempotencyKey)
+                .build();
 
-        // Lưu payment trước
-        payment = paymentRepository.save(payment);
+        try {
+            // Save payment first
+            payment = paymentRepository.save(payment);
+            log.info("Payment saved with ID: {}", payment.getId());
 
-        // Xử lý theo payment method
-        String approvalUrl = null;
-        if (request.getPaymentMethod() == PaymentMethod.PAYPAL) {
-            try {
-                // Tạo PayPal order
-                String orderId = payPalService.createPayPalOrder(
-                        request.getAmount(),
-                        "USD",
-                        request.getReturnUrl(),
-                        request.getCancelUrl(),
-                        request.getDescription()
-                );
+            // Process according to payment method
+            String approvalUrl = null;
+            if (request.getPaymentMethod() == PaymentMethod.PAYPAL) {
+                try {
+                    // Create PayPal order
+                    String orderId = payPalService.createPayPalOrder(
+                            request.getAmount(),
+                            "USD",
+                            request.getReturnUrl(),
+                            request.getCancelUrl(),
+                            request.getDescription()
+                    );
 
-                payment.setExternalOrderId(orderId);
-                approvalUrl = payPalService.getApprovalUrl(orderId);
+                    payment.setExternalOrderId(orderId);
+                    approvalUrl = payPalService.getApprovalUrl(orderId);
 
-                // Cập nhật payment
-                payment = paymentRepository.save(payment);
+                    // Update payment
+                    payment = paymentRepository.save(payment);
 
-                log.info("PayPal order created successfully: {}", orderId);
-            } catch (Exception e) {
-                log.error("Failed to create PayPal order: {}", e.getMessage());
-                payment.setStatus(PaymentStatus.FAILED);
-                paymentRepository.save(payment);
-                throw new RuntimeException("Failed to create PayPal payment: " + e.getMessage());
+                    log.info("PayPal order created successfully: {}", orderId);
+                } catch (Exception e) {
+                    log.error("Failed to create PayPal order: {}", e.getMessage());
+                    payment.setStatus(PaymentStatus.FAILED);
+                    paymentRepository.save(payment);
+                    throw new RuntimeException("Failed to create PayPal payment: " + e.getMessage());
+                }
             }
-        }
 
-        return convertToResponseDto(payment, approvalUrl);
+            return convertToResponseDto(payment, approvalUrl);
+
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Duplicate payment detected by database constraint: {}", e.getMessage());
+
+            // Try to find the existing payment that caused the constraint violation
+            Optional<Payment> duplicatePayment = paymentRepository.findActivePaymentByUserAuctionType(
+                    request.getUserId(), request.getAuctionId(), request.getPaymentType());
+
+            if (duplicatePayment.isPresent()) {
+                log.info("Returning existing payment due to constraint violation");
+                return convertToResponseDto(duplicatePayment.get(), null);
+            }
+
+            throw new RuntimeException("Payment creation failed due to duplicate constraint");
+        }
     }
 
     @Override
@@ -89,17 +162,34 @@ public class PaymentService implements IPaymentService {
         log.info("Creating auction payment for winner: {}, auction: {}, final amount: {}",
                 request.getWinnerId(), request.getAuctionId(), request.getFinalAmount());
 
+        // Check if auction payment already exists
+        if (isAuctionPaid(request.getAuctionId())) {
+            log.info("Auction {} already has a completed payment", request.getAuctionId());
+
+            // Return existing payment
+            Optional<Payment> existingPayment = paymentRepository.findCompletedAuctionPayment(request.getAuctionId());
+            if (existingPayment.isPresent()) {
+                if (!Objects.equals(existingPayment.get().getUserId(), request.getWinnerId())) {
+                    throw new RuntimeException("Auction has been paid by a different user");
+                }
+                return convertToResponseDto(existingPayment.get(), null);
+            }
+        }
+
         // Validate auction and winner
         validateAuctionPayment(request);
 
-        // Tính toán số tiền thực tế cần thanh toán (trừ deposit nếu có)
+        // Calculate actual amount to pay (subtract deposit if any)
         BigDecimal actualAmount = request.getFinalAmount().subtract(request.getDepositAmount());
 
         if (actualAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Actual payment amount must be greater than 0");
         }
 
-        // Tạo PaymentRequestDto
+        // Generate idempotency key for auction payment
+        String idempotencyKey = generateAuctionPaymentIdempotencyKey(request);
+
+        // Create PaymentRequestDto
         PaymentRequestDto paymentRequest = new PaymentRequestDto();
         paymentRequest.setUserId(request.getWinnerId());
         paymentRequest.setAuctionId(request.getAuctionId());
@@ -109,6 +199,7 @@ public class PaymentService implements IPaymentService {
         paymentRequest.setDescription("Auction payment for auction ID: " + request.getAuctionId());
         paymentRequest.setReturnUrl(request.getReturnUrl());
         paymentRequest.setCancelUrl(request.getCancelUrl());
+        paymentRequest.setIdempotencyKey(idempotencyKey);
 
         return createPayment(paymentRequest);
     }
@@ -118,20 +209,25 @@ public class PaymentService implements IPaymentService {
     public PaymentStatusDto executePayPalPayment(PayPalExecuteRequestDto request) {
         log.info("Executing PayPal payment: {}, payer: {}", request.getPaymentId(), request.getPayerId());
 
-        // Tìm payment theo external order ID
+        // Find payment by external order ID
         Payment payment = paymentRepository.findByExternalOrderId(request.getPaymentId())
                 .orElseThrow(() -> new RuntimeException("Payment not found with order ID: " + request.getPaymentId()));
 
         // Validate payment status
+        if (payment.getStatus() == PaymentStatus.COMPLETED) {
+            log.info("Payment {} is already completed, returning existing status", payment.getId());
+            return PaymentStatusDto.success(payment.getId(), payment.getExternalTransactionId());
+        }
+
         if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new RuntimeException("Payment is not in pending status");
+            throw new RuntimeException("Payment is not in pending status. Current status: " + payment.getStatus());
         }
 
         try {
             // Execute PayPal payment
             String transactionId = payPalService.executePayPalPayment(request.getPaymentId(), request.getPayerId());
 
-            // Cập nhật payment
+            // Update payment
             payment.setStatus(PaymentStatus.COMPLETED);
             payment.setExternalTransactionId(transactionId);
             payment.setCompletedAt(LocalDateTime.now());
@@ -139,12 +235,14 @@ public class PaymentService implements IPaymentService {
 
             log.info("PayPal payment executed successfully. Transaction ID: {}", transactionId);
 
-            // Gọi auction-service để xác nhận đấu giá đã được thanh toán
+            // Confirm payment with auction-service (will automatically update status to SOLD)
             try {
                 auctionServiceClient.confirmPayment(payment.getAuctionId(), String.valueOf(payment.getId()));
-                log.info("Notified auction-service about successful payment for auction {}", payment.getAuctionId());
+                log.info("Successfully confirmed payment for auction {} - status updated to SOLD", payment.getAuctionId());
             } catch (Exception ex) {
-                log.warn("Failed to notify auction-service about payment: {}", ex.getMessage());
+                log.warn("Failed to confirm payment with auction-service: {}", ex.getMessage());
+                // Note: Payment is still successful, just the auction status update failed
+                // Consider adding retry mechanism or manual intervention alert here
             }
 
             return PaymentStatusDto.success(payment.getId(), transactionId);
@@ -192,9 +290,12 @@ public class PaymentService implements IPaymentService {
             throw new RuntimeException("Failed to get auction details");
         }
 
-        // Validate auction status
-        if (auction.getStatus() != AuctionStatus.SOLD) {
-            throw new RuntimeException("Auction is not in SOLD status. Current status: " + auction.getStatus());
+        // Validate auction status - only allow payment for CLOSED auctions
+        if (auction.getStatus() != AuctionStatus.CLOSED) {
+            if (auction.getStatus() == AuctionStatus.SOLD) {
+                throw new RuntimeException("Auction has already been paid. Current status: " + auction.getStatus());
+            }
+            throw new RuntimeException("Auction is not ready for payment. Current status: " + auction.getStatus() + ". Auction must be CLOSED to allow payment.");
         }
 
         // Validate winner
@@ -213,11 +314,6 @@ public class PaymentService implements IPaymentService {
             throw new RuntimeException("Final amount does not match auction current bid");
         }
 
-        // Check if already paid
-        if (isAuctionPaid(request.getAuctionId())) {
-            throw new RuntimeException("Auction has already been paid");
-        }
-
         // Validate user exists
         try {
             UserDto user = userServiceClient.getUserById(request.getWinnerId());
@@ -228,6 +324,23 @@ public class PaymentService implements IPaymentService {
             log.error("Error validating winner: {}", e.getMessage());
             throw new RuntimeException("Invalid winner ID");
         }
+    }
+
+    // Helper methods for idempotency
+    private String generateIdempotencyKey(PaymentRequestDto request) {
+        return String.format("payment_%s_%s_%s_%s_%s",
+                request.getUserId(),
+                request.getAuctionId(),
+                request.getPaymentType().name(),
+                request.getAmount().toString(),
+                UUID.randomUUID().toString().substring(0, 8));
+    }
+
+    private String generateAuctionPaymentIdempotencyKey(AuctionPaymentRequestDto request) {
+        return String.format("auction_payment_%s_%s_%s",
+                request.getWinnerId(),
+                request.getAuctionId(),
+                request.getFinalAmount().toString());
     }
 
     // Remaining methods stay the same...
@@ -304,11 +417,11 @@ public class PaymentService implements IPaymentService {
 
     @Override
     public void handlePayPalWebhook(String payload) {
-        // TODO: Implement PayPal webhook handling nếu cần
+        // TODO: Implement PayPal webhook handling if needed
         log.info("Received PayPal webhook: {}", payload);
     }
 
-    // Helper method để convert Entity sang Dto
+    // Helper method to convert Entity to Dto
     private PaymentResponseDto convertToResponseDto(Payment payment, String approvalUrl) {
         PaymentResponseDto dto = new PaymentResponseDto();
         dto.setId(payment.getId());

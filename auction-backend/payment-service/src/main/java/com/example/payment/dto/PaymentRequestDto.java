@@ -37,4 +37,7 @@ public class PaymentRequestDto {
 
     // URL để PayPal redirect khi hủy thanh toán
     private String cancelUrl;
+
+    // Idempotency key để tránh duplicate requests
+    private String idempotencyKey;
 }

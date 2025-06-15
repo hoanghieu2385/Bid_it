@@ -184,7 +184,6 @@ public class AuctionService implements IAuctionService {
 
         auction.setWinnerId(winnerId);
         auction.setWinnerPaymentDeadline(now.plusDays(3));
-        auction.setStatus(AuctionStatus.SOLD);
         auction.setUpdatedAt(now);
 
         Auction saved = auctionRepository.save(auction);
