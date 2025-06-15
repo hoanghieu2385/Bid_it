@@ -21,8 +21,8 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - "5672:5672"    # for service-to-service messaging
-      - "15672:15672"  # for the management UI
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -54,12 +54,12 @@ services:
     networks:
       - auction-network
     restart: unless-stopped
-    healthcheck: 
+    healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761"]
       interval: 15s
       timeout: 7s
       retries: 10
-      start_period: 20s 
+      start_period: 20s
 
   api-gateway:
     build:
@@ -95,7 +95,7 @@ services:
     networks:
       - auction-network
     restart: unless-stopped
-    
+
   user-service:
     build:
       context: ./user-service
@@ -104,7 +104,6 @@ services:
       - "8082:8082"
     volumes:
       - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
-
     environment:
       - SPRING_APPLICATION_NAME=user-service
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
@@ -159,6 +158,35 @@ services:
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=123456
       - SERVER_PORT=8085
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    networks:
+      - auction-network
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_APPLICATION_NAME=payment-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/payment_service
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SERVER_PORT=8086
+      - PAYPAL_CLIENT_ID=AW2jq9XdNvixNWMpH_KOXXdrOaIs2S46VybhLEZkiyGhsmdbu5bIMRrz2i3-XQmBR9lLiGlNMrfzA98d
+      - PAYPAL_CLIENT_SECRET=EAkCC3doOfCQmPxug8P-1N4GH57LW_VTrxe_8F8alIzCKQBeMQDAtfy9LSdT-NwCjaMOS5Tm1f7aiQ0K
+      - PAYPAL_MODE=sandbox
+      - PAYPAL_BASE_URL=https://api.sandbox.paypal.com
+      - PAYPAL_SUCCESS_URL=http://localhost:8080/api/payment/success
+      - PAYPAL_CANCEL_URL=http://localhost:8080/api/payment/cancel
+      - PAYPAL_CURRENCY=USD
     depends_on:
       discovery-service:
         condition: service_healthy

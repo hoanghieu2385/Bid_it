@@ -56,10 +56,12 @@ public class SecurityConfig {
                                 "/auth/reset-password",
                                 "/auth/change-password",
                                 "/api/users/verify-phone-otp",
-                                "/api/users/send-phone-otp"
+                                "/api/users/send-phone-otp",
+                                "/internal/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/seller/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                        .requestMatchers("/api/users/{id}").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
