@@ -1,5 +1,13 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+
+// CRITICAL: Import crypto polyfill FIRST and IMMEDIATELY
+import '../../../utils/crypto-polyfill.js';
+
+// Add a small delay to ensure polyfill is fully loaded
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Import services
 import { getAllAuctions, getAuctionDetailById } from '../../../services/auction-api';
 import { getBidsByAuctionId } from '../../../services/bid_api';
 import { createBid } from '../../../services/bid_api';
@@ -7,7 +15,44 @@ import defaultAvatar from '../../../assets/images/default-avatar.png';
 import useToastMessage from '../../../hooks/useToastMessage';
 import { UserContext } from '../../../contexts/UserContext';
 import { getSellerById } from "../../../services/user-api.js";
-import { Client } from '@stomp/stompjs';
+
+// Import WebSocket libraries AFTER ensuring crypto is available
+let Client, SockJS;
+
+const loadWebSocketLibraries = async () => {
+	// Small delay to ensure crypto polyfill is fully initialized
+	await delay(50);
+
+	// Verify crypto is available before importing
+	if (typeof window !== 'undefined' &&
+		(window.crypto?.randomBytes || window.cryptoPolyfill?.randomBytes)) {
+		console.log('✅ Crypto verified, importing WebSocket libraries...');
+
+		try {
+			// Dynamic imports to ensure they load after crypto polyfill
+			const [stompModule, sockjsModule] = await Promise.all([
+				import('@stomp/stompjs'),
+				import('sockjs-client')
+			]);
+
+			// Sửa lại cách lấy Client - thử nhiều cách
+			Client = stompModule.Client || stompModule.default?.Client || stompModule.default;
+			SockJS = sockjsModule.default || sockjsModule;
+
+			console.log('✅ WebSocket libraries loaded successfully');
+			console.log('Client:', typeof Client);
+			console.log('SockJS:', typeof SockJS);
+
+			return { Client, SockJS };
+		} catch (error) {
+			console.error('❌ Failed to load WebSocket libraries:', error);
+			throw error;
+		}
+	} else {
+		console.error('❌ Crypto not available, WebSocket libraries may fail');
+		throw new Error('Crypto polyfill not properly loaded');
+	}
+};
 
 // Connection Status Component
 const ConnectionStatusBadge = ({ status }) => {
@@ -46,6 +91,7 @@ const AuctionDetailPage = () => {
 	const reconnectTimeoutRef = useRef(null);
 	const connectionAttemptsRef = useRef(0);
 	const maxAttempts = 5;
+	const isConnectingRef = useRef(false);
 
 	// Local state management
 	const [auction, setAuction] = useState(null);
@@ -70,12 +116,277 @@ const AuctionDetailPage = () => {
 			: auction.startingPrice + auction.incrementAmount;
 	};
 
-	// Update bid amount when auction data changes
+	// Load WebSocket libraries first
 	useEffect(() => {
-		if (auction) {
-			setBidAmount(getMinimumBid().toString());
+		loadWebSocketLibraries().catch(console.error);
+	}, []);
+
+	// Hoàn thành WebSocket connection effect
+	useEffect(() => {
+		if (!Client || !SockJS) {
+			console.log('⏳ Waiting for WebSocket libraries to load...');
+			return;
 		}
-	}, [auction]);
+
+		const connectWebSocket = () => {
+			// Prevent multiple concurrent connections
+			if (isConnectingRef.current) {
+				console.log('🔄 Connection already in progress, skipping...');
+				return;
+			}
+
+			if (connectionAttemptsRef.current >= maxAttempts) {
+				console.error('❌ Max connection attempts reached. Giving up.');
+				setConnectionStatus('error');
+				return;
+			}
+
+			isConnectingRef.current = true;
+
+			// Enhanced endpoint list with multiple strategies
+			const endpoints = [
+				// Strategy 1: SockJS through API Gateway
+				{
+					url: 'http://localhost:8080/bid-service/ws',
+					type: 'sockjs',
+					description: 'SockJS via API Gateway'
+				},
+				// Strategy 2: SockJS direct to service
+				{
+					url: 'http://localhost:8081/ws',
+					type: 'sockjs',
+					description: 'SockJS direct to bid service'
+				},
+				// Strategy 3: Native WebSocket through API Gateway
+				{
+					url: 'ws://localhost:8080/bid-service/ws-native',
+					type: 'native',
+					description: 'Native WS via API Gateway'
+				},
+				// Strategy 4: Native WebSocket direct
+				{
+					url: 'ws://localhost:8081/ws-native',
+					type: 'native',
+					description: 'Native WS direct to bid service'
+				},
+				// Strategy 5: Alternative ports
+				{
+					url: 'ws://127.0.0.1:8080/bid-service/ws-native',
+					type: 'native',
+					description: 'Native WS via 127.0.0.1'
+				}
+			];
+
+			const currentEndpoint = endpoints[connectionAttemptsRef.current % endpoints.length];
+			console.log(`🔄 Attempting to connect to: ${currentEndpoint.url} (${currentEndpoint.description}) - attempt ${connectionAttemptsRef.current + 1}`);
+
+			try {
+				let client;
+
+				if (currentEndpoint.type === 'sockjs') {
+					// Use SockJS for better compatibility
+					client = new Client({
+						webSocketFactory: () => new SockJS(currentEndpoint.url),
+						reconnectDelay: 0, // Disable automatic reconnection
+						heartbeatIncoming: 10000,
+						heartbeatOutgoing: 10000,
+						connectionTimeout: 15000, // Increased timeout
+						debug: (str) => {
+							console.log('🔧 STOMP Debug:', str);
+						}
+					});
+				} else {
+					// Native WebSocket
+					client = new Client({
+						brokerURL: currentEndpoint.url,
+						reconnectDelay: 0, // Disable automatic reconnection
+						heartbeatIncoming: 10000,
+						heartbeatOutgoing: 10000,
+						connectionTimeout: 15000,
+						debug: (str) => {
+							console.log('🔧 STOMP Debug:', str);
+						}
+					});
+				}
+
+				// Connection handlers
+				client.onConnect = (frame) => {
+					console.log('✅ Connected to WebSocket', frame);
+					setConnectionStatus('connected');
+					connectionAttemptsRef.current = 0; // Reset counter on successful connection
+					isConnectingRef.current = false;
+
+					// Subscribe to auction bid updates
+					const subscription = client.subscribe(`/topic/auction/${id}/bids`, (message) => {
+						try {
+							const newBid = JSON.parse(message.body);
+							console.log('📥 Received new bid:', newBid);
+
+							// Update bid history
+							setBidHistory((prev) => {
+								const existingBid = prev.find(bid =>
+									bid.id === newBid.id ||
+									(bid.userId === newBid.userId &&
+										Math.abs((bid.bidAmount || bid.amount) - (newBid.bidAmount || newBid.amount)) < 0.01)
+								);
+
+								if (existingBid) {
+									return prev;
+								}
+
+								return [newBid, ...prev];
+							});
+
+							// Update current bid
+							setAuction((prev) => ({
+								...prev,
+								currentBid: newBid.bidAmount || newBid.amount || prev.currentBid
+							}));
+
+							// Show notification
+							showSuccess(`New bid: ${(newBid.bidAmount || newBid.amount || 0).toLocaleString('vi-VN')} ₫`);
+						} catch (err) {
+							console.error('❌ Failed to parse bid from WebSocket:', err);
+						}
+					});
+
+					// Subscribe to auction statistics updates
+					client.subscribe(`/topic/auction/${id}/stats`, (message) => {
+						try {
+							const stats = JSON.parse(message.body);
+							console.log('📊 Received auction stats:', stats);
+
+							setAuction((prev) => ({
+								...prev,
+								currentBid: stats.currentBid || prev.currentBid,
+								bidCount: stats.bidCount || prev.bidCount
+							}));
+						} catch (err) {
+							console.error('❌ Failed to parse stats from WebSocket:', err);
+						}
+					});
+
+					// Subscribe to error messages
+					if (user?.id) {
+						client.subscribe(`/user/queue/auction/${id}/errors`, (message) => {
+							try {
+								const error = JSON.parse(message.body);
+								console.error('❌ Received bid error:', error);
+								showError(error.message || 'Bid failed');
+							} catch (err) {
+								console.error('❌ Failed to parse error from WebSocket:', err);
+							}
+						});
+					}
+
+					console.log('🎯 Subscribed to auction updates:', subscription);
+
+					// Send join message if user is logged in
+					if (user?.id) {
+						client.publish({
+							destination: `/app/auction/${id}/join`,
+							body: JSON.stringify({
+								userId: user.id,
+								username: user.username || user.fullName || 'Anonymous'
+							})
+						});
+					}
+				};
+
+				client.onStompError = (frame) => {
+					console.error('❌ STOMP error:', frame.headers['message']);
+					console.error('Error details:', frame.body);
+					isConnectingRef.current = false;
+					setConnectionStatus('error');
+					tryReconnect();
+				};
+
+				client.onWebSocketError = (error) => {
+					console.error('❌ WebSocket error:', error);
+					isConnectingRef.current = false;
+					setConnectionStatus('error');
+					tryReconnect();
+				};
+
+				client.onDisconnect = (frame) => {
+					console.log('🔌 Disconnected from WebSocket:', frame);
+					isConnectingRef.current = false;
+					setConnectionStatus('disconnected');
+					tryReconnect();
+				};
+
+				client.onWebSocketClose = (event) => {
+					console.log('🔌 WebSocket closed:', event);
+					isConnectingRef.current = false;
+					setConnectionStatus('disconnected');
+					tryReconnect();
+				};
+
+				stompClientRef.current = client;
+				client.activate();
+
+			} catch (error) {
+				console.error('❌ Failed to create WebSocket connection:', error);
+				isConnectingRef.current = false;
+				setConnectionStatus('error');
+				tryReconnect();
+			}
+		};
+
+		const tryReconnect = () => {
+			if (reconnectTimeoutRef.current) {
+				clearTimeout(reconnectTimeoutRef.current);
+			}
+
+			connectionAttemptsRef.current++;
+
+			if (connectionAttemptsRef.current < maxAttempts) {
+				const delay = Math.min(3000 * connectionAttemptsRef.current, 15000);
+				console.log(`🔄 Scheduling reconnection in ${delay}ms...`);
+
+				reconnectTimeoutRef.current = setTimeout(() => {
+					console.log('🔄 Attempting to reconnect...');
+					setConnectionStatus('connecting');
+					connectWebSocket();
+				}, delay);
+			} else {
+				console.error('❌ All connection attempts failed.');
+				setConnectionStatus('error');
+			}
+		};
+
+		// Initial connection
+		connectWebSocket();
+
+		// Cleanup function
+		return () => {
+			console.log('🛑 Cleaning up WebSocket connection...');
+			isConnectingRef.current = false;
+
+			if (reconnectTimeoutRef.current) {
+				clearTimeout(reconnectTimeoutRef.current);
+			}
+
+			if (stompClientRef.current && stompClientRef.current.connected) {
+				// Send leave message before disconnect
+				try {
+					if (user?.id) {
+						stompClientRef.current.publish({
+							destination: `/app/auction/${id}/leave`,
+							body: JSON.stringify({
+								userId: user.id,
+								username: user.username || user.fullName || 'Anonymous'
+							})
+						});
+					}
+				} catch (err) {
+					console.log('Could not send leave message:', err);
+				}
+
+				stompClientRef.current.deactivate();
+			}
+		};
+	}, [Client, SockJS, id, user]); // Re-run when auction ID or user changes
 
 	// Fetch auction by ID
 	const fetchAuction = async () => {
@@ -122,176 +433,6 @@ const AuctionDetailPage = () => {
 			console.error('Failed to load bid history', err);
 		}
 	};
-
-	// WebSocket connection với API Gateway support
-	useEffect(() => {
-		const connectWebSocket = () => {
-			if (connectionAttemptsRef.current >= maxAttempts) {
-				console.error('❌ Max connection attempts reached. Giving up.');
-				setConnectionStatus('error');
-				return;
-			}
-
-			// API Gateway WebSocket endpoints
-			const endpoints = [
-				'ws://localhost:8080/bid-service/ws-native',  // Through API Gateway
-				'ws://localhost:8080/ws-native',               // Direct service
-				'ws://localhost:8081/ws-native',               // Bid service direct port
-				'ws://127.0.0.1:8080/bid-service/ws-native',  // IP variant
-				'ws://127.0.0.1:8081/ws-native'               // Direct IP
-			];
-
-			const currentEndpoint = endpoints[connectionAttemptsRef.current % endpoints.length];
-			console.log(`🔄 Attempting to connect to: ${currentEndpoint} (attempt ${connectionAttemptsRef.current + 1})`);
-
-			try {
-				const client = new Client({
-					brokerURL: currentEndpoint,
-					reconnectDelay: 5000,
-					heartbeatIncoming: 10000,
-					heartbeatOutgoing: 10000,
-					connectionTimeout: 10000,
-					debug: (str) => {
-						console.log('🔧 STOMP Debug:', str);
-					},
-					onConnect: (frame) => {
-						console.log('✅ Connected to WebSocket', frame);
-						setConnectionStatus('connected');
-						connectionAttemptsRef.current = 0; // Reset counter on successful connection
-
-						// Subscribe to auction bid updates
-						const subscription = client.subscribe(`/topic/auction/${id}/bids`, (message) => {
-							try {
-								const newBid = JSON.parse(message.body);
-								console.log('📥 Received new bid:', newBid);
-
-								// Update bid history
-								setBidHistory((prev) => {
-									const existingBid = prev.find(bid =>
-										bid.id === newBid.id ||
-										(bid.userId === newBid.userId &&
-											Math.abs((bid.bidAmount || bid.amount) - (newBid.bidAmount || newBid.amount)) < 0.01)
-									);
-
-									if (existingBid) {
-										return prev;
-									}
-
-									return [newBid, ...prev];
-								});
-
-								// Update current bid
-								setAuction((prev) => ({
-									...prev,
-									currentBid: newBid.bidAmount || newBid.amount || prev.currentBid
-								}));
-
-								// Show notification
-								showSuccess(`New bid: ${(newBid.bidAmount || newBid.amount || 0).toLocaleString('vi-VN')} ₫`);
-							} catch (err) {
-								console.error('❌ Failed to parse bid from WebSocket:', err);
-							}
-						});
-
-						// Subscribe to auction statistics updates
-						client.subscribe(`/topic/auction/${id}/stats`, (message) => {
-							try {
-								const stats = JSON.parse(message.body);
-								console.log('📊 Received auction stats:', stats);
-
-								setAuction((prev) => ({
-									...prev,
-									currentBid: stats.currentBid || prev.currentBid,
-									bidCount: stats.bidCount || prev.bidCount
-								}));
-							} catch (err) {
-								console.error('❌ Failed to parse stats from WebSocket:', err);
-							}
-						});
-
-						console.log('🎯 Subscribed to auction updates:', subscription);
-
-						// Send join message
-						client.publish({
-							destination: `/app/auction/${id}/join`,
-							body: JSON.stringify({
-								userId: user?.id || 'anonymous',
-								username: user?.username || user?.fullName || 'Anonymous'
-							})
-						});
-					},
-					onStompError: (frame) => {
-						console.error('❌ STOMP error:', frame.headers['message']);
-						console.error('Error details:', frame.body);
-						setConnectionStatus('error');
-						tryReconnect();
-					},
-					onWebSocketError: (error) => {
-						console.error('❌ WebSocket error:', error);
-						setConnectionStatus('error');
-						tryReconnect();
-					},
-					onDisconnect: (frame) => {
-						console.log('🔌 Disconnected from WebSocket:', frame);
-						setConnectionStatus('disconnected');
-						tryReconnect();
-					}
-				});
-
-				stompClientRef.current = client;
-				client.activate();
-
-			} catch (error) {
-				console.error('❌ Failed to create WebSocket connection:', error);
-				setConnectionStatus('error');
-				tryReconnect();
-			}
-		};
-
-		const tryReconnect = () => {
-			connectionAttemptsRef.current++;
-
-			if (connectionAttemptsRef.current < maxAttempts) {
-				reconnectTimeoutRef.current = setTimeout(() => {
-					console.log('🔄 Attempting to reconnect...');
-					setConnectionStatus('connecting');
-					connectWebSocket();
-				}, Math.min(3000 * connectionAttemptsRef.current, 15000)); // Exponential backoff, max 15s
-			} else {
-				console.error('❌ All connection attempts failed.');
-				setConnectionStatus('error');
-			}
-		};
-
-		// Initial connection
-		connectWebSocket();
-
-		// Cleanup function
-		return () => {
-			console.log('🛑 Cleaning up WebSocket connection...');
-
-			if (reconnectTimeoutRef.current) {
-				clearTimeout(reconnectTimeoutRef.current);
-			}
-
-			if (stompClientRef.current && stompClientRef.current.connected) {
-				// Send leave message before disconnect
-				try {
-					stompClientRef.current.publish({
-						destination: `/app/auction/${id}/leave`,
-						body: JSON.stringify({
-							userId: user?.id || 'anonymous',
-							username: user?.username || user?.fullName || 'Anonymous'
-						})
-					});
-				} catch (err) {
-					console.log('Could not send leave message:', err);
-				}
-
-				stompClientRef.current.deactivate();
-			}
-		};
-	}, [id, user]); // Re-run when auction ID or user changes
 
 	// Load initial data
 	useEffect(() => {
@@ -403,10 +544,12 @@ const AuctionDetailPage = () => {
 					})
 				});
 
-				// Don't show success immediately, wait for WebSocket confirmation
+				// Show immediate feedback
+				showSuccess('Bid submitted! Waiting for confirmation...');
 				console.log('📤 Bid sent via WebSocket');
 			} else {
 				// Option 2: Fallback to REST API
+				console.log('📤 Using REST API fallback for bidding');
 				const result = await createBid(payload);
 
 				if (result && (result.success !== false)) {
@@ -625,7 +768,7 @@ const AuctionDetailPage = () => {
 									<div className="mt-2">
 										<button type="submit" className="btn btn-success fw-semibold py-2 w-100"
 												disabled={!user}>
-											{user ? (connectionStatus === 'connected' ? '⚡ Place Bid (Live)' : '📤 Place Bid') : 'Login to Bid'}
+											{user ? (connectionStatus === 'connected' ? '⚡ Place Bid (Live)' : '📤 Place Bid (API)') : 'Login to Bid'}
 										</button>
 									</div>
 								</div>

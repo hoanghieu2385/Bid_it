@@ -31,12 +31,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // ✅ Native WebSocket endpoint với CORS configuration chi tiết
         registry.addEndpoint("/ws-native")
-                .setAllowedOriginPatterns("*") // Cho phép tất cả origins trong development
                 .setAllowedOrigins("http://localhost:3000", "http://127.0.0.1:3000");
 
         // ✅ Backup endpoint với SockJS
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
                 .setAllowedOrigins("http://localhost:3000", "http://127.0.0.1:3000")
                 .withSockJS()
                 .setHeartbeatTime(25000)

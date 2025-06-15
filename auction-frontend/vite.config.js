@@ -1,24 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
-import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      // Node.js polyfills for browser compatibility
-      global: 'globalthis',
-      process: 'process/browser',
-      Buffer: 'buffer',
-      crypto: 'crypto-browserify',
-      stream: 'stream-browserify',
-      util: 'util',
-    }
-  },
+  plugins: [
+    react(),
+    nodePolyfills(),
+  ],
   define: {
-    global: 'globalThis',
-    'process.env': {}
+    'process.env': {},
+    'process.browser': true,
+    'process.version': JSON.stringify('v16.0.0'),
   },
   optimizeDeps: {
     include: [
@@ -26,29 +18,13 @@ export default defineConfig({
       '@stomp/stompjs',
       'buffer',
       'process',
-      'crypto-browserify'
+      'stream-browserify',
+      'util'
     ],
     esbuildOptions: {
       define: {
         global: 'globalThis',
       },
-      plugins: [
-        NodeGlobalsPolyfillPlugin({
-          process: true,
-          buffer: true,
-        }),
-        NodeModulesPolyfillPlugin(),
-      ],
-    }
-  },
-  build: {
-    rollupOptions: {
-      external: [],
-      output: {
-        globals: {
-          'crypto': 'crypto',
-        }
-      }
     }
   },
   server: {
@@ -58,7 +34,7 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
-        rewrite: path => path.replace(/^\/bid-service\/api/, '/bid-service/api'),
+        rewrite: (path) => path.replace(/^\/bid-service\/api/, '/bid-service/api'),
       },
     },
   },
