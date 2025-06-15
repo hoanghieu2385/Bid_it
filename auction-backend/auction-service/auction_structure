@@ -4,6 +4,7 @@ auction-service/
 │       ├── java/
 │       │   └── com.example.auction/
 │       │       ├── client/
+│       │       │   └── BidServiceClient.java
 │       │       │   └── UserClient.java
 │       │       ├── config/
 │       │       │   ├── CloudinaryConfig.java

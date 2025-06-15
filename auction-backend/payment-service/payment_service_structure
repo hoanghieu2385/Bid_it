@@ -1,0 +1,50 @@
+com.example.payment
+├── client/                   # FeignClients gọi đến các service khác
+│   ├── AuctionServiceClient.java
+│   └── UserServiceClient.java
+
+├── config/                   # Cấu hình PayPal, Feign, WebClient, v.v.
+│   ├── CacheConfig.java
+│   ├── CustomFeignErrorDecoder.java
+│   ├── FeignConfig.java
+│   ├── PayPalAuthService.java
+│   ├── PayPalConfig.java
+│   ├── PayPalProperties.java
+│   └── WebClientConfig.java
+
+├── controller/               # REST APIs cho payment
+│   └── PaymentController.java
+
+├── dto/                      # Request/Response object truyền qua API và Feign
+│   ├── AuctionDto.java
+│   ├── AuctionPaymentRequestDto.java
+│   ├── PaymentRequestDto.java
+│   ├── PaymentResponseDto.java
+│   ├── PaymentStatusDto.java
+│   ├── PayPalExecuteRequestDto.java
+│   └── UserDto.java
+
+├── entity/                   # JPA Entities
+│   ├── Payment.java
+│   └── Deposit.java
+
+├── enums/                    # Enum cho các trạng thái/thể loại
+│   ├── AuctionStatus.java         # Để xác định trạng thái của phiên đấu giá
+│   ├── PaymentMethod.java         # (PAYPAL, BANK, etc.)
+│   ├── PaymentStatus.java         # (PENDING, COMPLETED, REFUNDED,...)
+│   └── PaymentType.java           # (DEPOSIT, AUCTION_FINAL, etc.)
+
+├── mapper/                   # (Tuỳ chọn) MapStruct hoặc tự viết để convert DTO ↔ Entity
+│   └── PaymentMapper.java     # (nếu cần)
+
+├── repository/               # Giao tiếp DB
+│   ├── PaymentRepository.java
+│   └── DepositRepository.java
+
+├── service/                  # Business Logic
+│   ├── IPaymentService.java
+│   ├── PaymentService.java
+│   ├── IPayPalService.java
+│   └── PayPalService.java
+
+└── PaymentServiceApplication.java # File main
