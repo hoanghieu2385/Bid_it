@@ -15,6 +15,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * REST API cho thao tác bid (đa số chỉ dùng để test, chính thức dùng WebSocket).
+ */
 @RestController
 @RequestMapping("/api/bids")
 public class BidController {
@@ -24,9 +27,7 @@ public class BidController {
     @Autowired
     private IBidService bidService;
 
-    /**
-     * Tạo bid mới qua REST API
-     */
+    // Tạo bid mới qua REST (chỉ dùng để test hoặc fallback)
     @PostMapping
     public ResponseEntity<ApiResponse<Bid>> createBid(@Valid @RequestBody CreateBidRequest request) {
         try {
@@ -38,9 +39,7 @@ public class BidController {
         }
     }
 
-    /**
-     * Lấy danh sách bid của auction
-     */
+    // Lấy danh sách bid theo auctionId
     @GetMapping("/auction/{auctionId}")
     public ResponseEntity<ApiResponse<List<Bid>>> getBidsByAuction(@PathVariable Long auctionId) {
         try {
@@ -52,9 +51,7 @@ public class BidController {
         }
     }
 
-    /**
-     * Lấy bid history của auction
-     */
+    // Lấy lịch sử bid của 1 phiên đấu giá
     @GetMapping("/auction/{auctionId}/history")
     public ResponseEntity<ApiResponse<List<Bid>>> getBidHistory(@PathVariable Long auctionId) {
         try {
@@ -66,9 +63,7 @@ public class BidController {
         }
     }
 
-    /**
-     * Lấy bid cao nhất hiện tại của auction
-     */
+    // Lấy giá cao nhất hiện tại của auction
     @GetMapping("/auction/{auctionId}/highest")
     public ResponseEntity<ApiResponse<HighestBidResponse>> getHighestBid(@PathVariable Long auctionId) {
         try {
@@ -81,9 +76,7 @@ public class BidController {
         }
     }
 
-    /**
-     * Endpoint để auction-service gọi lấy thông tin winner
-     */
+    // Lấy người thắng cuộc → dùng cho auction-service
     @GetMapping("/auction/{auctionId}/winner")
     public ResponseEntity<WinnerResponse> getWinnerByAuctionId(@PathVariable Long auctionId) {
         try {
@@ -106,9 +99,7 @@ public class BidController {
         }
     }
 
-    /**
-     * Lấy thống kê bid của auction
-     */
+    // Lấy thống kê: tổng số bid, giá cao nhất,...
     @GetMapping("/auction/{auctionId}/statistics")
     public ResponseEntity<ApiResponse<IBidService.BidStatistics>> getBidStatistics(@PathVariable Long auctionId) {
         try {
@@ -120,9 +111,7 @@ public class BidController {
         }
     }
 
-    /**
-     * Lấy bid của user
-     */
+    // Lấy danh sách bid của một user
     @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<List<Bid>>> getBidsByUser(@PathVariable Long userId) {
         try {
@@ -134,9 +123,7 @@ public class BidController {
         }
     }
 
-    /**
-     * Validate bid trước khi tạo (để frontend kiểm tra)
-     */
+    // Endpoint để validate bid (trước khi gửi thật)
     @PostMapping("/validate")
     public ResponseEntity<ApiResponse<String>> validateBid(@Valid @RequestBody CreateBidRequest request) {
         try {
@@ -148,9 +135,7 @@ public class BidController {
         }
     }
 
-    /**
-     * Health check endpoint
-     */
+    // Health check
     @GetMapping("/health")
     public ResponseEntity<ApiResponse<String>> healthCheck() {
         return ResponseEntity.ok(new ApiResponse<>("Bid service is running", "OK"));

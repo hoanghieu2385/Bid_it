@@ -14,6 +14,14 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Controller xử lý bid qua WebSocket:
+ * - Nhận bid mới: /app/auction/{auctionId}/bid
+ * - Gửi kết quả:
+ *      + Thành công → /topic/auction/{auctionId}/bids
+ *      + Lỗi → /user/{userId}/queue/auction/{auctionId}/errors
+ */
+
 @Controller
 public class WebSocketController {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketController.class);
@@ -24,10 +32,6 @@ public class WebSocketController {
     @Autowired
     private IWebSocketService webSocketService;
 
-    /**
-     * Xử lý bid mới qua WebSocket - KHÔNG dùng @SendTo
-     * BidService.createBid() sẽ tự động gửi WebSocket notification
-     */
     @MessageMapping("/auction/{auctionId}/bid")
     public void handleNewBid(@DestinationVariable Long auctionId,
                              @Payload BidMessage bidMessage,

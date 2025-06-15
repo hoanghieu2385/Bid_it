@@ -121,7 +121,6 @@ public class AuctionController {
         }
     }
 
-
     // GET Auction by Category
     @GetMapping("/search/category")
     public ResponseEntity<List<AuctionResponseDTO>> searchAuctionsByCategory(
