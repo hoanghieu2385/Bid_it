@@ -18,6 +18,8 @@ import 'package:mobile_app/features/search/screens/search_screen.dart';
 import 'package:mobile_app/features/auction/screens/auction_detail.dart';
 import 'package:mobile_app/core/services/websocket_service.dart';
 
+import '../../../core/services/user_service.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
   @override
@@ -49,7 +51,6 @@ class _HomePageState extends State<HomePage> {
       _selectedIndex = index;
     });
     if (index == 0) {
-      // Khi về Home, reload watchlist ids
       await _homeContentKey.currentState?.loadWatchlistIds();
     }
     if (index == 3) {
@@ -101,8 +102,9 @@ class HomeContentState extends State<HomeContent> {
     _initWebSocket();
     loadData();
     loadWatchlistIds();
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
       setState(() {});
+      await _fetchAuction();
     });
   }
 
@@ -168,15 +170,43 @@ class HomeContentState extends State<HomeContent> {
       watchlistIds = list.map((e) => int.tryParse(e) ?? -1).where((id) => id > 0).toSet();
     });
   }
+  Future<void> _fetchAuction() async {
+    try {
+      final fetched = await AuctionService.fetchAuctions();
+      final now = DateTime.now();
+      final validAuctions = fetched.where((a) => a.endTime.isAfter(now)).toList();
 
+      final ongoing = validAuctions
+          .where((a) => now.isAfter(a.startTime) && now.isBefore(a.endTime))
+          .toList();
+
+      final upcoming = validAuctions
+          .where((a) => now.isBefore(a.startTime))
+          .toList();
+
+      final all = List<Auction>.from(validAuctions)
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      setState(() {
+        ongoingAuctions = ongoing;
+        upcomingAuctions = upcoming;
+        allAuctions = all;
+      });
+    } catch (e) {
+      debugPrint('Error refreshing auction data: \$e');
+    }
+  }
   Future<void> _initWebSocket() async {
     final userId = await _getCurrentUserId();
     if (userId == null) return;
 
+    final token = await UserService.getToken();
+
     WebSocketService().connect(
       auctionId: -1,
       userId: userId,
-      username: 'User$userId',
+      username: 'User $userId',
+      token: token!,
       onActivity: (data) {
         if (data['type'] == 'NEW_BID') {
           final int auctionId = data['auctionId'];
@@ -193,10 +223,24 @@ class HomeContentState extends State<HomeContent> {
               }
             }
           });
+
+          Timer.periodic(const Duration(seconds: 1), (timer) async {
+            if (!mounted) {
+              timer.cancel();
+              return;
+            }
+            await _fetchAuction();
+          });
         }
       },
       onError: (err) {
-        debugPrint('WebSocket error: $err');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('WebSocket Error: ${err.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       },
     );
   }

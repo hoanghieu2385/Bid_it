@@ -9,6 +9,11 @@ class AuthService {
   static const String _baseUrl = ApiService.authBaseUrl;
   static const String _baseUserUrl = ApiService.userBaseUrl;
 
+  static Future<String?> getAccessToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
+  }
+
   static Future<Map<String, dynamic>?> login(String email, String password, {bool rememberMe = false}) async {
     final url = Uri.parse('$_baseUrl/login');
 
