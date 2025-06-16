@@ -35,7 +35,7 @@ const loadWebSocketLibraries = async () => {
 				import('sockjs-client')
 			]);
 
-			// Sửa lại cách lấy Client - thử nhiều cách
+			// Sửa lại cách lấy Client
 			Client = stompModule.Client || stompModule.default?.Client || stompModule.default;
 			SockJS = sockjsModule.default || sockjsModule;
 
@@ -87,6 +87,7 @@ const AuctionDetailPage = () => {
 	const { user } = useContext(UserContext);
 
 	// WebSocket client ref
+	const wsUrl = '/bid-service/ws'; // Proxied through Vite to API Gateway
 	const stompClientRef = useRef(null);
 	const reconnectTimeoutRef = useRef(null);
 	const connectionAttemptsRef = useRef(0);
@@ -121,7 +122,7 @@ const AuctionDetailPage = () => {
 		loadWebSocketLibraries().catch(console.error);
 	}, []);
 
-	// Hoàn thành WebSocket connection effect
+	// WebSocket connection effect
 	useEffect(() => {
 		if (!Client || !SockJS) {
 			console.log('⏳ Waiting for WebSocket libraries to load...');
@@ -142,78 +143,27 @@ const AuctionDetailPage = () => {
 			}
 
 			isConnectingRef.current = true;
+			connectionAttemptsRef.current++;
 
-			// Enhanced endpoint list with multiple strategies
-			const endpoints = [
-				// Strategy 1: SockJS through API Gateway
-				{
-					url: 'http://localhost:8080/bid-service/ws',
-					type: 'sockjs',
-					description: 'SockJS via API Gateway'
-				},
-				// Strategy 2: SockJS direct to service
-				{
-					url: 'http://localhost:8081/ws',
-					type: 'sockjs',
-					description: 'SockJS direct to bid service'
-				},
-				// Strategy 3: Native WebSocket through API Gateway
-				{
-					url: 'ws://localhost:8080/bid-service/ws-native',
-					type: 'native',
-					description: 'Native WS via API Gateway'
-				},
-				// Strategy 4: Native WebSocket direct
-				{
-					url: 'ws://localhost:8081/ws-native',
-					type: 'native',
-					description: 'Native WS direct to bid service'
-				},
-				// Strategy 5: Alternative ports
-				{
-					url: 'ws://127.0.0.1:8080/bid-service/ws-native',
-					type: 'native',
-					description: 'Native WS via 127.0.0.1'
-				}
-			];
-
-			const currentEndpoint = endpoints[connectionAttemptsRef.current % endpoints.length];
-			console.log(`🔄 Attempting to connect to: ${currentEndpoint.url} (${currentEndpoint.description}) - attempt ${connectionAttemptsRef.current + 1}`);
+			console.log(`🔄 Attempting to connect to: ${wsUrl} - attempt ${connectionAttemptsRef.current}`);
 
 			try {
-				let client;
-
-				if (currentEndpoint.type === 'sockjs') {
-					// Use SockJS for better compatibility
-					client = new Client({
-						webSocketFactory: () => new SockJS(currentEndpoint.url),
-						reconnectDelay: 0, // Disable automatic reconnection
-						heartbeatIncoming: 10000,
-						heartbeatOutgoing: 10000,
-						connectionTimeout: 15000, // Increased timeout
-						debug: (str) => {
-							console.log('🔧 STOMP Debug:', str);
-						}
-					});
-				} else {
-					// Native WebSocket
-					client = new Client({
-						brokerURL: currentEndpoint.url,
-						reconnectDelay: 0, // Disable automatic reconnection
-						heartbeatIncoming: 10000,
-						heartbeatOutgoing: 10000,
-						connectionTimeout: 15000,
-						debug: (str) => {
-							console.log('🔧 STOMP Debug:', str);
-						}
-					});
-				}
+				const client = new Client({
+					webSocketFactory: () => new SockJS(wsUrl),
+					reconnectDelay: 0, // Disable automatic reconnection
+					heartbeatIncoming: 10000,
+					heartbeatOutgoing: 10000,
+					connectionTimeout: 15000,
+					debug: (str) => {
+						console.log('🔧 STOMP Debug:', str);
+					}
+				});
 
 				// Connection handlers
 				client.onConnect = (frame) => {
 					console.log('✅ Connected to WebSocket', frame);
 					setConnectionStatus('connected');
-					connectionAttemptsRef.current = 0; // Reset counter on successful connection
+					connectionAttemptsRef.current = 0; // Reset counter
 					isConnectingRef.current = false;
 
 					// Subscribe to auction bid updates
@@ -294,8 +244,7 @@ const AuctionDetailPage = () => {
 				};
 
 				client.onStompError = (frame) => {
-					console.error('❌ STOMP error:', frame.headers['message']);
-					console.error('Error details:', frame.body);
+					console.error('❌ STOMP error:', frame.headers['message'], frame.body);
 					isConnectingRef.current = false;
 					setConnectionStatus('error');
 					tryReconnect();
@@ -337,8 +286,6 @@ const AuctionDetailPage = () => {
 			if (reconnectTimeoutRef.current) {
 				clearTimeout(reconnectTimeoutRef.current);
 			}
-
-			connectionAttemptsRef.current++;
 
 			if (connectionAttemptsRef.current < maxAttempts) {
 				const delay = Math.min(3000 * connectionAttemptsRef.current, 15000);
@@ -386,7 +333,7 @@ const AuctionDetailPage = () => {
 				stompClientRef.current.deactivate();
 			}
 		};
-	}, [Client, SockJS, id, user]); // Re-run when auction ID or user changes
+	}, [Client, SockJS, id, user]);
 
 	// Fetch auction by ID
 	const fetchAuction = async () => {
