@@ -413,14 +413,6 @@ public class BidService implements IBidService {
         }
     }
 
-    // Lấy các bid theo auctionId
-    @Override
-    public List<Bid> getBidsByAuction(Long auctionId) {
-        List<Bid> bids = bidRepository.findByAuctionIdOrderByBidAmountDesc(auctionId);
-        bids.forEach(this::enrichBidWithExternalData);
-        return bids;
-    }
-
     // Lấy các bid theo lịch sử
     @Override
     public List<Bid> getBidHistory(Long auctionId) {
