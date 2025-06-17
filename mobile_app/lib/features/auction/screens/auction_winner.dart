@@ -2,16 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 
-class AuctionWinnerPage extends StatefulWidget {
-  final Map<String, dynamic> winnerData = {
-    'username': 'nguyenvana',
-    'email': 'nguyenvana@example.com',
-    'bidAmount': 12500000,
-    'auctionTitle': 'MacBook Pro 16-inch 2021',
-    'wonAt': DateTime.now().subtract(const Duration(minutes: 5)),
-  };
+import '../../payment/screens/payment_screen.dart';
+import 'package:mobile_app/core/services/auction_service.dart';
 
-  AuctionWinnerPage({super.key});
+class AuctionWinnerPage extends StatefulWidget {
+  final int auctionId;
+
+  const AuctionWinnerPage({super.key, required this.auctionId});
 
   @override
   _AuctionWinnerPageState createState() => _AuctionWinnerPageState();
@@ -25,6 +22,11 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
   late List<Animation<double>> _tileFadeAnimations;
   late Animation<double> _buttonFadeAnimation;
   late Animation<double> _buttonScaleAnimation;
+  bool _isLoading = false;
+  Map<String, dynamic>? winnerData;
+  Map<String, dynamic>? userData;
+  String errorMessage = '';
+  final AuctionService _auctionService = AuctionService();
 
   @override
   void initState() {
@@ -69,12 +71,43 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
       CurvedAnimation(parent: _controller, curve: const Interval(0.5, 0.8, curve: Curves.easeOutBack)),
     );
 
-    _controller.forward();
+    // Fetch data
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() {
+      _isLoading = true;
+      errorMessage = '';
+    });
+
+    try {
+      final winner = await _auctionService.fetchWinner(widget.auctionId);
+      if (winner != null) {
+        setState(() {
+          winnerData = winner;
+        });
+        final user = await _auctionService.fetchUser(winner['userId']);
+        setState(() {
+          userData = user;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+      if (errorMessage.isEmpty) {
+        _controller.forward();
+      }
+    }
   }
 
   @override
   void dispose() {
-    // Reverse animations for disappearance
     _controller.reverse().then((_) => _controller.dispose());
     super.dispose();
   }
@@ -82,8 +115,17 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final numberFormat = NumberFormat("#,##0", "en_US");
-    final bidAmount = numberFormat.format(widget.winnerData['bidAmount']);
-    final wonAt = DateFormat('yyyy-MM-dd HH:mm').format(widget.winnerData['wonAt']);
+    final bidAmountRaw = winnerData?['bidAmount'];
+    final double parsedBidAmount = bidAmountRaw is num
+        ? bidAmountRaw.toDouble()
+        : double.tryParse(bidAmountRaw.toString()) ?? 0.0;
+
+    final bidAmount = numberFormat.format(parsedBidAmount);
+
+    final wonAt = winnerData != null
+        ? DateFormat('yyyy-MM-dd HH:mm').format(DateTime.parse(winnerData!['bidTime']))
+        : '';
+
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -91,8 +133,15 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
         child: Center(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-              child: FadeTransition(
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width * 0.05,
+                vertical: 24,
+              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : errorMessage.isNotEmpty
+                  ? Center(child: Text(errorMessage, style: const TextStyle(color: Colors.red)))
+                  : FadeTransition(
                 opacity: _cardFadeAnimation,
                 child: SlideTransition(
                   position: _cardSlideAnimation,
@@ -103,7 +152,9 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                     ),
                     color: Colors.white,
                     child: Container(
-                      constraints: const BoxConstraints(maxWidth: 500),
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.9,
+                      ),
                       padding: const EdgeInsets.all(32),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -149,24 +200,13 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                           FadeTransition(
                             opacity: _cardFadeAnimation,
                             child: Text(
-                              'You won: ${widget.winnerData['auctionTitle']}',
+                              'You won: ${winnerData?['auctionTitle'] ?? ''}',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500,
                                 color: Color(0xFF666666),
                               ),
                               textAlign: TextAlign.center,
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          // Info Tiles with Fade Animations
-                          FadeTransition(
-                            opacity: _tileFadeAnimations[0],
-                            child: _buildInfoTile(
-                              context,
-                              icon: Icons.person,
-                              title: 'Winner',
-                              value: widget.winnerData['username'],
                             ),
                           ),
                           const Divider(height: 24, color: Color(0xFFEEEEEE)),
@@ -176,11 +216,11 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                               context,
                               icon: Icons.email,
                               title: 'Email',
-                              value: widget.winnerData['email'],
+                              value: userData?['email'] ?? '',
                               trailing: IconButton(
                                 icon: const Icon(Icons.copy, size: 20, color: Color(0xFF666666)),
                                 onPressed: () {
-                                  Clipboard.setData(ClipboardData(text: widget.winnerData['email']));
+                                  Clipboard.setData(ClipboardData(text: userData?['email'] ?? ''));
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: const Text('Email copied to clipboard'),
@@ -222,35 +262,82 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                             ),
                           ),
                           const SizedBox(height: 32),
-                          // Animated Button
+                          // Animated Buttons
                           FadeTransition(
                             opacity: _buttonFadeAnimation,
                             child: ScaleTransition(
                               scale: _buttonScaleAnimation,
-                              child: SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    // Trigger exit animation before navigation
-                                    _controller.reverse().then((_) {
-                                      // Add navigation or action here
-                                    });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFFA726),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 2,
-                                    textStyle: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // Back Button
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        _controller.reverse().then((_) {
+                                          Navigator.pop(context);
+                                        });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.grey[400],
+                                        foregroundColor: Colors.white,
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 14,
+                                          horizontal: MediaQuery.of(context).size.width * 0.03,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        elevation: 2,
+                                        textStyle: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      child: const Text('Back'),
                                     ),
                                   ),
-                                  child: const Text('Confirm & Proceed'),
-                                ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: _isLoading
+                                        ? const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Color(0xFFFFA726),
+                                      ),
+                                    )
+                                        : ElevatedButton(
+                                      onPressed: () async {
+                                        await _controller.reverse();
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => PaymentScreen(auctionId: widget.auctionId,),
+                                          ),
+                                        );
+                                        setState(() {
+                                          _isLoading = false;
+                                        });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFFFA726),
+                                        foregroundColor: Colors.white,
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 14,
+                                          horizontal: MediaQuery.of(context).size.width * 0.03,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        elevation: 2,
+                                        textStyle: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      child: const Text('Continue'),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
