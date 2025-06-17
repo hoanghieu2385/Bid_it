@@ -407,6 +407,8 @@ public class BidService implements IBidService {
             IBidService.BidStatistics stats = getBidStatistics(bid.getAuctionId());
             webSocketService.sendBidStatistics(bid.getAuctionId(), stats);
 
+            webSocketService.sendBidHistoryUpdate(bid.getAuctionId(), bidResponse);
+
         } catch (Exception e) {
             System.err.println("Failed to send realtime update: " + e.getMessage());
             throw e;
