@@ -84,7 +84,7 @@ export const getParticipatedAuctions = async (userId) => {
 		// If response is wrapped in another object (e.g., { bids: [...] } or { data: [...] })
 		if (bidsData && typeof bidsData === 'object' && !Array.isArray(bidsData)) {
 			// Try common property names
-			bidsData = bidsData.bids || bidsData.data || bidsData.content || [];
+			bidsData = bidsData.data || bidsData.bids || bidsData.content || [];
 		}
 		
 		// Ensure bidsData is an array
@@ -112,18 +112,51 @@ export const getParticipatedAuctions = async (userId) => {
 		// Add user's highest bid for each auction
 		const auctionsWithBids = auctions.map(auction => {
 			const userBids = bidsData.filter(bid => bid.auctionId === auction.id);
-			const highestUserBid = Math.max(...userBids.map(bid => bid.amount));
+			
+			// Tính toán highest bid với xử lý lỗi tốt hơn
+			let highestUserBid = 0;
+			if (userBids.length > 0) {
+				const bidAmounts = userBids
+					.map(bid => {
+						// Xử lý bid.bidAmount thay vì bid.amount (theo API response)
+						const amount = bid.bidAmount || bid.amount;
+						const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+						return isNaN(numericAmount) ? 0 : numericAmount;
+					})
+					.filter(amount => amount > 0);
+				
+				highestUserBid = bidAmounts.length > 0 ? Math.max(...bidAmounts) : 0;
+			}
+			
 			const bidCount = userBids.length;
+			
+			console.log(`Auction ${auction.id}:`, {
+				userBids,
+				highestUserBid,
+				bidCount,
+				bidAmounts: userBids.map(b => b.bidAmount || b.amount)
+			});
 			
 			return {
 				...auction,
 				userHighestBid: highestUserBid,
 				userBidCount: bidCount,
-				userBids: userBids
+				userBids: userBids.sort((a, b) => {
+					// Sort bids by createdAt desc (newest first)
+					const dateA = new Date(a.createdAt || 0);
+					const dateB = new Date(b.createdAt || 0);
+					return dateB - dateA;
+				})
 			};
 		});
 		
-		return auctionsWithBids;
+		// Sort auctions by participation date (latest bid first)
+		return auctionsWithBids.sort((a, b) => {
+			const latestBidA = a.userBids[0]?.createdAt || a.createdAt;
+			const latestBidB = b.userBids[0]?.createdAt || b.createdAt;
+			return new Date(latestBidB) - new Date(latestBidA);
+		});
+		
 	} catch (error) {
 		console.error('Error fetching participated auctions:', error);
 		
