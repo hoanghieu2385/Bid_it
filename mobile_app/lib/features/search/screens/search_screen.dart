@@ -213,11 +213,11 @@ class _SearchResultsState extends State<SearchResults> {
 
         return GridView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
             mainAxisSpacing: 14,
             crossAxisSpacing: 14,
-            childAspectRatio: 0.82, // Tăng tỉ lệ này lên (0.8~1.0) để tránh overflow
+            childAspectRatio: MediaQuery.of(context).size.width > 600 ? 0.9 : 0.75,
           ),
           itemCount: displayAuctions.length + ((auctions.length > 6) ? 1 : 0),
           itemBuilder: (context, index) {
@@ -327,7 +327,7 @@ class _SearchResultsState extends State<SearchResults> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 5),
                           SizedBox(
                             width: double.infinity,
                             height: 30,

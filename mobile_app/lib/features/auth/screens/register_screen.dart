@@ -6,6 +6,7 @@ import 'package:mobile_app/features/auth/screens/login_screen.dart';
 import 'package:mobile_app/features/auth/screens/start_screen.dart';
 import 'package:mobile_app/features/auth/screens/forgot_password_screen.dart';
 import 'package:mobile_app/core/services/auth_service.dart';
+import 'package:mobile_app/features/auth/screens/terms_conditions.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -212,14 +213,23 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       const Text('I agree to the ', style: TextStyle(color: AppColors.black)),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const TermsAndConditionsPage()),
+                          );
+                        },
                         child: const Text(
                           'terms and conditions',
-                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 30),
                   _isLoading
                       ? const Center(child: CircularProgressIndicator())

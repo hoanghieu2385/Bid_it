@@ -1,12 +1,13 @@
-/// lib/core/services/websocket_service.dart
-/// This WebSocketService handles STOMP protocol-based connections for auction bid events.
-
 import 'dart:convert';
 import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
 
 class WebSocketService {
+  static final WebSocketService _instance = WebSocketService._internal();
+  factory WebSocketService() => _instance;
+  WebSocketService._internal();
+
   StompClient? _stompClient;
   bool isConnected = false;
 
@@ -16,6 +17,7 @@ class WebSocketService {
   int? _auctionId;
   int? _userId;
   String? _username;
+  String? _token;
   late void Function(Map<String, dynamic>) _onActivity;
   late void Function(String message) _onError;
   void Function(Map<String, dynamic>)? _onInit;
@@ -26,6 +28,7 @@ class WebSocketService {
     required int auctionId,
     required int userId,
     required String username,
+    required String token,
     required void Function(Map<String, dynamic>) onActivity,
     required void Function(String message) onError,
     void Function()? onConnected,
@@ -37,6 +40,7 @@ class WebSocketService {
     _auctionId = auctionId;
     _userId = userId;
     _username = username;
+    _token = token;
     _onActivity = onActivity;
     _onError = onError;
     _onInit = onInit;
@@ -47,19 +51,23 @@ class WebSocketService {
 
     _stompClient = StompClient(
       config: StompConfig.SockJS(
-        url: 'http://10.0.2.2:8085/ws',
-        onConnect: _onConnectHandler,
-        beforeConnect: () async {
-          print('[WebSocket] Preparing connection...');
-          await Future.delayed(const Duration(milliseconds: 300));
+        url: 'ws://10.0.2.2:8085/ws',
+
+        webSocketConnectHeaders: {
+          'Authorization': 'Bearer $_token',
         },
-        onWebSocketError: (dynamic error) {
-          isConnected = false;
-          print('[WebSocket] Error: $error');
+
+        stompConnectHeaders: {
+          'Authorization': 'Bearer $_token',
+        },
+
+        onConnect: _onConnectHandler,
+        onWebSocketError: (error) {
+          print('[WebSocket] WebSocket error: $error');
           _onError(error.toString());
           _tryReconnect();
         },
-        onStompError: (StompFrame frame) {
+        onStompError: (frame) {
           print('[WebSocket] STOMP error: ${frame.body}');
           _onError(frame.body ?? 'Unknown STOMP error');
           _tryReconnect();
@@ -70,9 +78,13 @@ class WebSocketService {
           _onDisconnected?.call();
           _tryReconnect();
         },
-        reconnectDelay: const Duration(seconds: 0),
+        beforeConnect: () async {
+          print('[WebSocket] Preparing connection...');
+          await Future.delayed(const Duration(milliseconds: 300));
+        },
         heartbeatIncoming: Duration.zero,
         heartbeatOutgoing: Duration.zero,
+        reconnectDelay: const Duration(seconds: 2),
       ),
     );
 
@@ -85,8 +97,9 @@ class WebSocketService {
     print('[WebSocket] Connected successfully.');
     _onConnected?.call();
 
+    // Subscribe nhận bid mới
     _stompClient!.subscribe(
-      destination: '/topic/auction/$_auctionId',
+      destination: '/topic/auction/$_auctionId/bids',
       callback: (frame) {
         if (frame.body != null) {
           try {
@@ -110,13 +123,33 @@ class WebSocketService {
       },
     );
 
+    // Gửi init để backend có thể khởi tạo phiên
     _stompClient!.send(
-      destination: '/auction/$_auctionId/init',
+      destination: '/app/auction/$_auctionId/init',
       body: jsonEncode({
         'userId': _userId,
         'username': _username,
       }),
     );
+  }
+
+  void sendBid({
+    required int auctionId,
+    required int userId,
+    required int bidAmount,
+  }) {
+    if (_stompClient?.connected ?? false) {
+      print('[WebSocket] Sending bid: user=$userId, amount=$bidAmount');
+      _stompClient!.send(
+        destination: '/app/auction/$auctionId/bid',
+        body: jsonEncode({
+          'userId': userId,
+          'bidAmount': bidAmount,
+        }),
+      );
+    } else {
+      print('[WebSocket] Cannot send bid: not connected.');
+    }
   }
 
   void _tryReconnect() {
@@ -134,6 +167,7 @@ class WebSocketService {
         auctionId: _auctionId!,
         userId: _userId!,
         username: _username!,
+        token: _token!,
         onActivity: _onActivity,
         onError: _onError,
         onConnected: _onConnected,
@@ -141,25 +175,6 @@ class WebSocketService {
         onInit: _onInit,
       );
     });
-  }
-
-  void sendBid({
-    required int auctionId,
-    required int userId,
-    required double bidAmount,
-  }) {
-    if (_stompClient?.connected ?? false) {
-      print('[WebSocket] Sending bid: user=$userId, amount=$bidAmount');
-      _stompClient!.send(
-        destination: '/auction/$auctionId/bid',
-        body: jsonEncode({
-          'userId': userId,
-          'bidAmount': bidAmount,
-        }),
-      );
-    } else {
-      print('[WebSocket] Cannot send bid: not connected.');
-    }
   }
 
   void disconnect() {
