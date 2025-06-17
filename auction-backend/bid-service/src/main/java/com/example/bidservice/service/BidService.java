@@ -407,18 +407,12 @@ public class BidService implements IBidService {
             IBidService.BidStatistics stats = getBidStatistics(bid.getAuctionId());
             webSocketService.sendBidStatistics(bid.getAuctionId(), stats);
 
+            webSocketService.sendBidHistoryUpdate(bid.getAuctionId(), bidResponse);
+
         } catch (Exception e) {
             System.err.println("Failed to send realtime update: " + e.getMessage());
             throw e;
         }
-    }
-
-    // Lấy các bid theo auctionId
-    @Override
-    public List<Bid> getBidsByAuction(Long auctionId) {
-        List<Bid> bids = bidRepository.findByAuctionIdOrderByBidAmountDesc(auctionId);
-        bids.forEach(this::enrichBidWithExternalData);
-        return bids;
     }
 
     // Lấy các bid theo lịch sử
