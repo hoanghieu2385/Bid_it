@@ -22,6 +22,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
   bool _isLoading = false;
   Map<String, dynamic>? winnerData;
   String? errorMessage;
+  String _selectedMethod = 'Paypal';
 
   @override
   void initState() {
@@ -146,7 +147,20 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                           _buildDetailTile(Icons.attach_money, 'Amount to Pay', '\$$bidAmount'),
                           const Divider(height: 24, color: Color(0xFFEEEEEE)),
                           _buildDetailTile(Icons.access_time, 'Won At', wonAt),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 24),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text('Select Payment Method:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              _buildPaymentOption('Paypal'),
+                              const SizedBox(width: 16),
+                              _buildPaymentOption('Bank Transfer'),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
                           FadeTransition(
                             opacity: _buttonFadeAnimation,
                             child: ScaleTransition(
@@ -204,7 +218,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                                         ),
                                         elevation: 2,
                                       ),
-                                      child: const Text('Confirm'),
+                                      child: Text('Continue'),
                                     ),
                                   ),
                                 ],
@@ -218,6 +232,30 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentOption(String method) {
+    final isSelected = _selectedMethod == method;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedMethod = method),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: isSelected ? const Color(0xFFFFA726) : Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(12),
+            color: isSelected ? const Color(0xFFFFA726).withOpacity(0.1) : Colors.white,
+          ),
+          child: Column(
+            children: [
+              Icon(method == 'Paypal' ? Icons.account_balance_wallet : Icons.account_balance, size: 28, color: const Color(0xFFFFA726)),
+              const SizedBox(height: 8),
+              Text(method, style: TextStyle(fontWeight: FontWeight.w600)),
+            ],
           ),
         ),
       ),
