@@ -42,6 +42,9 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _startTime = now.add(const Duration(hours: 1));
+    _endTime = _startTime!.add(const Duration(hours: 1, minutes: 30));
     _checkLoginStatus();
   }
 
@@ -120,8 +123,12 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
       if (time != null) {
         final fullDate = DateTime(picked.year, picked.month, picked.day, time.hour, time.minute);
         setState(() {
-          if (isStart) _startTime = fullDate;
-          else _endTime = fullDate;
+          if (isStart) {
+            _startTime = fullDate;
+            _endTime = fullDate.add(const Duration(hours: 1, minutes: 30));
+          } else {
+            _endTime = fullDate;
+          }
         });
       }
     }
@@ -209,6 +216,17 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
       );
       return;
     }
+    bool _isEndTimeTooSoon() {
+      if (_startTime == null || _endTime == null) return false;
+      return _endTime!.difference(_startTime!) < const Duration(minutes: 60);
+    }
+    if (_isEndTimeTooSoon()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('End time must be at least 60 minutes after start time.')),
+      );
+      return;
+    }
+
     final startingPrice = double.tryParse(_startingPriceController.text);
     final incrementAmount = double.tryParse(_incrementAmountController.text);
     if (startingPrice == null || incrementAmount == null || _selectedCategory == null) return;
@@ -247,15 +265,13 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
     final response = await AuctionService.createAuction(auctionData);
     setState(() => _isUploading = false);
     if (response == null || response['success'] == false) {
-      final errorMsg = response?['message'] ?? 'Failed to create auction.';
+      final errorMsg = response?['message'] ?? '';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
-      return;
     }
     final auction = response;
-    if (auction == null) return;
     for (final image in _galleryImages) {
       final bytes = await image.readAsBytes();
-      await AuctionService.uploadImage(bytes, image.name, auction['id'], false);
+      await AuctionService.uploadImage(bytes, image.name, auction?['id'], false);
     }
     _formKey.currentState?.reset();
     _titleController.clear();
@@ -266,14 +282,16 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
     setState(() {
       _selectedCategory = null;
       _galleryImages = [];
-      _startTime = null;
-      _endTime = null;
       _requiresDeposit = false;
+      final now = DateTime.now();
+      _startTime = now.add(const Duration(hours: 1));
+      _endTime = _startTime!.add(const Duration(hours: 1, minutes: 30));
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(response["message"] ?? 'Auction created successfully.')),
+      SnackBar(content: Text(response?["message"] ?? 'Auction created successfully.')),
     );
   }
+
 
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(

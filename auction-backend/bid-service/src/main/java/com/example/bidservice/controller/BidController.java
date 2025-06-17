@@ -39,18 +39,6 @@ public class BidController {
         }
     }
 
-    // Lấy danh sách bid theo auctionId
-    @GetMapping("/auction/{auctionId}")
-    public ResponseEntity<ApiResponse<List<Bid>>> getBidsByAuction(@PathVariable Long auctionId) {
-        try {
-            List<Bid> bids = bidService.getBidsByAuction(auctionId);
-            return ResponseEntity.ok(new ApiResponse<>("Success", bids));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>("Failed to get bids: " + e.getMessage(), null));
-        }
-    }
-
     // Lấy lịch sử bid của 1 phiên đấu giá
     @GetMapping("/auction/{auctionId}/history")
     public ResponseEntity<ApiResponse<List<Bid>>> getBidHistory(@PathVariable Long auctionId) {
