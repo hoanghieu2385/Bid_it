@@ -1,8 +1,11 @@
-// File: src/services/bid-api.js
+// File: src/services/bid_api.js
 import api from './api';
 import API_CONFIG from './apiConfig';
 
 const bidEndpoint = `${API_CONFIG.BID_SERVICE}`;
+
+// Remove the duplicate axios instance - use the main api instance instead
+// This ensures consistent headers and interceptors
 
 // Gửi bid mới (đồng bộ)
 export const createBid = async (bidData) => {
@@ -49,5 +52,11 @@ export const getGroupedBidsByUser = async (userId) => {
 // Hủy một bid
 export const cancelBid = async (bidId) => {
 	const response = await api.delete(`${bidEndpoint}/cancel/${bidId}`);
+	return response.data;
+};
+
+// Lấy bid history cho auction - use consistent API endpoint
+export const getBidsByAuctionId = async (auctionId) => {
+	const response = await api.get(`${bidEndpoint}/auction/${auctionId}`);
 	return response.data;
 };
