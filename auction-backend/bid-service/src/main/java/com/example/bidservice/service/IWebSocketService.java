@@ -11,5 +11,6 @@ public interface IWebSocketService {
     void sendOutbidNotification(Long userId, Long auctionId, BigDecimal newHighestBid);
     void sendAuctionEndNotification(BidResponse winningBid);
     void sendBidFailed(Long userId, Long auctionId, String errorMessage);
+    void sendBidHistoryUpdate(Long auctionId, BidResponse bidResponse);
 
 }

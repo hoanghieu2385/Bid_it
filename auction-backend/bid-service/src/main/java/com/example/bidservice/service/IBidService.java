@@ -32,13 +32,6 @@ public interface IBidService {
     BigDecimal getCurrentHighestBid(Long auctionId);
 
     /**
-     * Lấy danh sách tất cả bid của auction theo thứ tự giảm dần
-     * @param auctionId ID của auction
-     * @return Danh sách bid
-     */
-    List<Bid> getBidsByAuction(Long auctionId);
-
-    /**
      * Lấy lịch sử bid gần nhất của auction
      * @param auctionId ID của auction
      * @return Danh sách bid gần nhất
