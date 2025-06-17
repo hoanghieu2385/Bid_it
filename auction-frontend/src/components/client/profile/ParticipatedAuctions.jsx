@@ -22,7 +22,11 @@ const ParticipatedAuctions = () => {
 				}
 
 				setCurrentUser(user);
+				console.log('Current user:', user); // Debug log
+				
 				const participatedAuctions = await getParticipatedAuctions(user.id);
+				console.log('Participated auctions:', participatedAuctions); // Debug log
+				
 				setAuctions(participatedAuctions);
 			} catch (err) {
 				console.error('Error fetching participated auctions:', err);
@@ -36,25 +40,45 @@ const ParticipatedAuctions = () => {
 	}, []);
 
 	const formatPrice = (price) => {
+		// Kiểm tra nếu price là null, undefined hoặc NaN
+		if (price === null || price === undefined || isNaN(price)) {
+			return 'N/A';
+		}
+		
+		// Chuyển đổi về số nếu là string
+		const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+		
+		if (isNaN(numericPrice)) {
+			return 'N/A';
+		}
+		
 		return new Intl.NumberFormat('vi-VN', {
 			style: 'currency',
 			currency: 'VND'
-		}).format(price);
+		}).format(numericPrice);
 	};
 
 	const formatDate = (dateString) => {
-		return new Date(dateString).toLocaleDateString('en-US', {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+		if (!dateString) return 'N/A';
+		
+		try {
+			return new Date(dateString).toLocaleDateString('en-US', {
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit'
+			});
+		} catch (error) {
+			console.error('Error formatting date:', error);
+			return 'Invalid Date';
+		}
 	};
 
 	const getStatusBadge = (status) => {
 		const statusMap = {
 			'PENDING': { class: 'bg-warning', text: 'Pending' },
+			'UPCOMING': { class: 'bg-info', text: 'Upcoming' },
 			'ACTIVE': { class: 'bg-success', text: 'Active' },
 			'ENDED': { class: 'bg-secondary', text: 'Ended' },
 			'CLOSED': { class: 'bg-dark', text: 'Closed' },
@@ -72,6 +96,18 @@ const ParticipatedAuctions = () => {
 
 	const isWinner = (auction, user) => {
 		return auction.winnerId === user?.id;
+	};
+
+	// Helper function để debug auction data
+	const debugAuctionData = (auction) => {
+		console.log('Auction debug:', {
+			id: auction.id,
+			title: auction.title,
+			userHighestBid: auction.userHighestBid,
+			userHighestBidType: typeof auction.userHighestBid,
+			userBidCount: auction.userBidCount,
+			userBids: auction.userBids
+		});
 	};
 
 	if (loading) {
@@ -115,90 +151,91 @@ const ParticipatedAuctions = () => {
 			</div>
 
 			<div className="row">
-				{auctions.map((auction) => (
-					<div key={auction.id} className="col-md-6 col-lg-4 mb-4">
-						<div className="card h-100 shadow-sm">
-							{auction.mediaUrls && auction.mediaUrls.length > 0 && (
-								<img 
-									src={auction.mediaUrls[0]} 
-									className="card-img-top" 
-									alt={auction.title}
-									style={{ height: '200px', objectFit: 'cover' }}
-								/>
-							)}
-							
-							<div className="card-body">
-								<div className="d-flex justify-content-between align-items-start mb-2">
-									<h6 className="card-title text-truncate" title={auction.title}>
-										{auction.title}
-									</h6>
-									{getStatusBadge(auction.status)}
-								</div>
-
-								<p className="card-text text-muted small text-truncate">
-									{auction.description}
-								</p>
-
-								<div className="mb-2">
-									<small className="text-muted">Current Price:</small>
-									<div className="fw-bold text-success">
-										{formatPrice(auction.currentBid || auction.startingPrice)}
-									</div>
-								</div>
-
-								<div className="mb-2">
-									<small className="text-muted">Your Highest Bid:</small>
-									<div className="fw-bold text-primary">
-										{formatPrice(auction.userHighestBid)}
-									</div>
-								</div>
-
-								<div className="mb-2">
-									<small className="text-muted">Bid Count:</small>
-									<span className="ms-1 badge bg-secondary">
-										{auction.userBidCount}
-									</span>
-								</div>
-
-								{currentUser && isWinner(auction, currentUser) && (
-									<div className="alert alert-success py-1 px-2 mb-2">
-										<i className="fas fa-trophy me-1"></i>
-										<small>You won this auction!</small>
-									</div>
+				{auctions.map((auction) => {
+					// Debug log cho mỗi auction
+					debugAuctionData(auction);
+					
+					return (
+						<div key={auction.id} className="col-md-6 col-lg-4 mb-4">
+							<div className="card h-100 shadow-sm">
+								{auction.mediaUrls && auction.mediaUrls.length > 0 && (
+									<img 
+										src={auction.mediaUrls[0]} 
+										className="card-img-top" 
+										alt={auction.title}
+										style={{ height: '200px', objectFit: 'cover' }}
+									/>
 								)}
+								
+								<div className="card-body">
+									<div className="d-flex justify-content-between align-items-start mb-2">
+										<h6 className="card-title text-truncate" title={auction.title}>
+											{auction.title}
+										</h6>
+										{getStatusBadge(auction.status)}
+									</div>
 
-								<div className="d-flex justify-content-between align-items-center text-muted small">
-									<span>
-										<i className="fas fa-clock me-1"></i>
-										Ends: {formatDate(auction.endTime)}
-									</span>
+									<div className="mb-2">
+										<small className="text-muted">Current Price:</small>
+										<div className="fw-bold text-success">
+											{formatPrice(auction.currentBid || auction.startingPrice)}
+										</div>
+									</div>
+
+									<div className="mb-2">
+										<small className="text-muted">Your Highest Bid:</small>
+										<div className="fw-bold text-primary">
+											{formatPrice(auction.userHighestBid)}
+										</div>
+									</div>
+
+									<div className="mb-2">
+										<small className="text-muted">Your Bids:</small>
+										<span className="ms-1 badge bg-secondary">
+											{auction.userBidCount || 0}
+										</span>
+									</div>
+
+									{currentUser && isWinner(auction, currentUser) && (
+										<div className="alert alert-success py-1 px-2 mb-2">
+											<i className="fas fa-trophy me-1"></i>
+											<small>You won this auction!</small>
+										</div>
+									)}
+
+									<div className="d-flex justify-content-between align-items-center text-muted small">
+										<span>
+											<i className="fas fa-clock me-1"></i>
+											Ends: {formatDate(auction.endTime)}
+										</span>
+									</div>
 								</div>
-							</div>
 
-							<div className="card-footer bg-transparent">
-								<div className="d-flex justify-content-between">
-									<button 
-										className="btn btn-outline-primary btn-sm"
-										onClick={() => window.location.href = `/auctions/${auction.id}`}
-									>
-										<i className="fas fa-eye me-1"></i>
-										View Details
-									</button>
-									
-									{auction.status === 'ACTIVE' && (
+								<div className="card-footer bg-transparent">
+									<div className="d-flex justify-content-between">
 										<button 
-											className="btn btn-primary btn-sm"
+											className="btn btn-outline-primary btn-sm"
 											onClick={() => window.location.href = `/auctions/${auction.id}`}
 										>
-											<i className="fas fa-gavel me-1"></i>
-											Continue Bidding
+											<i className="fas fa-eye me-1"></i>
+											View Details
 										</button>
-									)}
+										
+										{auction.status === 'ACTIVE' && (
+											<button 
+												className="btn btn-primary btn-sm"
+												onClick={() => window.location.href = `/auctions/${auction.id}`}
+											>
+												<i className="fas fa-gavel me-1"></i>
+												Continue Bidding
+											</button>
+										)}
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-				))}
+					);
+				})}
 			</div>
 
 			{/* Summary Statistics */}
@@ -223,7 +260,7 @@ const ParticipatedAuctions = () => {
 					</div>
 					<div className="col-md-3">
 						<div className="h5 text-info mb-0">
-							{auctions.reduce((total, auction) => total + auction.userBidCount, 0)}
+							{auctions.reduce((total, auction) => total + (auction.userBidCount || 0), 0)}
 						</div>
 						<small className="text-muted">Total Bids Placed</small>
 					</div>
