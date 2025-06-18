@@ -5,7 +5,7 @@ import { useParams, Link } from 'react-router-dom';
 import '../../../utils/crypto-polyfill.js';
 
 // Add a small delay to ensure polyfill is fully loaded
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Import services
 import { getAllAuctions, getAuctionDetailById } from '../../../services/auction-api';
@@ -14,7 +14,7 @@ import { createBid } from '../../../services/bid_api';
 import defaultAvatar from '../../../assets/images/default-avatar.png';
 import useToastMessage from '../../../hooks/useToastMessage';
 import { UserContext } from '../../../contexts/UserContext';
-import { getSellerById } from "../../../services/user-api.js";
+import { getSellerById } from '../../../services/user-api.js';
 
 // Import WebSocket libraries AFTER ensuring crypto is available
 let Client, SockJS;
@@ -24,16 +24,12 @@ const loadWebSocketLibraries = async () => {
 	await delay(50);
 
 	// Verify crypto is available before importing
-	if (typeof window !== 'undefined' &&
-		(window.crypto?.randomBytes || window.cryptoPolyfill?.randomBytes)) {
+	if (typeof window !== 'undefined' && (window.crypto?.randomBytes || window.cryptoPolyfill?.randomBytes)) {
 		console.log('✅ Crypto verified, importing WebSocket libraries...');
 
 		try {
 			// Dynamic imports to ensure they load after crypto polyfill
-			const [stompModule, sockjsModule] = await Promise.all([
-				import('@stomp/stompjs'),
-				import('sockjs-client')
-			]);
+			const [stompModule, sockjsModule] = await Promise.all([import('@stomp/stompjs'), import('sockjs-client')]);
 
 			// Sửa lại cách lấy Client
 			Client = stompModule.Client || stompModule.default?.Client || stompModule.default;
@@ -60,7 +56,7 @@ const ConnectionStatusBadge = ({ status }) => {
 		connecting: { color: 'warning', text: 'Connecting to live updates...', icon: '🔄' },
 		connected: { color: 'success', text: 'Live updates active', icon: '🟢' },
 		disconnected: { color: 'secondary', text: 'Live updates disconnected', icon: '🔴' },
-		error: { color: 'danger', text: 'Connection error - refreshing page recommended', icon: '❌' }
+		error: { color: 'danger', text: 'Connection error - refreshing page recommended', icon: '❌' },
 	};
 
 	const config = statusConfig[status] || statusConfig.connecting;
@@ -70,10 +66,7 @@ const ConnectionStatusBadge = ({ status }) => {
 			<span className="me-2">{config.icon}</span>
 			<small>{config.text}</small>
 			{status === 'error' && (
-				<button
-					className="btn btn-sm btn-outline-primary ms-auto"
-					onClick={() => window.location.reload()}
-				>
+				<button className="btn btn-sm btn-outline-primary ms-auto" onClick={() => window.location.reload()}>
 					Refresh Page
 				</button>
 			)}
@@ -108,7 +101,7 @@ const AuctionDetailPage = () => {
 	const [connectionStatus, setConnectionStatus] = useState('connecting');
 
 	// Toast message hook
-	const { showSuccess, showError } = useToastMessage();
+	const { showSuccess, showError, showWarning } = useToastMessage();
 
 	// Calculate minimum bid amount
 	const getMinimumBid = () => {
@@ -148,22 +141,29 @@ const AuctionDetailPage = () => {
 			console.log(`🔄 Attempting to connect to: ${wsUrl} - attempt ${connectionAttemptsRef.current}`);
 
 			try {
+				// Lấy token từ localStorage
+				const token = localStorage.getItem('jwt');
+				console.log('🔑 Token from localStorage:', token);
+
 				const client = new Client({
 					webSocketFactory: () => new SockJS(wsUrl),
-					reconnectDelay: 0, // Disable automatic reconnection
+					reconnectDelay: 0,
 					heartbeatIncoming: 10000,
 					heartbeatOutgoing: 10000,
 					connectionTimeout: 15000,
-					debug: (str) => {
-						console.log('🔧 STOMP Debug:', str);
-					}
+					debug: (str) => console.log('🔧 STOMP Debug:', str),
+
+					// Gửi token trong connect headers
+					connectHeaders: {
+						Authorization: token ? `Bearer ${token}` : undefined,
+					},
 				});
 
 				// Connection handlers
 				client.onConnect = (frame) => {
 					console.log('✅ Connected to WebSocket', frame);
 					setConnectionStatus('connected');
-					connectionAttemptsRef.current = 0; // Reset counter
+					connectionAttemptsRef.current = 0;
 					isConnectingRef.current = false;
 
 					// Subscribe to auction bid updates
@@ -174,10 +174,11 @@ const AuctionDetailPage = () => {
 
 							// Update bid history
 							setBidHistory((prev) => {
-								const existingBid = prev.find(bid =>
-									bid.id === newBid.id ||
-									(bid.userId === newBid.userId &&
-										Math.abs((bid.bidAmount || bid.amount) - (newBid.bidAmount || newBid.amount)) < 0.01)
+								const existingBid = prev.find(
+									(bid) =>
+										bid.id === newBid.id ||
+										(bid.userId === newBid.userId &&
+											Math.abs((bid.bidAmount || bid.amount) - (newBid.bidAmount || newBid.amount)) < 0.01),
 								);
 
 								if (existingBid) {
@@ -190,7 +191,7 @@ const AuctionDetailPage = () => {
 							// Update current bid
 							setAuction((prev) => ({
 								...prev,
-								currentBid: newBid.bidAmount || newBid.amount || prev.currentBid
+								currentBid: newBid.bidAmount || newBid.amount || prev.currentBid,
 							}));
 
 							// Show notification
@@ -209,7 +210,7 @@ const AuctionDetailPage = () => {
 							setAuction((prev) => ({
 								...prev,
 								currentBid: stats.currentBid || prev.currentBid,
-								bidCount: stats.bidCount || prev.bidCount
+								bidCount: stats.bidCount || prev.bidCount,
 							}));
 						} catch (err) {
 							console.error('❌ Failed to parse stats from WebSocket:', err);
@@ -227,6 +228,19 @@ const AuctionDetailPage = () => {
 								console.error('❌ Failed to parse error from WebSocket:', err);
 							}
 						});
+
+						// Subscribe to outbid notifications
+						client.subscribe(`/user/queue/auction/${id}/outbid`, (message) => {
+							try {
+								const notification = JSON.parse(message.body);
+								console.log('📢 Received outbid notification:', notification);
+								showWarning(
+									`You have been outbid! New highest bid: ${notification.currentHighestBid?.toLocaleString('vi-VN')} ₫`,
+								);
+							} catch (err) {
+								console.error('❌ Failed to parse outbid notification:', err);
+							}
+						});
 					}
 
 					console.log('🎯 Subscribed to auction updates:', subscription);
@@ -237,8 +251,8 @@ const AuctionDetailPage = () => {
 							destination: `/app/auction/${id}/join`,
 							body: JSON.stringify({
 								userId: user.id,
-								username: user.username || user.fullName || 'Anonymous'
-							})
+								username: user.username || user.fullName || 'Anonymous',
+							}),
 						});
 					}
 				};
@@ -273,7 +287,6 @@ const AuctionDetailPage = () => {
 
 				stompClientRef.current = client;
 				client.activate();
-
 			} catch (error) {
 				console.error('❌ Failed to create WebSocket connection:', error);
 				isConnectingRef.current = false;
@@ -322,8 +335,8 @@ const AuctionDetailPage = () => {
 							destination: `/app/auction/${id}/leave`,
 							body: JSON.stringify({
 								userId: user.id,
-								username: user.username || user.fullName || 'Anonymous'
-							})
+								username: user.username || user.fullName || 'Anonymous',
+							}),
 						});
 					}
 				} catch (err) {
@@ -365,9 +378,7 @@ const AuctionDetailPage = () => {
 			}
 
 			// Sort by bid time (newest first) and remove duplicates
-			const uniqueBids = bids.filter((bid, index, self) =>
-				index === self.findIndex(b => b.id === bid.id)
-			);
+			const uniqueBids = bids.filter((bid, index, self) => index === self.findIndex((b) => b.id === bid.id));
 
 			uniqueBids.sort((a, b) => {
 				const timeA = new Date(a.bidTime || a.createdAt || a.timestamp || 0);
@@ -487,8 +498,8 @@ const AuctionDetailPage = () => {
 					body: JSON.stringify({
 						userId: user.id,
 						bidAmount: bidValue,
-						timestamp: new Date().toISOString()
-					})
+						timestamp: new Date().toISOString(),
+					}),
 				});
 
 				// Show immediate feedback
@@ -499,7 +510,7 @@ const AuctionDetailPage = () => {
 				console.log('📤 Using REST API fallback for bidding');
 				const result = await createBid(payload);
 
-				if (result && (result.success !== false)) {
+				if (result && result.success !== false) {
 					showSuccess('Bid placed successfully!');
 
 					// Refresh auction data
@@ -513,10 +524,7 @@ const AuctionDetailPage = () => {
 		} catch (err) {
 			console.error('Bid error:', err);
 			const errorMessage =
-				err?.response?.data?.message ||
-				err?.response?.data ||
-				err?.message ||
-				'Failed to place bid. Please try again.';
+				err?.response?.data?.message || err?.response?.data || err?.message || 'Failed to place bid. Please try again.';
 			showError(errorMessage);
 		}
 	};
@@ -607,9 +615,7 @@ const AuctionDetailPage = () => {
 						<div className="bg-white mt-3 p-2 rounded shadow-sm border">
 							<h6 className="fw-bold mb-2 d-flex align-items-center">
 								Bid History ({bidHistory.length} bids)
-								{connectionStatus === 'connected' && (
-									<span className="badge bg-success ms-2">Live</span>
-								)}
+								{connectionStatus === 'connected' && <span className="badge bg-success ms-2">Live</span>}
 							</h6>
 							<ul className="list-group list-group-flush small">
 								{bidHistory.map((bid, index) => {
@@ -618,8 +624,10 @@ const AuctionDetailPage = () => {
 									const bidTime = bid.bidTime || bid.createdAt || bid.timestamp;
 
 									return (
-										<li key={bid.id || `bid-${index}`}
-											className="list-group-item px-2 py-1 d-flex justify-content-between align-items-center">
+										<li
+											key={bid.id || `bid-${index}`}
+											className="list-group-item px-2 py-1 d-flex justify-content-between align-items-center"
+										>
 											<div>
 												<strong>{bidderName}</strong>
 												<br />
@@ -628,10 +636,7 @@ const AuctionDetailPage = () => {
 												</small>
 											</div>
 											<span className="fw-bold text-success">
-												{bidAmount && !isNaN(bidAmount)
-													? Number(bidAmount).toLocaleString('vi-VN') + ' ₫'
-													: '0 ₫'
-												}
+												{bidAmount && !isNaN(bidAmount) ? Number(bidAmount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
 											</span>
 										</li>
 									);
@@ -670,7 +675,9 @@ const AuctionDetailPage = () => {
 					<div className="bg-white rounded p-4 shadow-sm">
 						{/* Current bid */}
 						<div className="d-flex justify-content-between mb-2">
-							<span><strong>Current Bid:</strong></span>
+							<span>
+								<strong>Current Bid:</strong>
+							</span>
 							<span className="text-success fw-bold">
 								{auction.currentBid ? Number(auction.currentBid).toLocaleString('vi-VN') : '0'} ₫
 							</span>
@@ -713,25 +720,37 @@ const AuctionDetailPage = () => {
 										<span className="input-group-text rounded-end bg-light fw-bold">₫</span>
 									</div>
 									<div className="mt-2">
-										<button type="submit" className="btn btn-success fw-semibold py-2 w-100"
-												disabled={!user}>
-											{user ? (connectionStatus === 'connected' ? '⚡ Place Bid (Live)' : '📤 Place Bid (API)') : 'Login to Bid'}
+										<button type="submit" className="btn btn-success fw-semibold py-2 w-100" disabled={!user}>
+											{user
+												? connectionStatus === 'connected'
+													? '⚡ Place Bid (Live)'
+													: '📤 Place Bid (API)'
+												: 'Login to Bid'}
 										</button>
 									</div>
 								</div>
 
 								{/* Quick bid buttons */}
 								<div className="d-flex gap-2 flex-wrap">
-									<button type="button" className="btn btn-outline-primary btn-sm"
-											onClick={() => setBidAmount(getMinimumBid().toString())}>
+									<button
+										type="button"
+										className="btn btn-outline-primary btn-sm"
+										onClick={() => setBidAmount(getMinimumBid().toString())}
+									>
 										Min: {getMinimumBid().toLocaleString('vi-VN')} ₫
 									</button>
-									<button type="button" className="btn btn-outline-primary btn-sm"
-											onClick={() => setBidAmount((getMinimumBid() + auction.incrementAmount).toString())}>
+									<button
+										type="button"
+										className="btn btn-outline-primary btn-sm"
+										onClick={() => setBidAmount((getMinimumBid() + auction.incrementAmount).toString())}
+									>
 										+{auction.incrementAmount.toLocaleString('vi-VN')} ₫
 									</button>
-									<button type="button" className="btn btn-outline-primary btn-sm"
-											onClick={() => setBidAmount((getMinimumBid() + auction.incrementAmount * 2).toString())}>
+									<button
+										type="button"
+										className="btn btn-outline-primary btn-sm"
+										onClick={() => setBidAmount((getMinimumBid() + auction.incrementAmount * 2).toString())}
+									>
 										+{(auction.incrementAmount * 2).toLocaleString('vi-VN')} ₫
 									</button>
 								</div>
@@ -781,10 +800,10 @@ const AuctionDetailPage = () => {
 										</div>
 										<div className="card-body">
 											<h6 className="card-title mb-1 text-dark">{item.title}</h6>
-											<small
-												className="text-muted">Starting: {new Date(item.startTime).toLocaleString('vi-VN')}</small>
+											<small className="text-muted">Starting: {new Date(item.startTime).toLocaleString('vi-VN')}</small>
 											<small className="text-muted">
-												<br />End: {new Date(item.endTime).toLocaleString('vi-VN')}
+												<br />
+												End: {new Date(item.endTime).toLocaleString('vi-VN')}
 											</small>
 										</div>
 									</div>

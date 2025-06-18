@@ -21,7 +21,7 @@ export const placeBidAsync = async (bidMessage) => {
 
 // Lấy danh sách bid theo auctionId
 export const getBidsByAuction = async (auctionId) => {
-	const response = await api.get(`${bidEndpoint}/auction/${auctionId}`);
+	const response = await api.get(`${bidEndpoint}/auction/${auctionId}/history`);
 	return response.data;
 };
 

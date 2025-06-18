@@ -31,11 +31,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Native WebSocket
         registry.addEndpoint("/ws-native")
-                .setAllowedOrigins(allowedOrigins.split(","));
+                .setAllowedOriginPatterns(allowedOrigins.split(","));
 
         // SockJS fallback
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(allowedOrigins.split(","))
+                .setAllowedOriginPatterns(allowedOrigins.split(","))
                 .withSockJS()
                 .setHeartbeatTime(25000)
                 .setDisconnectDelay(5000)
