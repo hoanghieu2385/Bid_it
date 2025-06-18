@@ -20,16 +20,25 @@ public class FeignClientConfig {
             authToken = TokenContextHolder.getToken();
 
             // Nếu không có, thử lấy từ HTTP request (cho REST API)
-            if (authToken == null) {
+            if (authToken == null || authToken.trim().isEmpty()) {
                 ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
                 if (attributes != null) {
                     HttpServletRequest request = attributes.getRequest();
                     authToken = request.getHeader("Authorization");
+//                    System.out.println("Token from HTTP request: " + (authToken != null ? authToken.substring(0, Math.min(50, authToken.length())) + "..." : "null"));
                 }
             }
 
-            if (authToken != null) {
+            if (authToken != null && !authToken.trim().isEmpty()) {
+                // Đảm bảo token có format Bearer
+                if (!authToken.startsWith("Bearer ")) {
+                    authToken = "Bearer " + authToken;
+                }
+
                 template.header("Authorization", authToken);
+//                System.out.println("Passing token to Feign: " + authToken.substring(0, Math.min(50, authToken.length())) + "...");
+            } else {
+//                System.out.println("No token available for Feign request");
             }
         };
     }
