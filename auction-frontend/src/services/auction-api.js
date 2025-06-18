@@ -66,6 +66,16 @@ export const getAuctionDetailById = async (auctionId) => {
 	return response.data;
 };
 
+export const getAuctionBidHistory = async (auctionId) => {
+	const token = Cookies.get('jwt');
+	const response = await api.get(`/bid-service/api/bids/auction/${auctionId}/history`, {
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+	return response.data;
+};
+
 export const getParticipatedAuctions = async (userId) => {
 	const token = Cookies.get('jwt');
 	try {
