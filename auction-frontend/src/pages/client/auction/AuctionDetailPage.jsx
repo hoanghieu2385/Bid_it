@@ -169,37 +169,39 @@ const AuctionDetailPage = () => {
 					// Subscribe to auction bid updates
 					const subscription = client.subscribe(`/topic/auction/${id}/bids`, (message) => {
 						try {
-							const newBid = JSON.parse(message.body);
-							console.log('📥 Received new bid:', newBid);
+							const notification = JSON.parse(message.body);
 
-							// Update bid history
-							setBidHistory((prev) => {
-								const existingBid = prev.find(
-									(bid) =>
-										bid.id === newBid.id ||
-										(bid.userId === newBid.userId &&
-											Math.abs((bid.bidAmount || bid.amount) - (newBid.bidAmount || newBid.amount)) < 0.01),
-								);
+							if (notification.type === 'NEW_BID' && notification.bidInfo) {
+								const newBid = notification.bidInfo;
+								console.log('📥 Received bid info:', newBid);
 
-								if (existingBid) {
-									return prev;
-								}
+								// Update bid history
+								setBidHistory((prev) => {
+									const existingBid = prev.find(
+										(bid) =>
+											bid.id === newBid.id ||
+											(bid.userId === newBid.userId &&
+												Math.abs((bid.bidAmount || bid.amount) - (newBid.bidAmount || newBid.amount)) < 0.01),
+									);
 
-								return [newBid, ...prev];
-							});
+									if (existingBid) return prev;
+									return [newBid, ...prev];
+								});
 
-							// Update current bid
-							setAuction((prev) => ({
-								...prev,
-								currentBid: newBid.bidAmount || newBid.amount || prev.currentBid,
-							}));
+								// Update current bid
+								setAuction((prev) => ({
+									...prev,
+									currentBid: notification.currentHighestBid || newBid.bidAmount || newBid.amount || prev.currentBid,
+								}));
 
-							// Show notification
-							showSuccess(`New bid: ${(newBid.bidAmount || newBid.amount || 0).toLocaleString('vi-VN')} ₫`);
+								// Show notification
+								showSuccess(`New bid: ${(newBid.bidAmount || newBid.amount || 0).toLocaleString('vi-VN')} ₫`);
+							}
 						} catch (err) {
 							console.error('❌ Failed to parse bid from WebSocket:', err);
 						}
 					});
+
 
 					// Subscribe to auction statistics updates
 					client.subscribe(`/topic/auction/${id}/stats`, (message) => {

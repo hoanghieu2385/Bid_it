@@ -57,6 +57,6 @@ export const cancelBid = async (bidId) => {
 
 // Lấy bid history cho auction - use consistent API endpoint
 export const getBidsByAuctionId = async (auctionId) => {
-	const response = await api.get(`${bidEndpoint}/auction/${auctionId}`);
+	const response = await api.get(`${bidEndpoint}/auction/${auctionId}/history`);
 	return response.data;
 };

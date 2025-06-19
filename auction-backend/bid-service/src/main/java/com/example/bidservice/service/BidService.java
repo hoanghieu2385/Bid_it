@@ -303,10 +303,8 @@ public class BidService implements IBidService {
         try {
             BidResponse bidResponse = mapToBidResponse(winningBid);
 
-            // Gửi BidNotification dạng AUCTION_END
             webSocketService.sendAuctionEndNotification(bidResponse);
 
-            // Gửi thống kê
             IBidService.BidStatistics finalStats = getBidStatistics(winningBid.getAuctionId());
             webSocketService.sendBidStatistics(winningBid.getAuctionId(), finalStats);
 
@@ -332,11 +330,8 @@ public class BidService implements IBidService {
         try {
             UserServiceClient.UserResponse user = userServiceClient.getUserById(bid.getUserId());
             if (user != null) {
-                // Sử dụng firstName và lastName trực tiếp
                 firstName = user.getFirstName() != null ? user.getFirstName() : "";
                 lastName = user.getLastName() != null ? user.getLastName() : "";
-
-                // Fallback to fullName nếu firstName/lastName null
                 if (firstName.isEmpty() && lastName.isEmpty() && user.getFullName() != null) {
                     String[] nameParts = user.getFullName().trim().split(" ", 2);
                     firstName = nameParts.length > 0 ? nameParts[0] : "";
@@ -359,6 +354,7 @@ public class BidService implements IBidService {
                 bid.getStatus().name()
         );
     }
+
 
     // Enrich dữ liệu bid bằng thông tin user & auction
     @Override
@@ -397,24 +393,24 @@ public class BidService implements IBidService {
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 100))
     public void sendRealtimeBidUpdate(Bid bid) {
         try {
-            // 1. Map entity Bid sang DTO BidResponse
-            BidResponse bidResponse = mapToBidResponse(bid);
+            Bid enrichedBid = enrichBidWithExternalData(bid); // ✅ đảm bảo có userName
+            BidResponse bidResponse = mapToBidResponse(enrichedBid); // ⚡ chắc chắn đầy đủ
 
-            // 2. Gửi notification bid mới
+            // 1. Gửi bid mới
             webSocketService.sendNewBidNotification(bidResponse);
 
-            // 3. Gửi thông tin thống kê
+            // 2. Gửi bid history update
+            webSocketService.sendBidHistoryUpdate(bid.getAuctionId(), bidResponse);
+
+            // 3. Gửi thống kê
             IBidService.BidStatistics stats = getBidStatistics(bid.getAuctionId());
             webSocketService.sendBidStatistics(bid.getAuctionId(), stats);
-
-            webSocketService.sendBidHistoryUpdate(bid.getAuctionId(), bidResponse);
 
         } catch (Exception e) {
             System.err.println("Failed to send realtime update: " + e.getMessage());
             throw e;
         }
     }
-
     // Lấy các bid theo lịch sử
     @Override
     public List<Bid> getBidHistory(Long auctionId) {
