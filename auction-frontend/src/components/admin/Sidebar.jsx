@@ -106,7 +106,7 @@ const Sidebar = () => {
                     <div className="bg-white py-2 collapse-inner rounded">
                         <Link
                             className={`collapse-item ${isPaymentOpen ? 'animate-item' : ''}`}
-                            to="/payments/deposits"
+                            to="/admin/deposits"
                             style={{
                                 transitionDelay: '0.1s',
                                 opacity: isPaymentOpen ? 1 : 0,
@@ -118,7 +118,7 @@ const Sidebar = () => {
                         </Link>
                         <Link
                             className={`collapse-item ${isPaymentOpen ? 'animate-item' : ''}`}
-                            to="/payments/winners"
+                            to="/admin/winners"
                             style={{
                                 transitionDelay: '0.2s',
                                 opacity: isPaymentOpen ? 1 : 0,
@@ -130,7 +130,7 @@ const Sidebar = () => {
                         </Link>
                         <Link
                             className={`collapse-item ${isPaymentOpen ? 'animate-item' : ''}`}
-                            to="/payments/seller-revenue"
+                            to="/admin/seller-revenue"
                             style={{
                                 transitionDelay: '0.3s',
                                 opacity: isPaymentOpen ? 1 : 0,

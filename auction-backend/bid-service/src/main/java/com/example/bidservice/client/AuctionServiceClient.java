@@ -6,7 +6,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
 // Auction Service Client
-@FeignClient(name = "auction-service", url = "${app.services.auction-service}", configuration = FeignClientConfig.class)
+@FeignClient(name = "auction-service", configuration = FeignClientConfig.class)
 public interface AuctionServiceClient {
 
     @GetMapping("/api/auctions/{id}")

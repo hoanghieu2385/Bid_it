@@ -65,4 +65,10 @@ public class WebSocketService implements IWebSocketService {
     public void sendGeneralNotification(String topic, Object payload) {
         messagingTemplate.convertAndSend(topic, payload);
     }
+
+    @Override
+    public void sendBidHistoryUpdate(Long auctionId, BidResponse bid) {
+        messagingTemplate.convertAndSend("/topic/auction/" + auctionId + "/history", bid);
+    }
+
 }

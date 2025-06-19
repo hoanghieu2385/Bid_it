@@ -77,13 +77,6 @@ const Header = () => {
 						</ul>
 
 						<div className="client-header-actions d-flex align-items-center gap-3">
-							{/* Search (only on desktop) */}
-							<div className="input-group w-auto d-none d-lg-flex">
-								<span className="input-group-text bg-white border-end-0">
-									<FaSearch className="text-muted" />
-								</span>
-								<input type="text" className="form-control border-start-0" placeholder="Search" />
-							</div>
 
 							{user ? (
 								<div className="dropdown user-dropdown" ref={dropdownRef}>

@@ -397,28 +397,22 @@ public class BidService implements IBidService {
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 100))
     public void sendRealtimeBidUpdate(Bid bid) {
         try {
-            // Tạo BidResponse để gửi qua WebSocket
+            // 1. Map entity Bid sang DTO BidResponse
             BidResponse bidResponse = mapToBidResponse(bid);
 
-            // Gửi notification qua WebSocketService
+            // 2. Gửi notification bid mới
             webSocketService.sendNewBidNotification(bidResponse);
 
-            // Gửi thông tin statistics update
+            // 3. Gửi thông tin thống kê
             IBidService.BidStatistics stats = getBidStatistics(bid.getAuctionId());
             webSocketService.sendBidStatistics(bid.getAuctionId(), stats);
+
+            webSocketService.sendBidHistoryUpdate(bid.getAuctionId(), bidResponse);
 
         } catch (Exception e) {
             System.err.println("Failed to send realtime update: " + e.getMessage());
             throw e;
         }
-    }
-
-    // Lấy các bid theo auctionId
-    @Override
-    public List<Bid> getBidsByAuction(Long auctionId) {
-        List<Bid> bids = bidRepository.findByAuctionIdOrderByBidAmountDesc(auctionId);
-        bids.forEach(this::enrichBidWithExternalData);
-        return bids;
     }
 
     // Lấy các bid theo lịch sử

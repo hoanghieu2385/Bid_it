@@ -2,19 +2,27 @@
 import React, { useEffect, useState } from 'react';
 import { getCurrentUser } from '../../../services/user-api';
 import { getParticipatedAuctions } from '../../../services/auction-api';
+import { getPaymentsByUserId, isAuctionPaid } from '../../../services/payment-api';
+import BidHistoryModal from '../../../components/client/auction/BidHistory';
+import "../../../assets/styles/client/profile/ParticipatedAuctions.css";
 
 const ParticipatedAuctions = () => {
 	const [auctions, setAuctions] = useState([]);
+	const [filteredAuctions, setFilteredAuctions] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 	const [currentUser, setCurrentUser] = useState(null);
+	const [filter, setFilter] = useState('all'); // all, won, active, ended
+	
+	// State for BidHistory Modal
+	const [selectedAuction, setSelectedAuction] = useState(null);
+	const [isBidHistoryModalOpen, setIsBidHistoryModalOpen] = useState(false);
 
 	useEffect(() => {
 		const fetchParticipatedAuctions = async () => {
 			try {
 				setLoading(true);
 				
-				// Await the getCurrentUser function
 				const user = await getCurrentUser();
 				if (!user || !user.id) {
 					setError('User not authenticated');
@@ -22,12 +30,51 @@ const ParticipatedAuctions = () => {
 				}
 
 				setCurrentUser(user);
-				console.log('Current user:', user); // Debug log
+				console.log('Current user:', user);
 				
-				const participatedAuctions = await getParticipatedAuctions(user.id);
-				console.log('Participated auctions:', participatedAuctions); // Debug log
+				const [participatedAuctions, payments] = await Promise.all([
+					getParticipatedAuctions(user.id),
+					getPaymentsByUserId(user.id).catch(err => {
+						console.warn('Failed to fetch payments:', err);
+						return [];
+					})
+				]);
+
+				console.log('Participated auctions:', participatedAuctions);
+				console.log('User payments:', payments);
 				
-				setAuctions(participatedAuctions);
+				// Add payment info to auctions
+				const auctionsWithPaymentInfo = await Promise.all(
+					participatedAuctions.map(async (auction) => {
+						try {
+							// Check if auction is paid
+							const isPaid = await isAuctionPaid(auction.id);
+							
+							// Find auction payment for this auction
+							const auctionPayment = payments.find(payment => 
+								payment.auctionId === auction.id && 
+								payment.paymentType === 'AUCTION_PAYMENT'
+							);
+
+							return {
+								...auction,
+								isPaid,
+								auctionPayment,
+								paymentStatus: auctionPayment ? auctionPayment.status : null
+							};
+						} catch (err) {
+							console.warn(`Failed to check payment for auction ${auction.id}:`, err);
+							return {
+								...auction,
+								isPaid: false,
+								auctionPayment: null,
+								paymentStatus: null
+							};
+						}
+					})
+				);
+				
+				setAuctions(auctionsWithPaymentInfo);
 			} catch (err) {
 				console.error('Error fetching participated auctions:', err);
 				setError('Failed to load participated auctions. Please try again later.');
@@ -35,17 +82,48 @@ const ParticipatedAuctions = () => {
 				setLoading(false);
 			}
 		};
-
 		fetchParticipatedAuctions();
 	}, []);
 
+	// Filter auctions based on selected filter
+	useEffect(() => {
+		let filtered = auctions;
+		
+		switch (filter) {
+			case 'won':
+				filtered = auctions.filter(auction => isWinner(auction, currentUser));
+				break;
+			case 'active':
+				filtered = auctions.filter(auction => auction.status === 'ACTIVE');
+				break;
+			case 'ended':
+				filtered = auctions.filter(auction => 
+					auction.status === 'ENDED' || auction.status === 'CLOSED' || auction.status === 'SOLD'
+				);
+				break;
+			default:
+				filtered = auctions;
+		}
+		
+		setFilteredAuctions(filtered);
+	}, [auctions, filter, currentUser]);
+
+	// Handle bid history modal
+	const handleShowBidHistory = (auction) => {
+		setSelectedAuction(auction);
+		setIsBidHistoryModalOpen(true);
+	};
+
+	const handleCloseBidHistory = () => {
+		setIsBidHistoryModalOpen(false);
+		setSelectedAuction(null);
+	};
+
 	const formatPrice = (price) => {
-		// Kiểm tra nếu price là null, undefined hoặc NaN
 		if (price === null || price === undefined || isNaN(price)) {
 			return 'N/A';
 		}
 		
-		// Chuyển đổi về số nếu là string
 		const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
 		
 		if (isNaN(numericPrice)) {
@@ -75,20 +153,19 @@ const ParticipatedAuctions = () => {
 		}
 	};
 
-	const getStatusBadge = (status) => {
+	const getPaymentStatusBadge = (paymentStatus) => {
+		if (!paymentStatus) return null;
+
 		const statusMap = {
-			'PENDING': { class: 'bg-warning', text: 'Pending' },
-			'UPCOMING': { class: 'bg-info', text: 'Upcoming' },
-			'ACTIVE': { class: 'bg-success', text: 'Active' },
-			'ENDED': { class: 'bg-secondary', text: 'Ended' },
-			'CLOSED': { class: 'bg-dark', text: 'Closed' },
-			'SOLD': { class: 'bg-info', text: 'Sold' },
-			'FAILED': { class: 'bg-danger', text: 'Failed' }
+			'PENDING': { class: 'bg-warning', text: 'Payment Pending' },
+			'COMPLETED': { class: 'bg-success', text: 'Paid' },
+			'FAILED': { class: 'bg-danger', text: 'Payment Failed' },
+			'CANCELLED': { class: 'bg-secondary', text: 'Payment Cancelled' }
 		};
 		
-		const statusInfo = statusMap[status] || { class: 'bg-secondary', text: status };
+		const statusInfo = statusMap[paymentStatus] || { class: 'bg-secondary', text: paymentStatus };
 		return (
-			<span className={`badge ${statusInfo.class} text-white`}>
+			<span className={`badge ${statusInfo.class} text-white ms-1`}>
 				{statusInfo.text}
 			</span>
 		);
@@ -98,174 +175,343 @@ const ParticipatedAuctions = () => {
 		return auction.winnerId === user?.id;
 	};
 
-	// Helper function để debug auction data
-	const debugAuctionData = (auction) => {
-		console.log('Auction debug:', {
-			id: auction.id,
-			title: auction.title,
-			userHighestBid: auction.userHighestBid,
-			userHighestBidType: typeof auction.userHighestBid,
-			userBidCount: auction.userBidCount,
-			userBids: auction.userBids
-		});
+	const isPaymentOverdue = (auction) => {
+		if (!auction.winnerPaymentDeadline) return false;
+		return new Date() > new Date(auction.winnerPaymentDeadline);
+	};
+
+	// Hàm xử lý khi ảnh lỗi
+	const handleImageError = (e) => {
+		e.target.style.display = 'none';
+		e.target.nextSibling.style.display = 'flex';
+	};
+
+	// Hàm render ảnh auction
+	const renderAuctionImage = (auction) => {
+		if (auction.mediaUrls && auction.mediaUrls.length > 0) {
+			return (
+				<div className="auction-image-container">
+					<img 
+						src={auction.mediaUrls[0]} 
+						className="card-img-top auction-image" 
+						alt={auction.title}
+						onError={handleImageError}
+					/>
+					<div className="auction-image-placeholder" style={{ display: 'none' }}>
+						<i className="fas fa-image"></i>
+					</div>
+				</div>
+			);
+		} else {
+			return (
+				<div className="auction-image-placeholder">
+					<i className="fas fa-image"></i>
+				</div>
+			);
+		}
 	};
 
 	if (loading) {
 		return (
-			<div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
-				<div className="spinner-border text-primary" role="status">
-					<span className="visually-hidden">Loading...</span>
+			<div className="participated-auctions">
+				<div className="loading-container">
+					<div className="spinner-border text-primary" role="status">
+						<span className="visually-hidden">Loading...</span>
+					</div>
+					<span className="ms-2">Loading auction history...</span>
 				</div>
-				<span className="ms-2">Loading auction history...</span>
 			</div>
 		);
 	}
 
 	if (error) {
 		return (
-			<div className="alert alert-danger" role="alert">
-				<i className="fas fa-exclamation-triangle me-2"></i>
-				{error}
+			<div className="participated-auctions">
+				<div className="alert alert-danger" role="alert">
+					<i className="fas fa-exclamation-triangle me-2"></i>
+					{error}
+				</div>
 			</div>
 		);
 	}
 
 	if (auctions.length === 0) {
 		return (
-			<div className="text-center py-5">
-				<i className="fas fa-gavel fa-3x text-muted mb-3"></i>
-				<h5 className="text-muted">No auctions participated yet</h5>
-				<p className="text-muted">You haven't placed any bids in any auction sessions.</p>
+			<div className="participated-auctions">
+				<div className="empty-state">
+					<i className="fas fa-gavel fa-3x text-muted mb-3"></i>
+					<h5 className="text-muted">No auctions participated yet</h5>
+					<p className="text-muted">You haven't placed any bids in any auction sessions.</p>
+				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div>
-			<div className="d-flex justify-content-between align-items-center mb-4">
-				<h4 className="mb-0">
+		<div className="participated-auctions">
+			<div className="page-header text-center">
+				<h4>
 					<i className="fas fa-history me-2"></i>
 					Participated Auctions
 				</h4>
-				<span className="badge bg-primary">{auctions.length} sessions</span>
+				<p className="mb-0">Track your auction participation and bidding history</p>
+			</div>
+
+			{/* Filter Buttons */}
+			<div className="filter-section">
+				<h6>Filter auctions by status:</h6>
+				<div className="d-flex flex-wrap">
+					<button 
+						className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+						onClick={() => setFilter('all')}
+					>
+						All ({auctions.length})
+					</button>
+					<button 
+						className={`filter-btn ${filter === 'won' ? 'active' : ''}`}
+						onClick={() => setFilter('won')}
+					>
+						<i className="fas fa-trophy me-1"></i>
+						Won ({currentUser ? auctions.filter(a => isWinner(a, currentUser)).length : 0})
+					</button>
+					<button 
+						className={`filter-btn ${filter === 'active' ? 'active' : ''}`}
+						onClick={() => setFilter('active')}
+					>
+						<i className="fas fa-play-circle me-1"></i>
+						Active ({auctions.filter(a => a.status === 'ACTIVE').length})
+					</button>
+					<button 
+						className={`filter-btn ${filter === 'ended' ? 'active' : ''}`}
+						onClick={() => setFilter('ended')}
+					>
+						<i className="fas fa-stop-circle me-1"></i>
+						Ended ({auctions.filter(a => a.status === 'ENDED' || a.status === 'CLOSED' || a.status === 'SOLD').length})
+					</button>
+				</div>
 			</div>
 
 			<div className="row">
-				{auctions.map((auction) => {
-					// Debug log cho mỗi auction
-					debugAuctionData(auction);
-					
-					return (
-						<div key={auction.id} className="col-md-6 col-lg-4 mb-4">
-							<div className="card h-100 shadow-sm">
-								{auction.mediaUrls && auction.mediaUrls.length > 0 && (
-									<img 
-										src={auction.mediaUrls[0]} 
-										className="card-img-top" 
-										alt={auction.title}
-										style={{ height: '200px', objectFit: 'cover' }}
-									/>
-								)}
-								
-								<div className="card-body">
-									<div className="d-flex justify-content-between align-items-start mb-2">
-										<h6 className="card-title text-truncate" title={auction.title}>
-											{auction.title}
-										</h6>
-										{getStatusBadge(auction.status)}
-									</div>
-
-									<div className="mb-2">
-										<small className="text-muted">Current Price:</small>
-										<div className="fw-bold text-success">
-											{formatPrice(auction.currentBid || auction.startingPrice)}
-										</div>
-									</div>
-
-									<div className="mb-2">
-										<small className="text-muted">Your Highest Bid:</small>
-										<div className="fw-bold text-primary">
-											{formatPrice(auction.userHighestBid)}
-										</div>
-									</div>
-
-									<div className="mb-2">
-										<small className="text-muted">Your Bids:</small>
-										<span className="ms-1 badge bg-secondary">
-											{auction.userBidCount || 0}
+				{filteredAuctions.map((auction) => (
+					<div key={auction.id} className="col-md-6 col-lg-4 mb-4">
+						<div className="auction-card card h-100">
+							{/* Auction Image */}
+							{renderAuctionImage(auction)}
+							
+							<div className="card-body">
+								<div className="d-flex justify-content-between align-items-start mb-3">
+									<h6 className="auction-title" title={auction.title}>
+										{auction.title}
+									</h6>
+									<div className="d-flex flex-wrap gap-1">
+										<span className={`status-badge status-${auction.status?.toLowerCase()}`}>
+											{auction.status}
 										</span>
-									</div>
-
-									{currentUser && isWinner(auction, currentUser) && (
-										<div className="alert alert-success py-1 px-2 mb-2">
-											<i className="fas fa-trophy me-1"></i>
-											<small>You won this auction!</small>
-										</div>
-									)}
-
-									<div className="d-flex justify-content-between align-items-center text-muted small">
-										<span>
-											<i className="fas fa-clock me-1"></i>
-											Ends: {formatDate(auction.endTime)}
-										</span>
+										{getPaymentStatusBadge(auction.paymentStatus)}
 									</div>
 								</div>
 
-								<div className="card-footer bg-transparent">
-									<div className="d-flex justify-content-between">
-										<button 
-											className="btn btn-outline-primary btn-sm"
-											onClick={() => window.location.href = `/auctions/${auction.id}`}
-										>
-											<i className="fas fa-eye me-1"></i>
-											View Details
-										</button>
+								{/* Price Section */}
+								<div className="price-section">
+									<div className="row">
+										<div className="col-6">
+											<div className="price-label">Current Price</div>
+											<div className="price-value price-current">
+												{formatPrice(auction.currentBid || auction.startingPrice)}
+											</div>
+										</div>
+										<div className="col-6">
+											<div className="price-label">Your Highest Bid</div>
+											<div className="price-value price-bid">
+												{formatPrice(auction.userHighestBid)}
+											</div>
+										</div>
+									</div>
+								</div>
+
+								{/* Auction Meta */}
+								<div className="auction-meta">
+									<div className="mt-1">
+										<i className="fas fa-clock me-1"></i>
+										Ends: {formatDate(auction.endTime)}
+									</div>
+								</div>
+
+								{/* Winner Status */}
+								{currentUser && isWinner(auction, currentUser) && (
+									<div className="winner-alert">
+										<i className="fas fa-trophy me-2"></i>
+										<strong>Congratulations! You won this auction!</strong>
+									</div>
+								)}
+
+								{/* Payment Information for Winners */}
+								{currentUser && isWinner(auction, currentUser) && auction.status === 'CLOSED' && (
+									<div className={`payment-info ${auction.isPaid ? 'paid' : isPaymentOverdue(auction) ? 'overdue' : ''}`}>
+										<h6 className="mb-2">
+											<i className="fas fa-credit-card me-1"></i>
+											Payment Status
+										</h6>
 										
-										{auction.status === 'ACTIVE' && (
-											<button 
-												className="btn btn-primary btn-sm"
-												onClick={() => window.location.href = `/auctions/${auction.id}`}
-											>
-												<i className="fas fa-gavel me-1"></i>
-												Continue Bidding
-											</button>
+										{auction.isPaid ? (
+											<div className="text-success">
+												<i className="fas fa-check-circle me-1"></i>
+												Payment completed successfully
+											</div>
+										) : (
+											<div>
+												{auction.winnerPaymentDeadline && (
+													<div className="payment-deadline">
+														<i className={`fas ${isPaymentOverdue(auction) ? 'fa-exclamation-triangle' : 'fa-clock'} me-1`}></i>
+														Deadline: {formatDate(auction.winnerPaymentDeadline)}
+														{isPaymentOverdue(auction) && (
+															<span className="ms-2 text-danger fw-bold">(OVERDUE)</span>
+														)}
+													</div>
+												)}
+												
+												{auction.auctionPayment?.status === 'PENDING' ? (
+													<div className="text-info">
+														<i className="fas fa-hourglass-half me-1"></i>
+														Payment processing...
+													</div>
+												) : (
+													<div className="text-warning">
+														<i className="fas fa-exclamation-circle me-1"></i>
+														Payment required to complete purchase
+													</div>
+												)}
+											</div>
 										)}
 									</div>
+								)}
+							</div>
+
+							<div className="card-footer">
+								<div className="d-flex justify-content-between gap-2">
+									<button 
+										className="action-btn btn-view"
+										onClick={() => handleShowBidHistory(auction)}
+									>
+										Bid history
+									</button>
+									
+									{auction.status === 'ACTIVE' && (
+										<button 
+											className="action-btn btn-bid"
+											onClick={() => window.location.href = `/auctions/${auction.id}`}
+										>
+											Bid Now
+										</button>
+									)}
+
+									{/* Payment Button for Winners */}
+									{currentUser && isWinner(auction, currentUser) && 
+									 auction.status === 'CLOSED' && 
+									 !auction.isPaid && 
+									 auction.auctionPayment?.status !== 'PENDING' && (
+										<button 
+											className={`action-btn btn-pay ${isPaymentOverdue(auction) ? 'overdue' : ''}`}
+											onClick={() => window.location.href = `/payment/auction/${auction.id}`}
+										>
+											Pay Now
+										</button>
+									)}
 								</div>
 							</div>
 						</div>
-					);
-				})}
+					</div>
+				))}
 			</div>
 
 			{/* Summary Statistics */}
-			<div className="mt-4 p-3 bg-light rounded">
-				<h6>Participation Statistics:</h6>
-				<div className="row text-center">
-					<div className="col-md-3">
-						<div className="h5 text-primary mb-0">{auctions.length}</div>
-						<small className="text-muted">Total Participated</small>
-					</div>
-					<div className="col-md-3">
-						<div className="h5 text-success mb-0">
-							{currentUser ? auctions.filter(a => isWinner(a, currentUser)).length : 0}
+			<div className="stats-section">
+				<h6>
+					<i className="fas fa-chart-bar me-2"></i>
+					Participation Statistics
+				</h6>
+				<div className="row">
+					<div className="col-md-3 col-sm-6">
+						<div className="stat-item">
+							<div className="stat-value text-primary">{filteredAuctions.length}</div>
+							<div className="stat-label">Total Auctions</div>
 						</div>
-						<small className="text-muted">Auctions Won</small>
 					</div>
-					<div className="col-md-3">
-						<div className="h5 text-warning mb-0">
-							{auctions.filter(a => a.status === 'ACTIVE').length}
+					<div className="col-md-3 col-sm-6">
+						<div className="stat-item">
+							<div className="stat-value text-success">
+								{currentUser ? filteredAuctions.filter(a => isWinner(a, currentUser)).length : 0}
+							</div>
+							<div className="stat-label">Auctions Won</div>
 						</div>
-						<small className="text-muted">Currently Active</small>
 					</div>
-					<div className="col-md-3">
-						<div className="h5 text-info mb-0">
-							{auctions.reduce((total, auction) => total + (auction.userBidCount || 0), 0)}
+					<div className="col-md-3 col-sm-6">
+						<div className="stat-item">
+							<div className="stat-value text-warning">
+								{filteredAuctions.filter(a => a.status === 'ACTIVE').length}
+							</div>
+							<div className="stat-label">Currently Active</div>
 						</div>
-						<small className="text-muted">Total Bids Placed</small>
+					</div>
+					<div className="col-md-3 col-sm-6">
+						<div className="stat-item">
+							<div className="stat-value text-info">
+								{filteredAuctions.reduce((total, auction) => total + (auction.userBidCount || 0), 0)}
+							</div>
+							<div className="stat-label">Total Bids</div>
+						</div>
 					</div>
 				</div>
+
+				{currentUser && (
+					<div className="row mt-3 pt-3 border-top">
+						<div className="col-md-4">
+							<div className="stat-item">
+								<div className="stat-value text-success">
+									{auctions.filter(a => isWinner(a, currentUser) && a.isPaid).length}
+								</div>
+								<div className="stat-label">Paid Auctions</div>
+							</div>
+						</div>
+						<div className="col-md-4">
+							<div className="stat-item">
+								<div className="stat-value text-warning">
+									{auctions.filter(a => 
+										isWinner(a, currentUser) && 
+										a.status === 'CLOSED' && 
+										!a.isPaid && 
+										!isPaymentOverdue(a)
+									).length}
+								</div>
+								<div className="stat-label">Pending Payment</div>
+							</div>
+						</div>
+						<div className="col-md-4">
+							<div className="stat-item">
+								<div className="stat-value text-danger">
+									{auctions.filter(a => 
+										isWinner(a, currentUser) && 
+										a.status === 'CLOSED' && 
+										!a.isPaid && 
+										isPaymentOverdue(a)
+									).length}
+								</div>
+								<div className="stat-label">Overdue Payment</div>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
+
+			{/* Bid History Modal */}
+			{selectedAuction && (
+				<BidHistoryModal
+					auctionId={selectedAuction.id}
+					auctionTitle={selectedAuction.title}
+					isOpen={isBidHistoryModalOpen}
+					onClose={handleCloseBidHistory}
+				/>
+			)}
 		</div>
 	);
 };

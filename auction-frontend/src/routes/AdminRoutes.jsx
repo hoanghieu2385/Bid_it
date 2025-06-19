@@ -10,6 +10,7 @@ import User from '../pages/admin/User.jsx';
 import UserDetail from '../pages/admin/UserDetail.jsx';
 import Security from '../pages/admin/Security.jsx';
 import VerifyRequests from "../pages/admin/VerifyRequests.jsx";
+import PaymentAndDeposit from '../pages/admin/PaymentAndDeposit.jsx';
 
 function AdminRoutes() {
 	const { user, loading } = useContext(UserContext);
@@ -30,7 +31,7 @@ function AdminRoutes() {
       		<Route path="/user/:userId" element={<UserDetail />} />
 			<Route path="/security" element={<Security />} />
 			<Route path="/verify-requests" element={<VerifyRequests />} />
-
+			<Route path="/deposits" element={<PaymentAndDeposit />} />
 		</Routes>
 	);
 }
