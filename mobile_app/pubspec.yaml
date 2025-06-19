@@ -47,6 +47,8 @@ dependencies:
   flutter_markdown: ^0.7.7+1
   google_fonts: ^4.0.4
   shimmer: ^3.0.0
+  flutter_paypal: ^0.2.0
+
 
 # Development and testing dependencies
 dev_dependencies:

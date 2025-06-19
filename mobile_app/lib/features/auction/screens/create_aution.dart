@@ -167,7 +167,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
         return GestureDetector(
           onTap: () => setState(() => controller.text = s),
           child: Chip(
-            label: Text('$formatted VNĐ'),
+            label: Text('$formatted \$'),
             backgroundColor: Colors.grey.shade200,
           ),
         );
@@ -455,9 +455,9 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
               const SizedBox(height: 24),
               const Text("Pricing", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
-              _buildTextField(_startingPriceController, 'Starting Price (VNĐ)', keyboardType: TextInputType.number),
+              _buildTextField(_startingPriceController, 'Starting Price (\$)', keyboardType: TextInputType.number),
               const SizedBox(height: 12),
-              _buildTextField(_incrementAmountController, 'Increment Amount (VNĐ)', keyboardType: TextInputType.number),
+              _buildTextField(_incrementAmountController, 'Increment Amount (\$)', keyboardType: TextInputType.number),
               SwitchListTile(
                 value: _requiresDeposit,
                 onChanged: _isLoggedIn
@@ -474,7 +474,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
                 const SizedBox(height: 8),
                 _buildTextField(
                   _depositAmountController,
-                  'Deposit Amount (VNĐ)',
+                  'Deposit Amount (\$)',
                   keyboardType: TextInputType.number,
                 ),
               ],

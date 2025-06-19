@@ -51,7 +51,7 @@ class WebSocketService {
 
     _stompClient = StompClient(
       config: StompConfig.SockJS(
-        url: 'ws://10.0.2.2:8085/ws',
+        url: 'http://10.0.2.2:8085/ws',
 
         webSocketConnectHeaders: {
           'Authorization': 'Bearer $_token',

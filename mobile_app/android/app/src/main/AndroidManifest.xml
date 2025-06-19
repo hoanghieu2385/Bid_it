@@ -1,19 +1,18 @@
-<!-- File: android/app/src/main/AndroidManifest.xml -->
-<!-- Description: Cấu hình chính cho ứng dụng Flutter + quyền truy cập ảnh -->
-
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.mobile_app">
 
-    <!-- Thêm quyền truy cập ảnh -->
-    <!-- Android 13+ (API 33 trở lên) -->
+    <!-- Quyền truy cập Internet -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Truy cập ảnh -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <!-- Android 12 trở xuống -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:label="Bit it"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
 
         <activity
             android:name=".MainActivity"
@@ -24,22 +23,22 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
+
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 
-        <!-- Flutter config -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
 
-    <!-- Cho phép xử lý văn bản từ ứng dụng khác (Flutter engine) -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
