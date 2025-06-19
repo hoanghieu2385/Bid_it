@@ -52,7 +52,7 @@ class AuctionHubApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: AuctionWinnerPage(auctionId: 2),
+      home: StartPage(),
     );
   }
 }

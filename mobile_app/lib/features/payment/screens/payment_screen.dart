@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile_app/features/payment/screens/paypal_payment.dart';
 import '../../auction/screens/auction_winner.dart';
 import '../../payment/screens/payment_success.dart';
 import 'package:mobile_app/core/services/auction_service.dart';
+import 'package:mobile_app/core/services/payment_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   final int auctionId;
@@ -22,7 +24,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
   bool _isLoading = false;
   Map<String, dynamic>? winnerData;
   String? errorMessage;
-  String _selectedMethod = 'Paypal';
+  String _selectedMethod = 'PAYPAL';
 
   @override
   void initState() {
@@ -64,14 +66,55 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Failed to load winner data: \$e';
+        errorMessage = 'Failed to load winner data: $e';
       });
+    }
+  }
+
+  Future<void> _processPayment() async {
+    if (winnerData == null) return;
+    try {
+      final dynamic rawAmount = winnerData!['bidAmount'];
+      final double finalAmount = rawAmount is num
+          ? rawAmount.toDouble()
+          : double.tryParse(rawAmount.toString()) ?? 0.0;
+
+      setState(() => _isLoading = true);
+      await PaymentService.createAuctionPayment(
+        winnerId: winnerData!['userId'],
+        auctionId: widget.auctionId,
+        finalAmount: finalAmount,
+        depositAmount: 0.0,
+        paymentMethod: _selectedMethod,
+        returnUrl: 'https://myapp/success',
+        cancelUrl: 'https://myapp/cancel',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Payment processed successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => PaypalPayment(amount: finalAmount, currency: "USD"),
+      ));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Payment failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
   @override
   void dispose() {
-    _controller.reverse().then((_) => _controller.dispose());
+    _controller.dispose();
     super.dispose();
   }
 
@@ -99,9 +142,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
 
     final bidAmount = numberFormat.format(parsedBidAmount);
 
-    final wonAt = winnerData != null
-        ? DateFormat('yyyy-MM-dd HH:mm').format(DateTime.parse(winnerData!['bidTime']))
-        : '';
+    final wonAt = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.parse(winnerData!['bidTime']));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -155,9 +196,9 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              _buildPaymentOption('Paypal'),
+                              _buildPaymentOption('PAYPAL'),
                               const SizedBox(width: 16),
-                              _buildPaymentOption('Bank Transfer'),
+                              _buildPaymentOption('BANK TRANSFER'),
                             ],
                           ),
                           const SizedBox(height: 24),
@@ -194,21 +235,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                                     child: _isLoading
                                         ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFA726)))
                                         : ElevatedButton(
-                                      onPressed: () async {
-                                        setState(() => _isLoading = true);
-                                        await Future.delayed(const Duration(seconds: 2));
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Payment processed successfully!'),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
-                                        setState(() => _isLoading = false);
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(builder: (_) => const PaymentSuccessScreen()),
-                                        );
-                                      },
+                                      onPressed: _processPayment,
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: const Color(0xFFFFA726),
                                         foregroundColor: Colors.white,
@@ -218,7 +245,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                                         ),
                                         elevation: 2,
                                       ),
-                                      child: Text('Continue'),
+                                      child: const Text('Continue'),
                                     ),
                                   ),
                                 ],
@@ -252,9 +279,9 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
           ),
           child: Column(
             children: [
-              Icon(method == 'Paypal' ? Icons.account_balance_wallet : Icons.account_balance, size: 28, color: const Color(0xFFFFA726)),
+              Icon(method == 'PAYPAL' ? Icons.account_balance_wallet : Icons.account_balance, size: 28, color: const Color(0xFFFFA726)),
               const SizedBox(height: 8),
-              Text(method, style: TextStyle(fontWeight: FontWeight.w600)),
+              Text(method, style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
           ),
         ),
