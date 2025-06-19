@@ -16,18 +16,33 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-        if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-            // Lấy token từ header khi connect
-            String authToken = accessor.getFirstNativeHeader("Authorization");
-            if (authToken != null) {
-                // Lưu token vào session attributes
-                accessor.getSessionAttributes().put("authToken", authToken);
-            }
-        } else if (accessor != null && accessor.getSessionAttributes() != null) {
-            // Đối với các message khác, lấy token từ session và set vào ThreadLocal
-            String authToken = (String) accessor.getSessionAttributes().get("authToken");
-            if (authToken != null) {
-                TokenContextHolder.setToken(authToken);
+        if (accessor != null) {
+            if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+                String authToken = accessor.getFirstNativeHeader("Authorization");
+//                System.out.println("STOMP CONNECT received token: " + authToken);
+
+                if (authToken != null) {
+                    // Đảm bảo token có format Bearer
+                    if (!authToken.startsWith("Bearer ")) {
+                        authToken = "Bearer " + authToken;
+                    }
+
+                    // Lưu vào session attributes
+                    accessor.getSessionAttributes().put("authToken", authToken);
+
+                    // Set vào ThreadLocal
+                    TokenContextHolder.setToken(authToken);
+                    System.out.println("Token set into TokenContextHolder: " + authToken);
+                }
+            } else {
+                // Với các message khác, lấy token từ session và set vào ThreadLocal
+                String authToken = (String) accessor.getSessionAttributes().get("authToken");
+                if (authToken != null) {
+                    TokenContextHolder.setToken(authToken);
+//                    System.out.println("Reused token from session: " + authToken);
+                } else {
+//                    System.out.println("No token found in session for command: " + accessor.getCommand());
+                }
             }
         }
 
@@ -36,7 +51,13 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
     @Override
     public void postSend(Message<?> message, MessageChannel channel, boolean sent) {
-        // Clear ThreadLocal sau khi xử lý xong
+        // Không clear ThreadLocal ở đây vì có thể còn cần dùng trong cùng thread
+        // TokenContextHolder.clear();
+    }
+
+    @Override
+    public void afterSendCompletion(Message<?> message, MessageChannel channel, boolean sent, Exception ex) {
+        // Clear ThreadLocal sau khi hoàn thành xử lý
         TokenContextHolder.clear();
     }
 }

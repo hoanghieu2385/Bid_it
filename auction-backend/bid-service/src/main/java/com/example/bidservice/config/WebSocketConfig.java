@@ -1,7 +1,9 @@
 package com.example.bidservice.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -12,30 +14,28 @@ import org.springframework.web.socket.config.annotation.WebSocketTransportRegist
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    @Autowired
+    private WebSocketAuthInterceptor webSocketAuthInterceptor;
+
     @Value("${app.websocket.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}")
     private String allowedOrigins;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Enable simple broker cho các topic và queue
-        config.enableSimpleBroker("/topic", "/queue");
-
-        // Set application destination prefix
+        config.enableSimpleBroker("/topic", "/queue", "/user");
         config.setApplicationDestinationPrefixes("/app");
-
-        // Set user destination prefix cho personal messages
         config.setUserDestinationPrefix("/user");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // ✅ Native WebSocket endpoint với CORS configuration chi tiết
+        // Native WebSocket
         registry.addEndpoint("/ws-native")
-                .setAllowedOrigins("http://localhost:3000", "http://127.0.0.1:3000");
+                .setAllowedOriginPatterns(allowedOrigins.split(","));
 
-        // ✅ Backup endpoint với SockJS
+        // SockJS fallback
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:3000", "http://127.0.0.1:3000")
+                .setAllowedOriginPatterns(allowedOrigins.split(","))
                 .withSockJS()
                 .setHeartbeatTime(25000)
                 .setDisconnectDelay(5000)
@@ -50,5 +50,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setSendBufferSizeLimit(512 * 1024)
                 .setMessageSizeLimit(128 * 1024)
                 .setTimeToFirstMessage(30 * 1000);
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(webSocketAuthInterceptor);
     }
 }
