@@ -7,6 +7,7 @@ public class BidResponse {
     private Long id;
     private Long auctionId;
     private Long userId;
+    private String userName;
     private String firstName;
     private String lastName;
     private BigDecimal bidAmount;
@@ -23,6 +24,7 @@ public class BidResponse {
         this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.userName = String.format("%s %s", firstName, lastName).trim(); // ⬅️ new
         this.bidAmount = bidAmount;
         this.bidTime = bidTime;
         this.isWinning = isWinning;
@@ -69,7 +71,8 @@ public class BidResponse {
     public void setLastName(String lastName) {
         this.lastName = lastName;
     }
-
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
     public BigDecimal getBidAmount() {
         return bidAmount;
     }
