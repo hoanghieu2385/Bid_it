@@ -19,22 +19,71 @@ class PaymentResponse {
     return PaymentResponse(
       id: json['id'].toString(),
       status: json['status'].toString(),
-      approvalLink: json['approvalLink'] ?? '',
+      approvalLink: json['approvalUrl'] ?? '',
     );
   }
 }
 
 class PaymentService {
   static const String _paymentBaseUrl = ApiService.paymentBaseUrl;
-  // 2. Tạo thanh toán cho winner khi kết thúc auction
+  static Future<List<Map<String, dynamic>>> fetchPaymentsByAuction(int auctionId, String token) async {
+    final response = await http.get(
+      Uri.parse('http://localhost:8080/payment-service/api/payment/auction/$auctionId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to load payments');
+    }
+  }
+
+  static Future<bool> hasCompletedPayment(int auctionId, String token) async {
+    final payments = await fetchPaymentsByAuction(auctionId, token);
+    return payments.any((payment) => payment['status'] == 'COMPLETED');
+  }
+
+  static Future<bool> executePayment({
+    required String paymentId,
+    required String payerId,
+  }) async {
+    final url = Uri.parse('$_paymentBaseUrl/execute');
+
+    try {
+      final token = await UserService.getToken();
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          "paymentId": paymentId,
+          "payerId": payerId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("❌ Payment execution failed: ${response.statusCode} - ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("❌ Exception during payment execution: $e");
+      return false;
+    }
+  }
+
   static Future<PaymentResponse> createAuctionPayment({
     required int winnerId,
     required int auctionId,
     required double finalAmount,
     required double depositAmount,
     required String paymentMethod,
-    required String returnUrl,
-    required String cancelUrl,
+    String returnUrl = 'https://example.com/success',
+    String cancelUrl = 'https://example.com/cancel',
   }) async {
     final token = await UserService.getToken();
     final payload = {
@@ -48,11 +97,11 @@ class PaymentService {
     };
     print('📤 Payload gửi: ${jsonEncode(payload)}');
 
-
     final headers = {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
+
     final res = await http.post(
       Uri.parse('$_paymentBaseUrl/auction'),
       headers: headers,
@@ -65,41 +114,8 @@ class PaymentService {
       print('❌ BACKEND ERROR: ${res.body}');
       throw Exception('Auction payment failed: ${res.statusCode} - ${res.body}');
     }
-
   }
 
-// Hàm gọi API backend để lấy approvalUrl từ orderId
-  static Future<String> getApprovalUrl(String orderId) async {
-    final res = await http.get(
-      Uri.parse('$_paymentBaseUrl/payment/order/$orderId'),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      if (data['approvalUrl'] != null) return data['approvalUrl'];
-      throw Exception('approvalUrl not found');
-    } else {
-      throw Exception('Failed to get approvalUrl: ${res.statusCode} ${res.body}');
-    }
-  }
-
-  // 3. Thực thi thanh toán PayPal sau khi người dùng approve
-  static Future<String> executePayment(String payerId, String paymentId) async {
-    final payload = {'payerId': payerId, 'paymentId': paymentId};
-    final res = await http.post(
-      Uri.parse('$_paymentBaseUrl/execute'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(payload),
-    );
-    if (res.statusCode == 200) {
-      return jsonDecode(res.body)['status'];
-    } else {
-      throw Exception('Execute payment failed: ${res.statusCode}');
-    }
-  }
-
-  // 4. Lấy payment theo ID
   static Future<PaymentResponse> getPaymentById(int id) async {
     final res = await http.get(Uri.parse('$_paymentBaseUrl/$id'));
     if (res.statusCode == 200) {
@@ -109,7 +125,6 @@ class PaymentService {
     }
   }
 
-  // 5. Lấy payment theo orderId PayPal
   static Future<PaymentResponse> getPaymentByOrderId(String orderId) async {
     final res = await http.get(Uri.parse('$_paymentBaseUrl/order/$orderId'));
     if (res.statusCode == 200) {
@@ -119,7 +134,6 @@ class PaymentService {
     }
   }
 
-  // 6. Lấy payment theo user
   static Future<List<PaymentResponse>> getPaymentsByUserId(int userId) async {
     final res = await http.get(Uri.parse('$_paymentBaseUrl/user/$userId'));
     if (res.statusCode == 200) {
@@ -130,7 +144,6 @@ class PaymentService {
     }
   }
 
-  // 7. Lấy payment theo auction
   static Future<List<PaymentResponse>> getPaymentsByAuctionId(int auctionId) async {
     final res = await http.get(Uri.parse('$_paymentBaseUrl/auction/$auctionId'));
     if (res.statusCode == 200) {
@@ -141,7 +154,6 @@ class PaymentService {
     }
   }
 
-  // 8. Cập nhật trạng thái payment
   static Future<String> updatePaymentStatus(int id, String status) async {
     final uri = Uri.parse('$_paymentBaseUrl/$id/status?status=$status');
     final res = await http.patch(uri);
@@ -152,7 +164,6 @@ class PaymentService {
     }
   }
 
-  // 9. Kiểm tra auction đã thanh toán hay chưa
   static Future<bool> isAuctionPaid(int auctionId) async {
     final res = await http.get(Uri.parse('$_paymentBaseUrl/check/auction/$auctionId'));
     if (res.statusCode == 200) {
@@ -162,7 +173,6 @@ class PaymentService {
     }
   }
 
-  // 10. Kiểm tra user đã nộp tiền đặt cọc hay chưa
   static Future<bool> hasUserPaidDeposit(int userId, int auctionId) async {
     final uri = Uri.parse('$_paymentBaseUrl/check/deposit?userId=$userId&auctionId=$auctionId');
     final res = await http.get(uri);
@@ -173,7 +183,6 @@ class PaymentService {
     }
   }
 
-  // 11. Hủy payment chưa hoàn tất
   static Future<String> cancelPayment(int id) async {
     final res = await http.delete(Uri.parse('$_paymentBaseUrl/$id'));
     if (res.statusCode == 200) {
@@ -183,7 +192,6 @@ class PaymentService {
     }
   }
 
-  // 12. Gửi webhook payload từ PayPal (nếu dùng webhook)
   static Future<void> handleWebhook(String rawPayload) async {
     final res = await http.post(
       Uri.parse('$_paymentBaseUrl/webhook'),
