@@ -4,6 +4,7 @@ import 'package:mobile_app/features/auth/screens/start_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_app/features/home/screens/home_screen.dart';
 import 'package:mobile_app/features/auction/screens/auction_detail.dart';
+import 'package:mobile_app/features/payment/screens/payment_screen.dart';
 import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
 import 'firebase_options.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';

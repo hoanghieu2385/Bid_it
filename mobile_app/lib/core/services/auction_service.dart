@@ -10,9 +10,13 @@ import 'package:mobile_app/core/services/api_service.dart';
 import 'package:mobile_app/core/services/user_service.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../models/auction_winner.dart';
+
 class AuctionService {
   static const String baseAuctionUrl = ApiService.auctionBaseUrl;
   static const String categoryUrl = ApiService.categoryBaseUrl;
+  static const String bidBaseUrl = ApiService.bidBaseUrl;
+  static const String userBaseUrl = ApiService.userBaseUrl;
 
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -241,5 +245,55 @@ class AuctionService {
     final auctions = await Future.wait(futures);
     return auctions.whereType<Auction>().toList();
   }
+  Future<Map<String, dynamic>?> fetchWinner(int auctionId) async {
+    try {
+      final token = await UserService.getToken();
+      if (token == null) {
+        throw Exception('Missing token. Please login again.');
+      }
 
+      final response = await http.get(
+        Uri.parse('$bidBaseUrl/bids/auction/$auctionId/winner'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized (401): Token may be expired or invalid.');
+      } else {
+        throw Exception('Failed to load winner: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching winner: $e');
+    }
+  }
+  Future<Map<String, dynamic>?> fetchUser(int userId) async {
+    try {
+      final token = await UserService.getToken();
+      print('[fetchUser] token = $token');
+      if (token == null || token.isEmpty) {
+        throw Exception('Missing token. Please login again.');
+      }
+
+      final response = await http.get(
+        Uri.parse('$userBaseUrl/$userId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+      print(userId);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load user: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching user: $e');
+    }
+  }
 }
