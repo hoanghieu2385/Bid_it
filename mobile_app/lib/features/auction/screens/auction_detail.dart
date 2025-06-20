@@ -29,6 +29,8 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
   List<int> bidSuggestions = [];
   bool isWatchlisted = false;
   int? selectedBidAmount;
+  bool isSeller = false;
+
 
   @override
   void initState() {
@@ -42,7 +44,18 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
 
     _checkWatchlist();
     _initWebSocket();
+
+    _checkIfSeller();
   }
+  Future<void> _checkIfSeller() async {
+    final user = await UserService.getCurrentUser();
+    if (user != null && user['id'] == widget.auction.sellerId) {
+      setState(() {
+        isSeller = true;
+      });
+    }
+  }
+
 
   void updateRemaining() {
     final now = DateTime.now();
@@ -162,7 +175,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
           debugPrint('[WebSocket] Received: $data');
           if (data['type'] == 'NEW_BID') {
             setState(() {
-              widget.auction.currentBid = (data['bidAmount'] as num?)?.toDouble() ?? widget.auction.currentBid;
+              widget.auction.currentBid = (data['currentHighestBid'] as num?)?.toDouble() ?? widget.auction.currentBid;
               widget.auction.bidCount = (data['totalBids'] as int?) ?? widget.auction.bidCount;
             });
           }
@@ -611,6 +624,16 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                               return;
                                             }
 
+                                            if (isSeller) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text('You cannot place a bid because you are the seller.'),
+                                                  backgroundColor: Colors.orange,
+                                                ),
+                                              );
+                                              return;
+                                            }
+
                                             try {
                                               final user = await UserService.getCurrentUser();
                                               if (user == null) throw 'User not found';
@@ -647,7 +670,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
-                                        ),
+                                        ), // End of ElevatedButton
                                       ),
                                     ],
                                   ),

@@ -90,7 +90,7 @@ class _BidHistoryPageState extends State<BidHistoryPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lịch sử đấu giá', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Bid History', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
@@ -114,7 +114,7 @@ class _BidHistoryPageState extends State<BidHistoryPage> {
             ),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Tìm theo tên đấu giá...',
+                hintText: 'Search by auction name...',
                 prefixIcon: const Icon(Icons.search),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(16),
@@ -127,9 +127,9 @@ class _BidHistoryPageState extends State<BidHistoryPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildFilterChip('ALL', 'Tất cả'),
-                _buildFilterChip('WINNING', 'Trúng thưởng'),
-                _buildFilterChip('OUTBID', 'Thất bại'),
+                _buildFilterChip('ALL', 'All'),
+                _buildFilterChip('WINNING', 'Winning'),
+                _buildFilterChip('OUTBID', 'Outbid'),
               ],
             ),
           ),
@@ -138,8 +138,8 @@ class _BidHistoryPageState extends State<BidHistoryPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Số lượng: $totalBids', style: const TextStyle(fontWeight: FontWeight.w500)),
-                Text('Tổng: ${numberFormat.format(totalAmount)} đ',
+                Text('Total: $totalBids bids', style: const TextStyle(fontWeight: FontWeight.w500)),
+                Text('Amount: ${numberFormat.format(totalAmount)} đ',
                     style: const TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -148,7 +148,7 @@ class _BidHistoryPageState extends State<BidHistoryPage> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : filteredBids.isEmpty
-                ? const Center(child: Text('Không có lịch sử đấu giá.'))
+                ? const Center(child: Text('No bid history available.'))
                 : RefreshIndicator(
               onRefresh: _fetchBidHistory,
               child: ListView.builder(
@@ -179,11 +179,31 @@ class _BidHistoryPageState extends State<BidHistoryPage> {
   }
 
   Widget _buildFilterChip(String value, String label) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: filterStatus == value,
-      onSelected: (_) => setState(() => filterStatus = value),
-      selectedColor: Colors.deepPurple.shade100,
+    final isSelected = filterStatus == value;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: ChoiceChip(
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.blue[900],
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        selected: isSelected,
+        selectedColor: Colors.blue[700],
+        backgroundColor: Colors.grey[200],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: isSelected ? Colors.blue[700]! : Colors.grey[300]!,
+            width: 1.5,
+          ),
+        ),
+        onSelected: (_) => setState(() => filterStatus = value),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        elevation: isSelected ? 4 : 0,
+      ),
     );
   }
 

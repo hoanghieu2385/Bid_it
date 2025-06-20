@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_app/features/payment/screens/payment_success.dart';
 
+import '../../../core/models/auction_model.dart';
 import '../../payment/screens/payment_screen.dart';
 import 'package:mobile_app/core/services/auction_service.dart';
 
@@ -24,8 +25,11 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
   late Animation<double> _buttonFadeAnimation;
   late Animation<double> _buttonScaleAnimation;
   bool _isLoading = false;
+
   Map<String, dynamic>? winnerData;
   Map<String, dynamic>? userData;
+  Auction? auctionData;
+
   String errorMessage = '';
   final AuctionService _auctionService = AuctionService();
 
@@ -37,7 +41,6 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
       vsync: this,
     );
 
-    // Card animations (fade and slide up)
     _cardFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.5, curve: Curves.easeOut)),
     );
@@ -48,12 +51,10 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
       CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.5, curve: Curves.easeOutCubic)),
     );
 
-    // Trophy scale animation
     _trophyScaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: const Interval(0.2, 0.6, curve: Curves.easeOutBack)),
     );
 
-    // Tile fade animations (staggered)
     _tileFadeAnimations = List.generate(
       4,
           (index) => Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -64,7 +65,6 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
       ),
     );
 
-    // Button animations
     _buttonFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: const Interval(0.5, 0.8, curve: Curves.easeOut)),
     );
@@ -72,7 +72,6 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
       CurvedAnimation(parent: _controller, curve: const Interval(0.5, 0.8, curve: Curves.easeOutBack)),
     );
 
-    // Fetch data
     _fetchData();
   }
 
@@ -92,10 +91,14 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
         setState(() {
           userData = user;
         });
+        final auction = await AuctionService.fetchAuctionById(widget.auctionId);
+        setState(() {
+          auctionData = auction;
+        });
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error: $e';
+        errorMessage = 'Error: \$e';
       });
     } finally {
       setState(() {
@@ -127,6 +130,9 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
         ? DateFormat('yyyy-MM-dd HH:mm').format(DateTime.parse(winnerData!['bidTime']))
         : '';
 
+    final paymentDeadline = auctionData?.winnerPaymentDeadline != null
+        ? DateFormat('yyyy-MM-dd HH:mm').format(auctionData!.winnerPaymentDeadline!)
+        : '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -161,7 +167,6 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // Trophy with Scale Animation
                           ScaleTransition(
                             scale: _trophyScaleAnimation,
                             child: Stack(
@@ -184,7 +189,6 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                             ),
                           ),
                           const SizedBox(height: 24),
-                          // Title
                           FadeTransition(
                             opacity: _cardFadeAnimation,
                             child: const Text(
@@ -201,7 +205,7 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                           FadeTransition(
                             opacity: _cardFadeAnimation,
                             child: Text(
-                              'You won: ${winnerData?['auctionTitle'] ?? ''}',
+                              'You won this auction ${auctionData?.title ?? ''}',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500,
@@ -244,7 +248,7 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                               context,
                               icon: Icons.attach_money,
                               title: 'Winning Bid',
-                              value: '\$$bidAmount',
+                              value: '\$\$bidAmount',
                               valueStyle: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -262,8 +266,22 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                               value: wonAt,
                             ),
                           ),
+                          const Divider(height: 24, color: Color(0xFFEEEEEE)),
+                          FadeTransition(
+                            opacity: _tileFadeAnimations[3],
+                            child: _buildInfoTile(
+                              context,
+                              icon: Icons.hourglass_bottom,
+                              title: 'Payment Deadline',
+                              value: paymentDeadline,
+                              valueStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFD32F2F),
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 32),
-                          // Animated Buttons
                           FadeTransition(
                             opacity: _buttonFadeAnimation,
                             child: ScaleTransition(
@@ -271,7 +289,6 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  // Back Button
                                   Expanded(
                                     child: ElevatedButton(
                                       onPressed: () {
