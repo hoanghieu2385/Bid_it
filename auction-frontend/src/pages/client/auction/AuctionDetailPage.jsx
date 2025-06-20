@@ -6,8 +6,6 @@ import '../../../utils/crypto-polyfill.js';
 
 // Add a small delay to ensure polyfill is fully loaded
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// Import services
 import { getAllAuctions, getAuctionDetailById } from '../../../services/auction-api';
 import { getBidsByAuctionId } from '../../../services/bid_api';
 import { createBid } from '../../../services/bid_api';
@@ -78,6 +76,7 @@ const AuctionDetailPage = () => {
 	// React router and user context
 	const { id } = useParams();
 	const { user } = useContext(UserContext);
+	const [showVerifyPopup, setShowVerifyPopup] = useState(false);
 
 	// WebSocket client ref
 	const wsUrl = '/bid-service/ws'; // Proxied through Vite to API Gateway
@@ -451,7 +450,6 @@ const AuctionDetailPage = () => {
 		setBidAmount(e.target.value);
 	};
 
-	// Handle bid submission
 	const handlePlaceBid = async (e) => {
 		e.preventDefault();
 		const bidValue = parseInt(bidAmount);
@@ -461,6 +459,14 @@ const AuctionDetailPage = () => {
 			showError('Please log in before placing a bid.');
 			return;
 		}
+
+		// ✅ Check if account is verified
+		if (user.verifiedAccount === 0) {
+			setShowVerifyPopup(true);
+			return;
+		}
+
+		// (các phần xử lý khác giữ nguyên...)
 
 		// Validate bid amount
 		const minimumBid = getMinimumBid();
@@ -699,7 +705,11 @@ const AuctionDetailPage = () => {
 						</div>
 
 						{/* Bid form */}
-						{new Date() < new Date(auction.startTime) ? (
+						{user?.id === auction.sellerId ? (
+							<div className="alert alert-warning text-center py-2 mb-2">
+								You cannot bid on your own auction.
+							</div>
+						) : new Date() < new Date(auction.startTime) ? (
 							<div className="alert alert-info text-center py-2 mb-2">Auction hasn't started yet. Please wait...</div>
 						) : new Date() >= new Date(auction.endTime) ? (
 							<div className="alert alert-secondary text-center py-2 mb-2">This auction has ended.</div>
@@ -815,6 +825,30 @@ const AuctionDetailPage = () => {
 					</div>
 				</div>
 			)}
+			{showVerifyPopup && (
+				<div className="modal d-block" tabIndex="-1" style={{ background: 'rgba(0,0,0,0.5)' }}>
+					<div className="modal-dialog modal-dialog-centered">
+						<div className="modal-content">
+							<div className="modal-header">
+								<h5 className="modal-title">Account Verification Required</h5>
+								<button type="button" className="btn-close" onClick={() => setShowVerifyPopup(false)}></button>
+							</div>
+							<div className="modal-body">
+								<p>You must verify your identity before placing a bid.</p>
+							</div>
+							<div className="modal-footer">
+								<button className="btn btn-secondary" onClick={() => setShowVerifyPopup(false)}>
+									Not Now
+								</button>
+								<Link to="/profile?tab=ekyc" className="btn btn-primary">
+									Go to Verification Page
+								</Link>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+
 		</div>
 	);
 };

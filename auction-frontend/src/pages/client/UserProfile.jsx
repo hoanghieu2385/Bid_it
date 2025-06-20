@@ -8,7 +8,7 @@ import EKYCVerification from '../../components/client/profile/EKYCVerification';
 import ChangePassword from '../../components/client/profile/ChangePassword';
 import MyAuctions from '../../components/client/profile/MyAuctions';
 import ParticipatedAuctions from '../../components/client/profile/ParticipatedAuctions';
-import { FaUser, FaHistory, FaLock, FaGavel, FaClipboardList } from 'react-icons/fa';
+import {FaUser, FaHistory, FaLock, FaGavel, FaClipboardList, FaExclamationCircle} from 'react-icons/fa';
 import '../../assets/styles/client/user-profile.css';
 import defaultAvatar from '../../assets/images/default-avatar.png';
 
@@ -52,21 +52,37 @@ const UserProfile = () => {
 								<p className="text-muted small mb-0">{user?.email}</p>
 							</div>
 							<div className="list-group mt-3">
-								<button className={`sidebar-tab list-group-item ${currentTab === 'info' ? 'active' : ''}`} onClick={() => changeTab('info')}>
-									<FaUser className="me-2" /> Profile Info
+								<button
+									className={`sidebar-tab list-group-item ${currentTab === 'info' ? 'active' : ''}`}
+									onClick={() => changeTab('info')}>
+									<FaUser className="me-2"/> Profile Info
 								</button>
-								<button className={`sidebar-tab list-group-item ${currentTab === 'ekyc' ? 'active' : ''}`} onClick={() => changeTab('ekyc')}>
-									<i className="fa-solid fa-id-card me-2" style={{ color: '#d1d3e2' }} />
-									eKYC Verification
+								<button
+									className={`sidebar-tab list-group-item d-flex justify-content-between align-items-center ${currentTab === 'ekyc' ? 'active' : ''}`}
+									onClick={() => changeTab('ekyc')}
+								>
+									<div>
+										<i className="fa-solid fa-id-card me-2" style={{color: '#d1d3e2'}}/>
+										eKYC Verification
+									</div>
+									{user?.verifiedAccount !== 1 && (
+										<FaExclamationCircle className="text-warning ms-2" title="eKYC not verified"/>
+									)}
 								</button>
-								<button className={`sidebar-tab list-group-item ${currentTab === 'my-auctions' ? 'active' : ''}`} onClick={() => changeTab('my-auctions')}>
-									<FaGavel className="me-2" /> My Auctions
+								<button
+									className={`sidebar-tab list-group-item ${currentTab === 'my-auctions' ? 'active' : ''}`}
+									onClick={() => changeTab('my-auctions')}>
+									<FaGavel className="me-2"/> My Auctions
 								</button>
-								<button className={`sidebar-tab list-group-item ${currentTab === 'participated' ? 'active' : ''}`} onClick={() => changeTab('participated')}>
-									<FaClipboardList className="me-2" /> Participated
+								<button
+									className={`sidebar-tab list-group-item ${currentTab === 'participated' ? 'active' : ''}`}
+									onClick={() => changeTab('participated')}>
+									<FaClipboardList className="me-2"/> Participated
 								</button>
-								<button className={`sidebar-tab list-group-item ${currentTab === 'password' ? 'active' : ''}`} onClick={() => changeTab('password')}>
-									<FaLock className="me-2" /> Change Password
+								<button
+									className={`sidebar-tab list-group-item ${currentTab === 'password' ? 'active' : ''}`}
+									onClick={() => changeTab('password')}>
+									<FaLock className="me-2"/> Change Password
 								</button>
 							</div>
 						</div>
@@ -75,11 +91,11 @@ const UserProfile = () => {
 					{/* Main Content */}
 					<div className="col-md-9">
 						<div className="card shadow-sm p-4">
-							{currentTab === 'info' && <ProfileInfo />}
-							{currentTab === 'ekyc' && <EKYCVerification />}
-							{currentTab === 'my-auctions' && <MyAuctions />}
-							{currentTab === 'participated' && <ParticipatedAuctions />}
-							{currentTab === 'password' && <ChangePassword />}
+							{currentTab === 'info' && <ProfileInfo/>}
+							{currentTab === 'ekyc' && <EKYCVerification/>}
+							{currentTab === 'my-auctions' && <MyAuctions/>}
+							{currentTab === 'participated' && <ParticipatedAuctions/>}
+							{currentTab === 'password' && <ChangePassword/>}
 						</div>
 					</div>
 				</div>
