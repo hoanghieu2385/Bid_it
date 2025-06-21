@@ -18,6 +18,7 @@ import BlogPostDetail from '../pages/client/BlogPostDetail.jsx';
 import UserProfile from '../pages/client/UserProfile.jsx';
 import CreateAuctionPage from '../pages/client/auction/CreateAuctionPage.jsx';
 import AuctionDetailPage from '../pages/client/auction/AuctionDetailPage.jsx';
+import EditAuctionPage from "../pages/client/auction/EditAuctionPage.jsx";
 
 function ClientRoutes() {
 	const location = useLocation();
@@ -43,7 +44,7 @@ function ClientRoutes() {
 				<Route path="/blog/:id" element={<BlogPostDetail />} />
 				<Route path="/auctions/create" element={<CreateAuctionPage />} />
 				<Route path="/auctions/:id" element={<AuctionDetailPage />} />
-
+				<Route path="/auctions/:id/edit" element={<EditAuctionPage />} />
 			</Route>
 		</Routes>
 	);
