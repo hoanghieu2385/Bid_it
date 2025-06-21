@@ -259,20 +259,31 @@ public class AuctionService implements IAuctionService {
         return auctionMapper.mapToResponseDTOList(auctions);
     }
 
-    // SOFT Delete Auction by AuctionID
-    public void deleteAuction(Long id, Long requesterId) {
-        Auction auction = auctionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
+    public void deleteAuction(Long auctionId, Long requesterId) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + auctionId));
 
-        UserDTO requester = userClient.getUserById(requesterId);
-        if (requester.getRoles() == null || !requester.getRoles().contains("ADMIN")) {
-            throw new SecurityException("Only admins can delete auctions");
+        // Kiểm tra quyền admin thông qua UserClient
+        UserDTO requester;
+        try {
+            requester = userClient.getUserById(requesterId);
+            if (requester == null) {
+                throw new IllegalArgumentException("User not found");
+            }
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to verify requester identity", ex);
+        }
+
+        // Kiểm tra quyền: ADMIN hoặc chủ sở hữu auction
+        boolean isAdmin = requester.getRoles() != null && requester.getRoles().contains("ADMIN");
+        boolean isOwner = auction.getSellerId().equals(requesterId);
+
+        if (!isAdmin && !isOwner) {
+            throw new IllegalArgumentException("You don't have permission to delete this auction");
         }
 
         auctionRepository.delete(auction);
     }
-
-
     // Keep old mapToResponseDTO method for compatibility (but uses mapper)
     @Deprecated // Recommend using AuctionMapper instead
     public AuctionResponseDTO mapToResponseDTO(Auction auction) {
