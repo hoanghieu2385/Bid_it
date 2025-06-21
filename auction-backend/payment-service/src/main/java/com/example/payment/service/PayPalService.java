@@ -187,4 +187,45 @@ public class PayPalService implements IPayPalService {
         log.info("Refund requested for transaction: {}, amount: {}", transactionId, amount);
         throw new UnsupportedOperationException("Refund functionality not implemented yet");
     }
+
+    @Override
+    public Map<String, Object> getOrderDetails(String orderId) {
+        try {
+            String accessToken = payPalAuthService.getAccessToken();
+
+            Map<String, Object> response = paypalWebClient
+                    .get()
+                    .uri("/v2/checkout/orders/" + orderId)
+                    .header("Authorization", "Bearer " + accessToken)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .onErrorMap(ex -> new RuntimeException("PayPal get order error: " + ex.getMessage()))
+                    .block();
+
+            log.info("PayPal order details retrieved for: {}", orderId);
+            return response != null ? response : new HashMap<>();
+
+        } catch (Exception e) {
+            log.error("Error getting PayPal order details: {}", e.getMessage());
+            throw new RuntimeException("Failed to get order details: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean isOrderValid(String orderId) {
+        try {
+            Map<String, Object> orderDetails = getOrderDetails(orderId);
+            String status = (String) orderDetails.get("status");
+
+            // PayPal order statuses: CREATED, SAVED, APPROVED, VOIDED, COMPLETED, PAYER_ACTION_REQUIRED
+            // Valid statuses for payment: CREATED, SAVED, APPROVED, PAYER_ACTION_REQUIRED
+            return status != null &&
+                    ("CREATED".equals(status) || "SAVED".equals(status) ||
+                            "APPROVED".equals(status) || "PAYER_ACTION_REQUIRED".equals(status));
+
+        } catch (Exception e) {
+            log.warn("Order {} is not valid: {}", orderId, e.getMessage());
+            return false;
+        }
+    }
 }

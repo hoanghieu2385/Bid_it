@@ -8,6 +8,7 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
+//@Profile("!dev") // nếu bạn chỉ muốn chạy scheduler trên môi trường non-dev
 public class AuctionStatusScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(AuctionStatusScheduler.class);
@@ -28,88 +30,73 @@ public class AuctionStatusScheduler {
         this.bidServiceClient = bidServiceClient;
     }
 
-    @Scheduled(fixedRate = 7000) // reload every 7 seconds
+    // Giảm tần suất từ 7s xuống 30s
+    @Scheduled(fixedRate = 30000)
     @Transactional
     public void updateAuctionStatuses() {
         LocalDateTime now = LocalDateTime.now();
-        logger.info("Running AuctionStatusScheduler at {}", now);
+        boolean hasChanges = false;
 
         try {
-            // 1. UPCOMING → OPENED: if start time has passed and end time hasn't passed yet
-            updateUpcomingToOpened(now);
+            hasChanges |= openUpcomingAuctions(now);
+            hasChanges |= closeEndedAuctions(now);
+            hasChanges |= failUnpaidAuctions(now);
 
-            // 2. OPENED → CLOSED: if end time has passed
-            updateOpenedToClosed(now);
-
-            // 3. CLOSED → FAILED: if payment deadline has passed and no payment
-            updateClosedToFailed(now);
-
-            // NOTE: CLOSED → SOLD sẽ được xử lý khi có API thanh toán
-            // Không tự động chuyển sang SOLD vì cần xác nhận thanh toán thực tế
-
+            if (hasChanges) {
+                logger.info("AuctionStatusScheduler applied updates at {}", now);
+            }
         } catch (Exception e) {
             logger.error("Error in AuctionStatusScheduler: ", e);
         }
     }
 
-    private void updateUpcomingToOpened(LocalDateTime now) {
+    private boolean openUpcomingAuctions(LocalDateTime now) {
         List<Auction> toOpen = auctionRepository.findByStatusAndStartTimeBeforeAndEndTimeAfter(
                 AuctionStatus.UPCOMING, now, now);
 
-        if (!toOpen.isEmpty()) {
-            toOpen.forEach(auction -> {
-                auction.setStatus(AuctionStatus.OPENED);
-                auction.setUpdatedAt(now);
-                logger.info("Auction {} moved from UPCOMING to OPENED", auction.getId());
-            });
-            auctionRepository.saveAll(toOpen);
-            logger.info("Updated {} auctions from UPCOMING to OPENED", toOpen.size());
-        }
+        if (toOpen.isEmpty()) return false;
+
+        toOpen.forEach(a -> {
+            a.setStatus(AuctionStatus.OPENED);
+            a.setUpdatedAt(now);
+            logger.info("Auction {}: UPCOMING → OPENED", a.getId());
+        });
+        auctionRepository.saveAll(toOpen);
+        logger.info("Opened {} auctions", toOpen.size());
+        return true;
     }
 
-    private void updateOpenedToClosed(LocalDateTime now) {
-        LocalDateTime bufferTime = now.minusSeconds(5);
+    private boolean closeEndedAuctions(LocalDateTime now) {
+        // thêm buffer 5s để chắc chắn endTime đã qua
+        LocalDateTime buffer = now.minusSeconds(5);
+        List<Auction> toClose = auctionRepository.findByStatusAndEndTimeBefore(AuctionStatus.OPENED, buffer);
 
-        List<Auction> toClose = auctionRepository.findByStatusAndEndTimeBefore(AuctionStatus.OPENED, bufferTime);
+        if (toClose.isEmpty()) return false;
 
-        if (!toClose.isEmpty()) {
-            toClose.forEach(auction -> {
-                auction.setStatus(AuctionStatus.CLOSED);
-                auction.setUpdatedAt(now);
-
-                // Set payment deadline (3 days from now)
-                auction.setWinnerPaymentDeadline(now.plusDays(3));
-
-                logger.info("Auction {} moved from OPENED to CLOSED (with 5s buffer, winner will be updated by bid-service)",
-                        auction.getId());
-            });
-
-            auctionRepository.saveAll(toClose);
-            logger.info("Updated {} auctions from OPENED to CLOSED", toClose.size());
-        }
+        toClose.forEach(a -> {
+            a.setStatus(AuctionStatus.CLOSED);
+            a.setUpdatedAt(now);
+            a.setWinnerPaymentDeadline(now.plusDays(3));
+            logger.info("Auction {}: OPENED → CLOSED", a.getId());
+        });
+        auctionRepository.saveAll(toClose);
+        logger.info("Closed {} auctions", toClose.size());
+        return true;
     }
 
-    /**
-     * Chuyển CLOSED → FAILED nếu quá hạn thanh toán
-     */
-    private void updateClosedToFailed(LocalDateTime now) {
-        // Tìm các auction CLOSED có payment deadline đã qua
-        List<Auction> expiredPayments = auctionRepository.findByStatusAndWinnerPaymentDeadlineBefore(
+    private boolean failUnpaidAuctions(LocalDateTime now) {
+        List<Auction> expired = auctionRepository.findByStatusAndWinnerPaymentDeadlineBefore(
                 AuctionStatus.CLOSED, now);
 
-        if (!expiredPayments.isEmpty()) {
-            logger.info("Found {} CLOSED auctions with expired payment deadline", expiredPayments.size());
+        if (expired.isEmpty()) return false;
 
-            expiredPayments.forEach(auction -> {
-                auction.setStatus(AuctionStatus.FAILED);
-                auction.setUpdatedAt(now);
-                logger.info("Auction {} moved from CLOSED to FAILED due to payment timeout (winnerId: {})",
-                        auction.getId(), auction.getWinnerId());
-            });
-
-            auctionRepository.saveAll(expiredPayments);
-            logger.info("Successfully updated {} auctions from CLOSED to FAILED", expiredPayments.size());
-        }
+        expired.forEach(a -> {
+            a.setStatus(AuctionStatus.FAILED);
+            a.setUpdatedAt(now);
+            logger.info("Auction {}: CLOSED → FAILED (no payment)", a.getId());
+        });
+        auctionRepository.saveAll(expired);
+        logger.info("Marked {} auctions as FAILED", expired.size());
+        return true;
     }
-
 }
