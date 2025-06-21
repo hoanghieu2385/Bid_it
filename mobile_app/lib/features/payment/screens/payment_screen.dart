@@ -86,8 +86,8 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
         finalAmount: finalAmount,
         depositAmount: 0.0,
         paymentMethod: _selectedMethod,
-        returnUrl: 'https://myapp/success',
-        cancelUrl: 'https://myapp/cancel',
+        returnUrl: 'myapp://success',
+        cancelUrl: 'myapp://cancel',
       );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -98,7 +98,13 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => PaypalPayment(amount: finalAmount, currency: "USD"),
+          MaterialPageRoute(
+            builder: (_) => PaypalPayment(
+              winnerId: winnerData!['userId'],
+              auctionId: widget.auctionId,
+              finalAmount: finalAmount,
+              depositAmount: 0.00,
+            ),
       ));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
