@@ -24,7 +24,7 @@ const CustomNumberInput = ({ field, form, ...props }) => {
 			type="text"
 			value={formatNumber(field.value)}
 			onChange={handleChange}
-			className="form-control"
+			className="form-control border"
 		/>
 	);
 };
@@ -59,25 +59,25 @@ const AuctionTimeAndPrice = ({ formik }) => {
 			<div className="row mb-3">
 				<div className="col">
 					<label className="form-label">Start Time</label>
-					<Field type="datetime-local" name="startTime" className="form-control" />
+					<Field type="datetime-local" name="startTime" className="form-control border" />
 					<ErrorMessage name="startTime" component="div" className="text-danger" />
 				</div>
 				<div className="col">
 					<label className="form-label">End Time</label>
-					<Field type="datetime-local" name="endTime" className="form-control" />
+					<Field type="datetime-local" name="endTime" className="form-control border" />
 					<ErrorMessage name="endTime" component="div" className="text-danger" />
 				</div>
 			</div>
 
 			<div className="row mb-3">
 				<div className="col">
-					<label className="form-label">Starting Price (VNĐ)</label>
+					<label className="form-label">Starting Price</label>
 					<Field name="startingPrice" component={CustomNumberInput} />
 					<ErrorMessage name="startingPrice" component="div" className="text-danger" />
 					{renderSuggestions(values.startingPrice, setFieldValue, 'startingPrice')}
 				</div>
 				<div className="col">
-					<label className="form-label">Increment Amount (VNĐ)</label>
+					<label className="form-label">Increment Amount</label>
 					<Field name="incrementAmount" component={CustomNumberInput} />
 					<ErrorMessage name="incrementAmount" component="div" className="text-danger" />
 					{renderSuggestions(values.incrementAmount, setFieldValue, 'incrementAmount')}

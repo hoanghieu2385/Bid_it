@@ -9,13 +9,16 @@ import com.example.auction.mapper.AuctionMapper;
 import com.example.auction.model.Auction;
 import com.example.auction.model.AuctionStatus;
 import com.example.auction.service.AuctionService;
+import com.example.auction.service.AuctionMediaService; // Import service mới
 import jakarta.validation.Valid;
 import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @Validated
@@ -25,10 +28,14 @@ public class AuctionController {
 
     private final AuctionService auctionService;
     private final AuctionMapper auctionMapper;
+    private final AuctionMediaService auctionMediaService;
 
-    public AuctionController(AuctionService auctionService, AuctionMapper auctionMapper) {
+    public AuctionController(AuctionService auctionService,
+                             AuctionMapper auctionMapper,
+                             AuctionMediaService auctionMediaService) {
         this.auctionService = auctionService;
         this.auctionMapper = auctionMapper;
+        this.auctionMediaService = auctionMediaService;
     }
 
     // CREATE Auction
@@ -38,6 +45,19 @@ public class AuctionController {
             @RequestParam("requesterId") Long requesterId
     ) {
         AuctionResponseDTO response = auctionService.createAuction(auctionRequestDTO, requesterId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // CREATE Auction với Media
+    @PostMapping(value = "/with-media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AuctionResponseDTO> createAuctionWithMedia(
+            @RequestParam("requesterId") Long requesterId,
+            @RequestPart("auction") AuctionRequestDTO auctionRequestDTO,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
+    ) {
+        AuctionResponseDTO response = auctionMediaService.createAuctionWithMediaSimple(
+                auctionRequestDTO, requesterId, files
+        );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -171,6 +191,4 @@ public class AuctionController {
         auctionService.deleteAuction(id, requesterId);
         return ResponseEntity.noContent().build();
     }
-
-    // Removed the old mapToResponseDTO method since we now use AuctionMapper
 }
