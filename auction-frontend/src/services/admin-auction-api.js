@@ -1,6 +1,7 @@
 // src/services/admin-auction-api.js
 import api from './api';
 import API_CONFIG from './apiConfig';
+import Cookies from 'js-cookie';
 
 const adminAuctionAPI = {
     // Lấy tất cả auctions
@@ -59,17 +60,41 @@ const adminAuctionAPI = {
             console.error(`Error searching auctions by category ${categoryId}:`, error);
             throw error;
         }
-    },    
+    },
 
     // Tạo auction mới
-    createAuction: async (auctionData, requesterId) => {
+    createAuction: async (auctionData, imageFiles, requesterId) => {
         try {
-            const response = await api.post(API_CONFIG.AUCTION_SERVICE, auctionData, {
-                params: { requesterId }
+            const token = Cookies.get('jwt');
+
+            const formData = new FormData();
+
+            // Gắn auction JSON
+            formData.append(
+                'auction',
+                new Blob([JSON.stringify(auctionData)], { type: 'application/json' })
+            );
+
+            // Gắn ảnh
+            imageFiles.forEach(file => {
+                formData.append('files', file);
             });
+
+            const response = await api.post(
+                `${API_CONFIG.AUCTION_SERVICE}/with-media`,
+                formData,
+                {
+                    params: { requesterId },
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+
             return response.data;
         } catch (error) {
-            console.error('Error creating auction:', error);
+            console.error('Error creating auction (with media):', error);
             throw error;
         }
     },
@@ -90,8 +115,8 @@ const adminAuctionAPI = {
     // Cập nhật trạng thái auction (chỉ admin)
     updateAuctionStatus: async (id, status, requesterId) => {
         try {
-            const response = await api.put(`${API_CONFIG.AUCTION_SERVICE}/${id}/status`, 
-                { status }, 
+            const response = await api.put(`${API_CONFIG.AUCTION_SERVICE}/${id}/status`,
+                { status },
                 { params: { requesterId } }
             );
             return response.data;
@@ -118,14 +143,14 @@ const adminAuctionAPI = {
     searchAuctions: async (filters = {}) => {
         try {
             const { searchQuery, category, status, sortBy } = filters;
-            
+
             // Nếu có filter cụ thể, sử dụng endpoint tương ứng
             if (status && status !== 'All Statuses') {
                 // Chuyển đổi status name sang backend format
                 const statusMap = {
                     'Opened': 'OPENED',
                     'Active': 'OPENED',
-                    'Completed': 'COMPLETED', 
+                    'Completed': 'COMPLETED',
                     'Pending': 'PENDING',
                     'Draft': 'DRAFT',
                     'Delivered': 'DELIVERED'
@@ -157,11 +182,11 @@ const adminAuctionAPI = {
 
             // Filter theo search query
             if (searchQuery && searchQuery.trim()) {
-                data = data.filter(auction => 
+                data = data.filter(auction =>
                     auction.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     auction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (auction.user && auction.user.fullName && 
-                     auction.user.fullName.toLowerCase().includes(searchQuery.toLowerCase()))
+                    (auction.user && auction.user.fullName &&
+                        auction.user.fullName.toLowerCase().includes(searchQuery.toLowerCase()))
                 );
             }
 
@@ -182,7 +207,7 @@ const adminAuctionAPI = {
         try {
             // Lấy tất cả auctions để tính stats
             const auctions = await adminAuctionAPI.getAllAuctions();
-            
+
             const stats = {
                 all: auctions.length,
                 active: auctions.filter(a => a.status === 'OPENED').length,
@@ -203,7 +228,7 @@ const adminAuctionAPI = {
 // Helper function để sort auctions
 const sortAuctions = (auctions, sortBy) => {
     const sortedAuctions = [...auctions];
-    
+
     switch (sortBy) {
         case 'Newest':
             return sortedAuctions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
