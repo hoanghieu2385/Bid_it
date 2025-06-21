@@ -175,40 +175,153 @@ const ParticipatedAuctions = () => {
 		return auction.winnerId === user?.id;
 	};
 
+	// Check if notification should be shown (within 1 day of auction end)
+	const shouldShowNotification = (auction) => {
+		if (!auction.endTime) return false;
+		
+		const auctionEndTime = new Date(auction.endTime);
+		const currentTime = new Date();
+		const oneDayInMs = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+		
+		return (currentTime - auctionEndTime) <= oneDayInMs;
+	};
+
+	// Improved logic to check if user truly won the auction
+	const isValidWinner = (auction, user) => {
+		// Must be the winner
+		if (!isWinner(auction, user)) return false;
+		
+		// Auction must be in appropriate status (CLOSED or SOLD)
+		if (!['CLOSED', 'SOLD'].includes(auction.status)) return false;
+		
+		// If payment failed, not a valid winner
+		if (auction.paymentStatus === 'FAILED' || auction.paymentStatus === 'CANCELLED') {
+			return false;
+		}
+		
+		// If payment is overdue and not paid, might not be valid winner
+		if (!auction.isPaid && isPaymentOverdue(auction)) {
+			return false;
+		}
+		
+		return true;
+	};
+
 	const isPaymentOverdue = (auction) => {
 		if (!auction.winnerPaymentDeadline) return false;
 		return new Date() > new Date(auction.winnerPaymentDeadline);
 	};
 
-	// Hàm xử lý khi ảnh lỗi
-	const handleImageError = (e) => {
-		e.target.style.display = 'none';
-		e.target.nextSibling.style.display = 'flex';
+	// Check if should show Pay Now button (winner and not paid and within payment deadline)
+	const shouldShowPayNowButton = (auction, user) => {
+		if (!isWinner(auction, user)) return false;
+		if (auction.isPaid) return false;
+		if (auction.status !== 'CLOSED') return false;
+		if (auction.auctionPayment?.status === 'PENDING') return false;
+		if (auction.paymentStatus === 'CANCELLED') return false;
+		
+		// Show Pay Now button until payment deadline expires
+		return !isPaymentOverdue(auction);
 	};
 
-	// Hàm render ảnh auction
+	// Check if should show Retry Payment button
+	const shouldShowRetryPaymentButton = (auction, user) => {
+		if (!isWinner(auction, user)) return false;
+		if (auction.isPaid) return false;
+		if (auction.status !== 'CLOSED') return false;
+		
+		return auction.paymentStatus === 'FAILED' && !isPaymentOverdue(auction);
+	};
+
+	// Fixed image loading with proper API base URL
+	const getImageUrl = (url) => {
+		if (!url) return null;
+		
+		// If it's already a full URL, return as is
+		if (url.startsWith('http://') || url.startsWith('https://')) {
+			return url;
+		}
+		
+		// If it starts with /api or similar, prepend base URL
+		if (url.startsWith('/') || url.startsWith('api/')) {
+			return `http://localhost:8080${url.startsWith('/') ? '' : '/'}${url}`;
+		}
+		
+		// Otherwise, construct full URL
+		return `http://localhost:8080/${url}`;
+	};
+
+	// Improved image error handling
+	const handleImageError = (e) => {
+		console.warn('Image failed to load:', e.target.src);
+		e.target.style.display = 'none';
+		if (e.target.nextSibling) {
+			e.target.nextSibling.style.display = 'flex';
+		}
+	};
+
+	// Improved image loading
+	const handleImageLoad = (e) => {
+		console.log('Image loaded successfully:', e.target.src);
+		if (e.target.nextSibling) {
+			e.target.nextSibling.style.display = 'none';
+		}
+	};
+
+	// Enhanced auction image rendering
 	const renderAuctionImage = (auction) => {
+		// Check if auction has media URLs
 		if (auction.mediaUrls && auction.mediaUrls.length > 0) {
+			const imageUrl = getImageUrl(auction.mediaUrls[0]);
+			
 			return (
 				<div className="auction-image-container">
 					<img 
-						src={auction.mediaUrls[0]} 
+						src={imageUrl}
 						className="card-img-top auction-image" 
 						alt={auction.title}
 						onError={handleImageError}
+						onLoad={handleImageLoad}
+						crossOrigin="anonymous"
 					/>
 					<div className="auction-image-placeholder" style={{ display: 'none' }}>
 						<i className="fas fa-image"></i>
+						<span>No Image</span>
 					</div>
 				</div>
 			);
-		} else {
+		} 
+		
+		// Check if auction has media array (alternative structure)
+		if (auction.media && auction.media.length > 0) {
+			const media = auction.media[0];
+			const imageUrl = getImageUrl(media.url || media.mediaUrl);
+			
 			return (
-				<div className="auction-image-placeholder">
-					<i className="fas fa-image"></i>
+				<div className="auction-image-container">
+					<img 
+						src={imageUrl}
+						className="card-img-top auction-image" 
+						alt={auction.title}
+						onError={handleImageError}
+						onLoad={handleImageLoad}
+						crossOrigin="anonymous"
+					/>
+					<div className="auction-image-placeholder" style={{ display: 'none' }}>
+						<i className="fas fa-image"></i>
+						<span>No Image</span>
+					</div>
 				</div>
 			);
 		}
+		
+		// No image available
+		return (
+			<div className="auction-image-placeholder">
+				<i className="fas fa-image"></i>
+				<span>No Image Available</span>
+			</div>
+		);
 	};
 
 	if (loading) {
@@ -272,7 +385,7 @@ const ParticipatedAuctions = () => {
 						onClick={() => setFilter('won')}
 					>
 						<i className="fas fa-trophy me-1"></i>
-						Won ({currentUser ? auctions.filter(a => isWinner(a, currentUser)).length : 0})
+						Won ({currentUser ? auctions.filter(a => isValidWinner(a, currentUser)).length : 0})
 					</button>
 					<button 
 						className={`filter-btn ${filter === 'active' ? 'active' : ''}`}
@@ -337,11 +450,31 @@ const ParticipatedAuctions = () => {
 									</div>
 								</div>
 
-								{/* Winner Status */}
-								{currentUser && isWinner(auction, currentUser) && (
+								{/* Winner Status - Only show within 1 day of auction end */}
+								{currentUser && isValidWinner(auction, currentUser) && shouldShowNotification(auction) && (
 									<div className="winner-alert">
 										<i className="fas fa-trophy me-2"></i>
 										<strong>Congratulations! You won this auction!</strong>
+									</div>
+								)}
+
+								{/* Payment Failed or Cancelled Alert - Only show within 1 day */}
+								{currentUser && isWinner(auction, currentUser) && 
+								 (auction.paymentStatus === 'FAILED' || auction.paymentStatus === 'CANCELLED') && 
+								 shouldShowNotification(auction) && (
+									<div className="alert alert-danger small mt-2">
+										<i className="fas fa-exclamation-triangle me-1"></i>
+										Payment {auction.paymentStatus.toLowerCase()}. Auction win may be forfeited.
+									</div>
+								)}
+
+								{/* Payment Overdue Alert - Only show within 1 day */}
+								{currentUser && isWinner(auction, currentUser) && 
+								 !auction.isPaid && isPaymentOverdue(auction) && 
+								 shouldShowNotification(auction) && (
+									<div className="alert alert-warning small mt-2">
+										<i className="fas fa-clock me-1"></i>
+										Payment overdue. Please complete payment to secure your win.
 									</div>
 								)}
 
@@ -375,6 +508,11 @@ const ParticipatedAuctions = () => {
 														<i className="fas fa-hourglass-half me-1"></i>
 														Payment processing...
 													</div>
+												) : auction.paymentStatus === 'FAILED' ? (
+													<div className="text-danger">
+														<i className="fas fa-times-circle me-1"></i>
+														Payment failed - please retry
+													</div>
 												) : (
 													<div className="text-warning">
 														<i className="fas fa-exclamation-circle me-1"></i>
@@ -405,16 +543,23 @@ const ParticipatedAuctions = () => {
 										</button>
 									)}
 
-									{/* Payment Button for Winners */}
-									{currentUser && isWinner(auction, currentUser) && 
-									 auction.status === 'CLOSED' && 
-									 !auction.isPaid && 
-									 auction.auctionPayment?.status !== 'PENDING' && (
+									{/* Pay Now Button - Show immediately when won and not paid */}
+									{currentUser && shouldShowPayNowButton(auction, currentUser) && (
 										<button 
 											className={`action-btn btn-pay ${isPaymentOverdue(auction) ? 'overdue' : ''}`}
 											onClick={() => window.location.href = `/payment/auction/${auction.id}`}
 										>
 											Pay Now
+										</button>
+									)}
+
+									{/* Retry Payment Button for Failed Payments */}
+									{currentUser && shouldShowRetryPaymentButton(auction, currentUser) && (
+										<button 
+											className="action-btn btn-retry"
+											onClick={() => window.location.href = `/payment/auction/${auction.id}`}
+										>
+											Retry Payment
 										</button>
 									)}
 								</div>
@@ -440,7 +585,7 @@ const ParticipatedAuctions = () => {
 					<div className="col-md-3 col-sm-6">
 						<div className="stat-item">
 							<div className="stat-value text-success">
-								{currentUser ? filteredAuctions.filter(a => isWinner(a, currentUser)).length : 0}
+								{currentUser ? filteredAuctions.filter(a => isValidWinner(a, currentUser)).length : 0}
 							</div>
 							<div className="stat-label">Auctions Won</div>
 						</div>
@@ -480,7 +625,9 @@ const ParticipatedAuctions = () => {
 										isWinner(a, currentUser) && 
 										a.status === 'CLOSED' && 
 										!a.isPaid && 
-										!isPaymentOverdue(a)
+										!isPaymentOverdue(a) &&
+										a.paymentStatus !== 'FAILED' &&
+										a.paymentStatus !== 'CANCELLED'
 									).length}
 								</div>
 								<div className="stat-label">Pending Payment</div>
@@ -492,11 +639,10 @@ const ParticipatedAuctions = () => {
 									{auctions.filter(a => 
 										isWinner(a, currentUser) && 
 										a.status === 'CLOSED' && 
-										!a.isPaid && 
-										isPaymentOverdue(a)
+										(!a.isPaid && (isPaymentOverdue(a) || a.paymentStatus === 'FAILED' || a.paymentStatus === 'CANCELLED'))
 									).length}
 								</div>
-								<div className="stat-label">Overdue Payment</div>
+								<div className="stat-label">Failed/Overdue</div>
 							</div>
 						</div>
 					</div>
