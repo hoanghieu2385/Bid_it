@@ -171,6 +171,18 @@ export const getAuctionDetailById = async (auctionId) => {
 	return response.data;
 };
 
+// Get auction details by ID with JWT
+export const getProtectedAuctionDetailById = async (auctionId) => {
+	const token = Cookies.get('jwt');
+	const response = await api.get(
+		`/auction-service/api/auctions/${auctionId}`,
+		{
+			headers: { Authorization: `Bearer ${token}` }
+		}
+	);
+	return response.data;
+};
+
 // Get auction bid history
 export const getAuctionBidHistory = async (auctionId) => {
 	const token = Cookies.get('jwt');
