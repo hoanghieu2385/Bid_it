@@ -1,10 +1,8 @@
 package com.example.payment.service;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
-/**
- * Interface cho PayPal integration
- */
 public interface IPayPalService {
 
     // Tạo PayPal payment order
@@ -24,4 +22,9 @@ public interface IPayPalService {
 
     // Refund PayPal payment (dự phòng cho tương lai)
     String refundPayPalPayment(String transactionId, BigDecimal amount, String currency);
+
+    // New methods for order management
+    Map<String, Object> getOrderDetails(String orderId);
+
+    boolean isOrderValid(String orderId);
 }
