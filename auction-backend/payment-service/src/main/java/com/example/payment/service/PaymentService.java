@@ -50,20 +50,14 @@ public class PaymentService implements IPaymentService {
         if (existingPayment.isPresent()) {
             log.info("Payment with idempotency key {} already exists, returning existing payment", idempotencyKey);
             Payment payment = existingPayment.get();
-            String approvalUrl = null;
 
-            // If payment is pending and PayPal, try to get approval URL
+            // Handle existing PayPal payment
             if (payment.getStatus() == PaymentStatus.PENDING &&
-                    payment.getPaymentMethod() == PaymentMethod.PAYPAL &&
-                    StringUtils.hasText(payment.getExternalOrderId())) {
-                try {
-                    approvalUrl = payPalService.getApprovalUrl(payment.getExternalOrderId());
-                } catch (Exception e) {
-                    log.warn("Failed to get approval URL for existing payment: {}", e.getMessage());
-                }
+                    payment.getPaymentMethod() == PaymentMethod.PAYPAL) {
+                return handleExistingPayPalPayment(payment, request);
             }
 
-            return convertToResponseDto(payment, approvalUrl);
+            return convertToResponseDto(payment, null);
         }
 
         // Check for active payment (same user, auction, type)
@@ -75,24 +69,83 @@ public class PaymentService implements IPaymentService {
             log.info("Active payment already exists for user: {}, auction: {}, type: {}",
                     request.getUserId(), request.getAuctionId(), request.getPaymentType());
 
-            String approvalUrl = null;
-            // If payment is pending and PayPal, try to get approval URL
+            // Handle existing PayPal payment
             if (payment.getStatus() == PaymentStatus.PENDING &&
-                    payment.getPaymentMethod() == PaymentMethod.PAYPAL &&
-                    StringUtils.hasText(payment.getExternalOrderId())) {
-                try {
-                    approvalUrl = payPalService.getApprovalUrl(payment.getExternalOrderId());
-                } catch (Exception e) {
-                    log.warn("Failed to get approval URL for active payment: {}", e.getMessage());
-                }
+                    payment.getPaymentMethod() == PaymentMethod.PAYPAL) {
+                return handleExistingPayPalPayment(payment, request);
             }
 
-            return convertToResponseDto(payment, approvalUrl);
+            return convertToResponseDto(payment, null);
         }
 
         // Validate business rules
         validatePaymentRequest(request);
 
+        // Create new payment
+        return createNewPayment(request, idempotencyKey);
+    }
+
+    /**
+     * Handle existing PayPal payment - recreate order if needed
+     */
+    private PaymentResponseDto handleExistingPayPalPayment(Payment payment, PaymentRequestDto request) {
+        String approvalUrl = null;
+        boolean needNewOrder = false;
+
+        if (StringUtils.hasText(payment.getExternalOrderId())) {
+            // Check if existing order is still valid
+            if (payPalService.isOrderValid(payment.getExternalOrderId())) {
+                try {
+                    // Get approval URL for valid existing order
+                    approvalUrl = payPalService.getApprovalUrl(payment.getExternalOrderId());
+                    log.info("Successfully retrieved approval URL for existing valid order: {}", payment.getExternalOrderId());
+                } catch (Exception e) {
+                    log.warn("Failed to get approval URL for valid order {}: {}",
+                            payment.getExternalOrderId(), e.getMessage());
+                    needNewOrder = true;
+                }
+            } else {
+                log.info("Existing PayPal order {} is expired/invalid, creating new order", payment.getExternalOrderId());
+                needNewOrder = true;
+            }
+        } else {
+            // No external order ID, need to create new one
+            needNewOrder = true;
+        }
+
+        if (needNewOrder) {
+            try {
+                log.info("Creating new PayPal order for existing payment: {}", payment.getId());
+                String newOrderId = payPalService.createPayPalOrder(
+                        payment.getAmount(),
+                        "USD",
+                        request.getReturnUrl(),
+                        request.getCancelUrl(),
+                        payment.getDescription()
+                );
+
+                // Update payment with new order ID
+                payment.setExternalOrderId(newOrderId);
+                payment.setUpdatedAt(LocalDateTime.now());
+                payment = paymentRepository.save(payment);
+
+                // Get approval URL for new order
+                approvalUrl = payPalService.getApprovalUrl(newOrderId);
+                log.info("New PayPal order created successfully: {}", newOrderId);
+
+            } catch (Exception createException) {
+                log.error("Failed to create new PayPal order: {}", createException.getMessage());
+                throw new RuntimeException("Failed to recreate PayPal payment: " + createException.getMessage());
+            }
+        }
+
+        return convertToResponseDto(payment, approvalUrl);
+    }
+
+    /**
+     * Create completely new payment
+     */
+    private PaymentResponseDto createNewPayment(PaymentRequestDto request, String idempotencyKey) {
         // Create payment entity
         Payment payment = Payment.builder()
                 .userId(request.getUserId())
@@ -149,6 +202,13 @@ public class PaymentService implements IPaymentService {
 
             if (duplicatePayment.isPresent()) {
                 log.info("Returning existing payment due to constraint violation");
+
+                // Handle PayPal payment if needed
+                if (duplicatePayment.get().getStatus() == PaymentStatus.PENDING &&
+                        duplicatePayment.get().getPaymentMethod() == PaymentMethod.PAYPAL) {
+                    return handleExistingPayPalPayment(duplicatePayment.get(), request);
+                }
+
                 return convertToResponseDto(duplicatePayment.get(), null);
             }
 
