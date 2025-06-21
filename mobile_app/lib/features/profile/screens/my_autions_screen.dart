@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
 import 'package:mobile_app/core/services/auction_service.dart';
+import '../../../core/services/user_service.dart';
 import '../../auction/screens/auction_detail.dart';
 import '../../home/screens/home_screen.dart';
 
@@ -42,6 +43,79 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
       }
     });
   }
+  void _confirmDeleteAuction(int auctionId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Không cho đóng khi nhấn bên ngoài
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+        actionsPadding: const EdgeInsets.only(bottom: 16, right: 16),
+
+        title: Row(
+          children: const [
+            Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+            SizedBox(width: 10),
+            Text(
+              'Confirm Deletion',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+
+        content: const Text(
+          'Are you sure you want to delete this auction? This action cannot be undone.',
+          style: TextStyle(fontSize: 15),
+        ),
+
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.of(ctx).pop(),
+            icon: const Icon(Icons.cancel, color: Colors.grey),
+            label: const Text('Cancel'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey[700],
+              textStyle: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              try {
+                final user = await UserService.getCurrentUser();
+                await AuctionService.deleteAuction(auctionId, user?['id'],);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Auction deleted successfully'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                _loadAuctions(); // Refresh list
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to delete auction: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+            label: const Text('Delete'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.redAccent,
+              textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Color getStatusColor(String status) {
     switch (status.toUpperCase()) {
@@ -234,7 +308,49 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                             Text('Start Price: ₫${auction.startingPrice.toStringAsFixed(0)}'),
                           ],
                         ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        trailing: PopupMenuButton<String>(
+                          tooltip: 'Options',
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 4,
+                          offset: const Offset(0, 40),
+                          icon: const Icon(Icons.more_vert, color: Colors.grey),
+                          onSelected: (value) {
+                            if (value == 'view') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AuctionDetailPage(auction: auction),
+                                ),
+                              );
+                            } else if (value == 'delete') {
+                              _confirmDeleteAuction(auction.id);
+                            }
+                          },
+                          itemBuilder: (BuildContext context) => [
+                            PopupMenuItem<String>(
+                              value: 'view',
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.visibility, color: Colors.blueAccent),
+                                  SizedBox(width: 10),
+                                  Text('View Details'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'delete',
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.delete, color: Colors.redAccent),
+                                  SizedBox(width: 10),
+                                  Text('Delete Auction'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+
                         onTap: () {
                           Navigator.push(
                             context,

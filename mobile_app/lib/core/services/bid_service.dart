@@ -79,7 +79,7 @@ class BidService {
     return auctions.values.toList();
   }
   static Future<List<Map<String, dynamic>>> fetchAllAuctionBids(int auctionId, {required String token}) async {
-    final url = Uri.parse('$bidbaseUrl/bids/auction/$auctionId');
+    final url = Uri.parse('$bidbaseUrl//bids/auction/$auctionId/history');
     final response = await http.get(
       url,
       headers: {

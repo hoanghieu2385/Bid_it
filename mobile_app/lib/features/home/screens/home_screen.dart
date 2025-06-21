@@ -193,7 +193,7 @@ class HomeContentState extends State<HomeContent> {
         allAuctions = all;
       });
     } catch (e) {
-      debugPrint('Error refreshing auction data: \$e');
+      debugPrint('Error refreshing auction data: $e');
     }
   }
   Future<void> _initWebSocket() async {
@@ -311,22 +311,16 @@ class HomeContentState extends State<HomeContent> {
 
   Widget _buildAuctionCard(Auction auction) {
     final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
-    final duration = auction.endTime.difference(DateTime.now());
-    final days = duration.inDays;
-    final hours = duration.inHours % 24;
-    final minutes = duration.inMinutes % 60;
-    final seconds = duration.inSeconds % 60;
+    final now = DateTime.now();
+    final String startingPrice = _vndFormat.format(auction.startingPrice);
+    final String currentBid = _vndFormat.format(auction.currentBid ?? 0);
+
     String? displayImage;
     if (auction.mediaUrls.isNotEmpty) {
       displayImage = auction.mediaUrls.first;
-    } else if (auction.thumbnailUrl != null && auction.thumbnailUrl!.isNotEmpty) {
+    } else if (auction.thumbnailUrl?.isNotEmpty ?? false) {
       displayImage = auction.thumbnailUrl;
-    } else {
-      displayImage = null;
     }
-
-    final String startingPrice = _vndFormat.format(auction.startingPrice);
-    final String currentBid = _vndFormat.format(auction.currentBid ?? 0);
 
     return GestureDetector(
       onTap: () {
@@ -376,9 +370,7 @@ class HomeContentState extends State<HomeContent> {
                   top: 10,
                   right: 12,
                   child: GestureDetector(
-                    onTap: () async {
-                      await _toggleWatchlist(auction);
-                    },
+                    onTap: () async => await _toggleWatchlist(auction),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -410,19 +402,11 @@ class HomeContentState extends State<HomeContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildTimeItem('$days', 'Days'),
-                      _buildTimeItem('$hours', 'Hours'),
-                      _buildTimeItem('$minutes', 'Minutes'),
-                      _buildTimeItem('$seconds', 'Seconds'),
-                    ],
-                  ),
+                  _buildCountdownWidget(auction),
                   const SizedBox(height: 4),
                   Center(
                     child: Text(
-                      'End time: ${dateFormatter.format(auction.endTime)}',
+                      'End: ${dateFormatter.format(auction.endTime)}',
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
@@ -465,6 +449,44 @@ class HomeContentState extends State<HomeContent> {
       ),
     );
   }
+
+  Widget _buildCountdownWidget(Auction auction) {
+    final now = DateTime.now();
+
+    if (now.isAfter(auction.endTime)) {
+      return const Center(
+        child: Text(
+          'Ended',
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+
+    final targetTime = now.isBefore(auction.startTime)
+        ? auction.startTime
+        : auction.endTime;
+
+    final duration = targetTime.difference(now);
+    final days = duration.inDays;
+    final hours = duration.inHours % 24;
+    final minutes = duration.inMinutes % 60;
+    final seconds = duration.inSeconds % 60;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildTimeItem('$days', 'Days'),
+        _buildTimeItem('$hours', 'Hours'),
+        _buildTimeItem('$minutes', 'Minutes'),
+        _buildTimeItem('$seconds', 'Seconds'),
+      ],
+    );
+  }
+
 
   Widget _buildTimeItem(String value, String label) {
     return Column(
