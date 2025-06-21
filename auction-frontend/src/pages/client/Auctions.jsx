@@ -219,74 +219,65 @@ const Auctions = () => {
 
 	return (
 		<div className="auction-page container">
-			<h2 className="my-4">Browse Auctions</h2>
-
-			{/* Search Bar */}
-			<div className="row mb-4">
-				<div className="col-12">
-					<form onSubmit={handleSearchSubmit}>
-						<div className="input-group">
-							<span className="input-group-text">
-								<FaSearch />
-							</span>
-							<input
-								type="text"
-								className="form-control"
-								placeholder="Search auctions by title, description, or category..."
-								value={searchQuery}
-								onChange={handleSearchChange}
-							/>
-							{(searchQuery || statusFilter || categoryFilter) && (
-								<button
-									type="button"
-									className="btn btn-outline-secondary"
-									onClick={clearFilters}
-									title="Clear all filters"
-								>
-									Clear
-								</button>
-							)}
-						</div>
-					</form>
+			{/* Search and Filters Container */}
+			<div className="search-filter-container">
+			<div className="filter-row">
+				{/* Search Bar */}
+				<div className="search-group">
+				<label>Search</label>
+				<form onSubmit={handleSearchSubmit}>
+					<div className="input-group">
+					<span className="input-group-text">
+						<FaSearch />
+					</span>
+					<input
+						type="text"
+						className="form-control"
+						placeholder="Search auctions"
+						value={searchQuery}
+						onChange={handleSearchChange}
+					/>
+					</div>
+				</form>
 				</div>
+
+				{/* Status Filter */}
+				<div className="filter-group">
+				<label>Status</label>
+				<select className="form-select" value={statusFilter} onChange={handleStatusChange}>
+					<option value="">All Status</option>
+					<option value="UPCOMING">Upcoming</option>
+					<option value="OPENED">Opened</option>
+					<option value="ENDED">Ended</option>
+				</select>
+				</div>
+				
+				{/* Category Filter */}
+				<div className="filter-group">
+				<label>Category</label>
+				<select className="form-select" value={categoryFilter} onChange={handleCategoryChange}>
+					<option value="">All Categories</option>
+					{categories.map((cat) => (
+					<option key={cat.id} value={cat.name}>
+						{cat.name}
+					</option>
+					))}
+				</select>
+				</div>
+
+				{/* Clear Button */}
+				{(searchQuery || statusFilter || categoryFilter) && (
+				<button
+					type="button"
+					className="btn btn-outline-secondary"
+					onClick={clearFilters}
+					style={{marginBottom: '0'}}
+				>
+					Clear
+				</button>
+				)}
 			</div>
-
-			{/* Filters */}
-			<div className="row g-3 mb-4">
-				<div className="col-md-4">
-					<label>Status</label>
-					<select className="form-select" value={statusFilter} onChange={handleStatusChange}>
-						<option value="">All Status</option>
-						<option value="UPCOMING">Upcoming</option>
-						<option value="OPENED">Opened</option>
-						<option value="ENDED">Ended</option>
-					</select>
-				</div>
-				<div className="col-md-4">
-					<label>Category</label>
-					<select className="form-select" value={categoryFilter} onChange={handleCategoryChange}>
-						<option value="">All Categories</option>
-						{categories.map((cat) => (
-							<option key={cat.id} value={cat.name}>
-								{cat.name}
-							</option>
-						))}
-					</select>
-				</div>
 			</div>
-
-			{/* Results Info */}
-			{(searchQuery || statusFilter || categoryFilter) && (
-				<div className="mb-3">
-					<small className="text-muted">
-						Showing {filteredAuctions.length} results
-						{searchQuery && ` for "${searchQuery}"`}
-						{statusFilter && ` with status "${statusFilter}"`}
-						{categoryFilter && ` in category "${categoryFilter}"`}
-					</small>
-				</div>
-			)}
-
 			<div className="row g-4">
 				{currentItems.map((auction) => (
 					<div className="col-md-3" key={auction.id}>

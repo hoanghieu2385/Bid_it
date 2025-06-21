@@ -1,60 +1,196 @@
-/* Phần tìm kiếm và bộ lọc container */
-.auction-search-filter-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 100px;
-  margin-bottom: 100px;
-  gap: 50px;
-  width: 100%;
-  padding: 0 20px;
+/* Auction.css */
+
+.auction-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding: 20px 0;
 }
 
-/* Tìm kiếm */
-.auction-search {
-  width: 40%;
+.auction-page h2 {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 30px;
+}
+
+/* Search and Filter Layout - Single Row */
+.search-filter-container {
   background-color: #fff;
-  border-radius: 2px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  position: relative;
-  display: flex;
-  align-items: center;
-  border: 2px solid #3f51b5;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-.search-input {
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
+.filter-row {
+  display: flex;
+  gap: 15px;
+  align-items: flex-end;
+}
+
+/* Search Bar Styling */
+.search-group {
+  flex: 2;
+  max-width: 400px;
+}
+
+.input-group {
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e0e6ed;
+}
+
+.input-group-text {
+  background-color: #f8f9fa;
   border: none;
-  border-radius: 3px;
+  color: #6c757d;
+  padding: 12px 15px;
+}
+
+.form-control {
+  border: none;
+  padding: 12px 15px;
+  font-size: 15px;
+  background-color: #fff;
+}
+
+.form-control:focus {
+  box-shadow: none;
+  border: none;
   outline: none;
 }
 
-.search-input:focus {
-  border-color: #3f51b5;
+.form-control::placeholder {
+  color: #adb5bd;
+  font-size: 14px;
 }
 
-.search-icon {
-  position: absolute;
-  right: 10px;
-  color: white;
-  background-color: #3f51b5;
-  padding: 8px;
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.filter-group {
+  flex: 1;
+  min-width: 150px;
 }
 
-/* Bộ lọc */
-.auction-filter {
-  display: flex;
-  gap: 10px;
-  width: 40%;
-  justify-content: space-evenly;
+.filter-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+.search-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Filter Dropdowns */
+.form-select {
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+  padding: 10px 12px;
+  background-color: #fff;
+  font-size: 14px;
+  color: #495057;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 8px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+.form-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+.form-select option {
+  padding: 8px 12px;
+}
+
+/* Auction Cards */
+.card {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.hover-shadow:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 15px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-text {
+  font-size: 14px;
+  color: #6c757d;
+  line-height: 1.6;
+}
+
+/* Status Badges */
+.badge {
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bg-success {
+  background-color: #28a745 !important;
+}
+
+.bg-warning {
+  background-color: #ffc107 !important;
+}
+
+.bg-secondary {
+  background-color: #6c757d !important;
+}
+
+/* Price Display */
+.card-text {
+  font-weight: 500;
+}
+
+.card-text br + strong,
+.card-text strong {
+  color: #e74c3c;
+  font-size: 16px;
+}
+
+/* Time Left Display */
+.text-muted {
+  font-size: 12px;
+  color: #95a5a6 !important;
+}
+
+/* Like Button */
 .filter-btn {
   padding: 10px 20px;
   font-size: 14px;
@@ -77,194 +213,6 @@
 .filter-btn.active-past {
   background-color: #3f51b5;
   color: white;
-}
-
-/* Tạo nền ảnh cho phần đầu trang */
-.auction-header {
-  background-image: url("../../images/Nen-cua-Aution.png");
-  background-size: cover;
-  background-position: center;
-  height: 550px;
-  display: flex;
-  align-items: center;
-  justify-content: left;
-  color: white;
-  text-align: center;
-}
-
-.auction-title {
-  margin-left: 100px;
-  font-size: 3rem;
-  font-weight: bold;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
-}
-
-.auction-page {
-  background-color: #ffffff;
-}
-
-.auction-list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 sản phẩm mỗi hàng như trong ảnh */
-  gap: 20px;
-  margin: 40px;
-  padding: 0 135px;
-  justify-items: center; /* Căn giữa các sản phẩm trong grid */
-}
-
-/* Hiệu ứng thẻ sản phẩm */
-.auction-card {
-  background-color: #fff;
-  border-radius: 5px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  transition: transform 0.3s;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.auction-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-}
-
-/* Container cho hình ảnh và thời gian */
-.auction-img-container {
-  position: relative;
-  height : 400px;
-  overflow: hidden;
-  width: 100%;
-}
-
-.auction-img {
-  width: 100%;
-  height: 240px;
-  object-fit: cover;
-}
-
-/* Styling cho timer */
-.auction-timer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background-color: rgba(0, 0, 0, 0.75);
-  color: white;
-  padding: 10px;
-}
-
-.auction-start-time {
-  display: flex;
-  justify-content: space-between;
-  font-weight: bold;
-  font-size: 14px;
-}
-
-.auction-countdown {
-  display: flex;
-  justify-content: space-around;
-  text-align: center;
-}
-
-.countdown-unit {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.countdown-value {
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.countdown-label {
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-/* Category tag styling */
-.auction-category-icon {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 10;
-}
-
-.category-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background-color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #333;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.auction-info {
-  padding: 15px;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.auction-item-title {
-  font-size: 16px;
-  color: #333;
-  font-weight: bold;
-  margin-bottom: 10px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-height: 2.4em;
-  line-height: 1.2em;
-  height: 2.4em; /* Đảm bảo chiều cao cố định */
-}
-
-/* Styling cho thông tin giá */
-.auction-price-details {
-  margin-top: 10px;
-  flex-grow: 1;
-  height: 80px; /* Thiết lập chiều cao cố định */
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between; /* Phân bố đều các hàng */
-}
-
-.price-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 5px;
-  font-size: 14px;
-  height: 20px; /* Thiết lập chiều cao cố định cho mỗi hàng */
-}
-
-.price-label {
-  color: #666;
-  width: 110px; /* Thêm chiều rộng cố định */
-  display: inline-block; /* Đảm bảo thuộc tính width có hiệu lực */
-  text-align: left; /* Căn chỉnh văn bản sang trái */
-}
-
-.price-value {
-  font-weight: 600;
-  color: #4661ff;
-  text-align: right; /* Căn chỉnh giá trị sang phải */
-  flex: 1; /* Cho phép phần giá trị mở rộng để lấp đầy không gian còn lại */
-}
-
-/* Action buttons */
-.action-buttons {
-  display: flex;
-  margin-top: 15px;
-  gap: 10px;
-  height: 40px;
 }
 
 .view-details-btn {
@@ -304,15 +252,6 @@
   color: rgb(148, 0, 0);
 }
 
-/* Pagination */
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  margin: 80px 0;
-}
-
 .pagination-btn {
   background-color: #fff;
   padding: 8px 16px;
@@ -340,50 +279,134 @@
   border-color: #3f51b5;
 }
 
-.page-number {
-  font-size: 1rem;
+.text-danger {
+  color: #e74c3c !important;
+}
+
+/* Image Container */
+.card img {
+  transition: transform 0.3s ease;
+}
+
+.card:hover img {
+  transform: scale(1.05);
+}
+
+/* Pagination */
+.pagination .page-link {
+  border: none;
+  color: #6c757d;
+  padding: 10px 15px;
+  margin: 0 2px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #007bff;
+  color: white;
+}
+
+.pagination .page-link:hover {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.pagination .page-item.disabled .page-link {
+  color: #adb5bd;
+  background-color: transparent;
+}
+
+/* Clear Filters Button */
+.btn-outline-secondary {
+  border-color: #e0e6ed;
+  color: #6c757d;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+  color: #495057;
+}
+
+/* Category highlight for active filter */
+.category-highlight {
+  background-color: #3b82f6;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
   font-weight: 600;
-  color: #333;
 }
 
-@media (max-width: 1200px) {
-  .auction-list {
-    grid-template-columns: repeat(2, 1fr);
-    padding: 0 60px;
-  }
+/* No Results Message */
+.text-center.py-5 {
+  background-color: #fff;
+  border-radius: 12px;
+  margin: 20px 0;
 }
 
+/* Results Info */
+.text-muted small {
+  font-style: italic;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-  .auction-title {
-    font-size: 2rem;
-    margin-left: 30px;
+  .col-md-3 {
+    margin-bottom: 20px;
   }
   
-  .auction-search-filter-container {
-    flex-direction: column;
-    gap: 20px;
+  .card-title {
+    font-size: 16px;
   }
   
-  .auction-search,
-  .auction-filter {
-    width: 90%;
+  .input-group {
+    margin-bottom: 15px;
   }
   
-  .auction-filter {
-    flex-wrap: wrap;
-    justify-content: center;
+  .row.g-3.mb-4 .col-md-4 {
+    margin-bottom: 15px;
   }
+}
 
-  .auction-list {
-    grid-template-columns: 1fr;
-    padding: 0 20px;
+@media (max-width: 576px) {
+  .auction-page {
+    padding: 10px;
   }
   
-  .countdown-value {
+  .card-body {
+    padding: 15px;
+  }
+  
+  .pagination .page-link {
+    padding: 8px 12px;
     font-size: 14px;
   }
-  
-  .countdown-label {
-    font-size: 10px;
-  }
+}
+
+/* Animation for loading states */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Countdown timer styling */
+.card-text small.text-muted {
+  background-color: rgba(0,0,0,0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 5px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
 }
