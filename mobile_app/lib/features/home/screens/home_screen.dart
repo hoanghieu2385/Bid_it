@@ -201,39 +201,38 @@ class HomeContentState extends State<HomeContent> {
     if (userId == null) return;
 
     final token = await UserService.getToken();
+    if (token == null || token.isEmpty) return;
 
-    WebSocketService().connect(
+    _webSocketService.connect(
       auctionId: -1,
       userId: userId,
       username: 'User $userId',
-      token: token!,
-      onActivity: (data) {
+      token: token,
+      onActivity: (data) async {
         if (data['type'] == 'NEW_BID') {
           final int auctionId = data['auctionId'];
           final double newBid = data['bidAmount']?.toDouble() ?? 0;
           final int bidCount = data['bidCount'] ?? 0;
+
+          bool updated = false;
 
           setState(() {
             for (var auction in allAuctions) {
               if (auction.id == auctionId) {
                 auction.currentBid = newBid;
                 auction.bidCount = bidCount;
-                print('📡 Received bid: ${data['bidAmount']}');
+                updated = true;
                 break;
               }
             }
           });
-
-          Timer.periodic(const Duration(seconds: 1), (timer) async {
-            if (!mounted) {
-              timer.cancel();
-              return;
-            }
+          if (!updated) {
             await _fetchAuction();
-          });
+          }
         }
       },
       onError: (err) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('WebSocket Error: ${err.toString()}'),
@@ -244,7 +243,6 @@ class HomeContentState extends State<HomeContent> {
       },
     );
   }
-
   Future<void> _toggleWatchlist(Auction auction) async {
     final userId = await _getCurrentUserId();
     if (userId == null) {

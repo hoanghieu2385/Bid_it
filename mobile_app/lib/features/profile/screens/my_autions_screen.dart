@@ -46,77 +46,96 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
   void _confirmDeleteAuction(int auctionId) {
     showDialog(
       context: context,
-      barrierDismissible: false, // Không cho đóng khi nhấn bên ngoài
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-        actionsPadding: const EdgeInsets.only(bottom: 16, right: 16),
-
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        elevation: 4,
+        backgroundColor: Colors.white,
         title: Row(
-          children: const [
-            Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
-            SizedBox(width: 10),
+          children: [
+            Icon(Icons.warning_rounded, color: Colors.red[600], size: 28),
+            const SizedBox(width: 12),
             Text(
-              'Confirm Deletion',
+              'Delete Auction',
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                color: Colors.grey[900],
               ),
             ),
           ],
         ),
-
-        content: const Text(
-          'Are you sure you want to delete this auction? This action cannot be undone.',
-          style: TextStyle(fontSize: 15),
-        ),
-
-        actions: [
-          TextButton.icon(
-            onPressed: () => Navigator.of(ctx).pop(),
-            icon: const Icon(Icons.cancel, color: Colors.grey),
-            label: const Text('Cancel'),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.grey[700],
-              textStyle: const TextStyle(fontWeight: FontWeight.w500),
-            ),
+        content: Text(
+          'Are you sure you want to delete this auction? This action is irreversible.',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey[700],
+            height: 1.4,
           ),
-          TextButton.icon(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              try {
-                final user = await UserService.getCurrentUser();
-                await AuctionService.deleteAuction(auctionId, user?['id'],);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Auction deleted successfully'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-                _loadAuctions(); // Refresh list
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Failed to delete auction: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-            label: const Text('Delete'),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.redAccent,
-              textStyle: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+        ),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  foregroundColor: Colors.grey[600],
+                  backgroundColor: Colors.grey[100],
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  try {
+                    final user = await UserService.getCurrentUser();
+                    await AuctionService.deleteAuction(auctionId, user?['id']);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Auction deleted successfully'),
+                        backgroundColor: Colors.green[600],
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    );
+                    _loadAuctions();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to delete auction: $e'),
+                        backgroundColor: Colors.red[600],
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    );
+                  }
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.red[600],
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
-
-
   Color getStatusColor(String status) {
     switch (status.toUpperCase()) {
       case 'UPCOMING':

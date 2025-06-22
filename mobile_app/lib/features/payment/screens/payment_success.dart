@@ -2,8 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_app/features/home/screens/home_screen.dart';
 
+import '../../order/screens/order_detail.dart';
+
 class PaymentSuccessScreen extends StatefulWidget {
-  const PaymentSuccessScreen({super.key});
+  final int auctionId;
+  const PaymentSuccessScreen({super.key, required this.auctionId});
 
   @override
   State<PaymentSuccessScreen> createState() => _PaymentSuccessScreenState();
@@ -25,7 +28,10 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
         timer.cancel();
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
+          MaterialPageRoute(
+            builder: (_) => OrderDetailPage(auctionId: widget.auctionId),
+          ),
+
         );
       } else {
         setState(() => _secondsRemaining--);

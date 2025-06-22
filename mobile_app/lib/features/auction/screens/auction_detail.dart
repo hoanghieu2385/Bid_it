@@ -281,7 +281,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    var auction = widget.auction;
+    var auction = currentAuction;
     final numberFormat = NumberFormat("#,##0", "vi_VN");
     final mediaList = auction.mediaUrls.isNotEmpty
         ? auction.mediaUrls
@@ -447,7 +447,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                               children: [
                                 Expanded(
                                   child: Text(
-                                    widget.auction.title,
+                                    auction.title,
                                     style: const TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.bold,
@@ -478,7 +478,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              widget.auction.description,
+                              auction.description,
                               style: const TextStyle(fontSize: 15, color: Colors.black87),
                               maxLines: isDescriptionExpanded ? null : 2,
                               overflow: isDescriptionExpanded ? null : TextOverflow.ellipsis,

@@ -48,8 +48,8 @@ class _UpdateAuctionPageState extends State<UpdateAuctionPage> {
   }
 
   void _initAuctionData() {
-    _titleController.text = widget.auction.title;
-    _descriptionController.text = widget.auction.description;
+    _titleController.text = widget.auction.title ?? '';
+    _descriptionController.text = widget.auction.description ?? '';
     _startingPriceController.text = widget.auction.startingPrice.toString();
     _incrementAmountController.text = widget.auction.incrementAmount.toString();
     _startTime = widget.auction.startTime;
@@ -279,13 +279,13 @@ class _UpdateAuctionPageState extends State<UpdateAuctionPage> {
 
     setState(() => _isUploading = true);
     try {
-      final encodedTitle = Uri.encodeComponent(_titleController.text.trim());
-      final encodedDescription = Uri.encodeComponent(_descriptionController.text.trim());
+      final rawTitle = _titleController.text.trim();
+      final rawDescription = _descriptionController.text.trim();
 
       final updatedAuction = await AuctionService.updateAuction(
         id: widget.auction.id,
-        title: encodedTitle,
-        description: encodedDescription,
+        title: rawTitle,
+        description: rawDescription,
         startingPrice: startingPrice.toInt(),
         incrementAmount: incrementAmount.toInt(),
         startTime: _dateFormatter.parse(_dateFormatter.format(_startTime!.toLocal())),
