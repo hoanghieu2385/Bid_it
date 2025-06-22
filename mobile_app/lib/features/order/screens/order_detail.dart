@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 import '../../../core/models/auction_model.dart';
 import '../../../core/services/auction_service.dart';
 import '../../../core/services/user_service.dart';
+import '../../auction/screens/auction_winner.dart';
 import '../../home/screens/home_screen.dart';
+import '../../payment/screens/payment_screen.dart';
 
 class OrderDetailPage extends StatefulWidget {
   final int auctionId;
@@ -231,12 +233,48 @@ class _OrderDetailPageState extends State<OrderDetailPage>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => AuctionWinnerPage(auctionId: widget.auctionId),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey[400],
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 14,
+                                    horizontal: MediaQuery.of(context).size.width * 0.03,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 2,
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                child: const Text('Back'),
+                              ),
+                            ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: isPaymentDue ? _goToHome : null,
+                                onPressed: () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => PaymentScreen(auctionId: widget.auctionId),
+                                    ),
+                                  );
+                                },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: isPaymentDue ? const Color(0xFFFFA726) : Colors.grey,
+                                  backgroundColor: const Color(0xFFFFA726),
                                   foregroundColor: Colors.white,
                                   padding: EdgeInsets.symmetric(
                                     vertical: 14,
@@ -257,7 +295,7 @@ class _OrderDetailPageState extends State<OrderDetailPage>
                           ],
                         ),
                       ),
-                    ),
+                    )
                   ],
                 ),
               ),

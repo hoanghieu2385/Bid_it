@@ -5,6 +5,7 @@ import 'package:mobile_app/features/payment/screens/payment_success.dart';
 import 'package:mobile_app/features/payment/screens/paypal_payment.dart';
 
 import '../../../core/models/auction_model.dart';
+import '../../order/screens/order_detail.dart';
 import '../../payment/screens/payment_screen.dart';
 import 'package:mobile_app/core/services/auction_service.dart';
 
@@ -328,7 +329,7 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => PaymentScreen(auctionId: widget.auctionId)
+                                            builder: (_) => OrderDetailPage(auctionId: widget.auctionId)
                                           ),
                                         );
                                         setState(() {
