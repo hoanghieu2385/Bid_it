@@ -1,7 +1,7 @@
 import React from 'react';
 
 const AuctionImageUpload = ({ previews, setPreviews, images, setImages }) => {
-	const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+	// const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 	const MAX_FILES = 10;
 	const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
@@ -9,15 +9,15 @@ const AuctionImageUpload = ({ previews, setPreviews, images, setImages }) => {
 		if (!ALLOWED_TYPES.includes(file.type)) {
 			return `File "${file.name}" has invalid format. Only JPG, JPEG, PNG, WebP are accepted.`;
 		}
-		if (file.size > MAX_FILE_SIZE) {
-			return `File "${file.name}" is too large. Maximum size is 5MB.`;
-		}
+		// if (file.size > MAX_FILE_SIZE) {
+		// 	return `File "${file.name}" is too large. Maximum size is 5MB.`;
+		// }
 		return null;
 	};
 
 	const handleImageChange = (e) => {
 		const files = Array.from(e.target.files);
-		
+
 		// Check total file count
 		if (images.length + files.length > MAX_FILES) {
 			alert(`You can only upload up to ${MAX_FILES} images`);
@@ -28,7 +28,7 @@ const AuctionImageUpload = ({ previews, setPreviews, images, setImages }) => {
 		const errors = [];
 		const validFiles = [];
 
-		files.forEach(file => {
+		files.forEach((file) => {
 			const error = validateFile(file);
 			if (error) {
 				errors.push(error);
@@ -45,11 +45,8 @@ const AuctionImageUpload = ({ previews, setPreviews, images, setImages }) => {
 		// Add valid files
 		if (validFiles.length > 0) {
 			const newImages = [...images, ...validFiles];
-			const newPreviews = [
-				...previews,
-				...validFiles.map((file) => URL.createObjectURL(file))
-			];
-				
+			const newPreviews = [...previews, ...validFiles.map((file) => URL.createObjectURL(file))];
+
 			setImages(newImages);
 			setPreviews(newPreviews);
 		}
@@ -58,16 +55,50 @@ const AuctionImageUpload = ({ previews, setPreviews, images, setImages }) => {
 		e.target.value = '';
 	};
 
+	const handleImageDrop = (droppedFiles) => {
+		const files = droppedFiles.filter((f) => f instanceof File);
+
+		// Check total file count
+		if (images.length + files.length > MAX_FILES) {
+			alert(`You can only upload up to ${MAX_FILES} images`);
+			return;
+		}
+
+		const errors = [];
+		const validFiles = [];
+
+		files.forEach((file) => {
+			const error = validateFile(file);
+			if (error) {
+				errors.push(error);
+			} else {
+				validFiles.push(file);
+			}
+		});
+
+		if (errors.length > 0) {
+			alert(errors.join('\n'));
+		}
+
+		if (validFiles.length > 0) {
+			const newImages = [...images, ...validFiles];
+			const newPreviews = [...previews, ...validFiles.map((file) => URL.createObjectURL(file))];
+
+			setImages(newImages);
+			setPreviews(newPreviews);
+		}
+	};
+
 	const handleRemoveImage = (index) => {
 		const newImages = [...images];
 		const newPreviews = [...previews];
-		
+
 		// Revoke object URL to prevent memory leaks
 		URL.revokeObjectURL(newPreviews[index]);
-		
+
 		newImages.splice(index, 1);
 		newPreviews.splice(index, 1);
-		
+
 		setImages(newImages);
 		setPreviews(newPreviews);
 	};
@@ -90,19 +121,35 @@ const AuctionImageUpload = ({ previews, setPreviews, images, setImages }) => {
 					{images.length}/{MAX_FILES} images
 				</small>
 			</div>
-			
-			<div className="border-2 border-dashed border-secondary rounded p-3 text-center mb-3">
-				<input 
-					type="file" 
-					multiple 
-					accept="image/jpeg,image/jpg,image/png,image/webp"
-					onChange={handleImageChange} 
-					className="form-control mb-2"
-					id="imageUpload"
-				/>
-				<label htmlFor="imageUpload" className="text-muted small mb-0">
-					Click to select images or drag and drop here
+
+			<div
+				className={`dropzone bg-white border border-2 rounded d-flex flex-column align-items-center justify-content-center text-center p-4 mb-3 ${
+					images.length === 0 ? 'border-secondary' : 'border-success'
+				}`}
+				onDragOver={(e) => e.preventDefault()}
+				onDrop={(e) => {
+					e.preventDefault();
+					const droppedFiles = Array.from(e.dataTransfer.files);
+					handleImageDrop(droppedFiles);
+				}}
+				onDragEnter={(e) => e.currentTarget.classList.add('border-primary')}
+				onDragLeave={(e) => e.currentTarget.classList.remove('border-primary')}
+			>
+				<i className="bi bi-cloud-arrow-up-fill fs-2 text-primary mb-2"></i>
+				<p className="mb-1">
+					<strong>Drag & drop</strong> your images here or
+				</p>
+				<label htmlFor="imageUpload" className="btn btn-outline-dark btn-sm mt-1">
+					Select Files
 				</label>
+				<input
+					id="imageUpload"
+					type="file"
+					multiple
+					accept="image/jpeg,image/jpg,image/png,image/webp"
+					onChange={handleImageChange}
+					className="d-none"
+				/>
 			</div>
 
 			{previews.length > 0 && (
@@ -113,20 +160,23 @@ const AuctionImageUpload = ({ previews, setPreviews, images, setImages }) => {
 								<img
 									src={src}
 									alt={`preview-${idx}`}
-									className="w-100"
-									style={{ 
-										height: '120px', 
-										objectFit: 'cover' 
+									className="w-100 bg-light"
+									style={{
+										height: '120px',
+										objectFit: 'contain',
+										padding: '4px',
+										// backgroundColor: '#f8f9fa',
 									}}
 								/>
+
 								<button
 									type="button"
 									className="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 p-1 lh-1"
 									onClick={() => handleRemoveImage(idx)}
-									style={{ 
-										width: '24px', 
+									style={{
+										width: '24px',
 										height: '24px',
-										fontSize: '12px'
+										fontSize: '12px',
 									}}
 									title="Remove image"
 								>
@@ -137,9 +187,7 @@ const AuctionImageUpload = ({ previews, setPreviews, images, setImages }) => {
 										<small className="d-block text-truncate" style={{ fontSize: '10px' }}>
 											{images[idx].name}
 										</small>
-										<small style={{ fontSize: '9px' }}>
-											{formatFileSize(images[idx].size)}
-										</small>
+										<small style={{ fontSize: '9px' }}>{formatFileSize(images[idx].size)}</small>
 									</div>
 								)}
 							</div>
@@ -149,11 +197,9 @@ const AuctionImageUpload = ({ previews, setPreviews, images, setImages }) => {
 			)}
 
 			{previews.length === 0 && (
-				<div className="alert alert-info py-2 mb-0">
-					<small>
-						<i className="bi bi-info-circle me-1"></i>
-						No images selected. Please upload at least one image.
-					</small>
+				<div className="alert alert-warning py-2 mb-3 text-center small">
+					<i className="bi bi-exclamation-triangle me-1"></i>
+					No images selected. Please upload at least one image.
 				</div>
 			)}
 		</div>
