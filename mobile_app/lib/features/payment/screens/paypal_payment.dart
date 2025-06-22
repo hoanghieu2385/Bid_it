@@ -52,7 +52,7 @@ class _PaypalPaymentState extends State<PaypalPayment> {
                 ).then((success) {
                   if (success && mounted) {
                     Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const PaymentSuccessScreen()),
+                      MaterialPageRoute(builder: (_) => PaymentSuccessScreen(auctionId: widget.auctionId,)),
                           (route) => false,
                     );
                   } else {

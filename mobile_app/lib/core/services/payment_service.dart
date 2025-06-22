@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:mobile_app/core/services/api_service.dart';
 import 'package:mobile_app/core/services/user_service.dart';
 
+import '../models/payment_model.dart';
+
 class PaymentResponse {
   final String id;
   final String status;
