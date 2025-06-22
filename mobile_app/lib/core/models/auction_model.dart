@@ -72,4 +72,29 @@ class Auction {
           : [],
     );
   }
+
+  // Thêm phương thức toJson để hỗ trợ log JSON
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'description': description,
+    'startingPrice': startingPrice,
+    'incrementAmount': incrementAmount,
+    'securityDeposit': securityDeposit,
+    'status': status,
+    'startTime': startTime.toIso8601String(),
+    'endTime': endTime.toIso8601String(),
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'categoryId': categoryId,
+    'sellerId': sellerId,
+    'requiresDeposit': requiresDeposit,
+    'bidCount': bidCount,
+    'currentBid': currentBid,
+    'winnerId': winnerId,
+    'winnerPaymentDeadline': winnerPaymentDeadline?.toIso8601String(),
+    'disputeRequestDeadline': disputeRequestDeadline?.toIso8601String(),
+    'thumbnailUrl': thumbnailUrl,
+    'mediaUrls': mediaUrls,
+  };
 }

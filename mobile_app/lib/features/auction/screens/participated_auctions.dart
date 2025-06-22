@@ -7,6 +7,8 @@ import 'package:mobile_app/core/services/auction_service.dart';
 import 'package:mobile_app/core/services/payment_service.dart';
 import 'package:mobile_app/features/auction/screens/auction_detail.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
+import 'dart:convert';
+import 'dart:developer' as developer;
 
 class ParticipatedAuctionsPage extends StatefulWidget {
   const ParticipatedAuctionsPage({super.key});
@@ -22,6 +24,8 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
   String filterStatus = 'ALL';
   String searchQuery = '';
   bool showAll = false;
+  String? errorMessage;
+
 
   @override
   void initState() {
@@ -31,12 +35,19 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
 
   Future<void> _fetchUserAuctions() async {
     try {
+      setState(() => errorMessage = null);
       final user = await UserService.getCurrentUser();
-      if (user == null) return;
+      if (user == null) {
+        throw Exception('User not logged in');
+      }
       final token = await UserService.getToken() ?? '';
-      final bids = await BidService.fetchAllUserBids(user['id'], token: token);
+      final timestamp = DateTime.now().toIso8601String();
+      developer.log('[$timestamp] User ID: ${user['id']}', name: 'UserService');
+      developer.log('[$timestamp] Token: $token', name: 'UserService');
 
-      // Group bids by auctionId
+      final bids = await BidService.fetchAllUserBids(user['id'], token: token);
+      developer.log('[$timestamp] Bids JSON Response: ${jsonEncode(bids)}', name: 'BidService');
+
       final Map<int, Map<String, dynamic>> grouped = HashMap();
       for (final bid in bids) {
         final id = bid['auctionId'];
@@ -48,18 +59,26 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
             'status': bid['status'] ?? '',
             'isWinning': bid['isWinning'] ?? false,
           };
+          developer.log('[$timestamp] Grouped Auction ID $id: ${jsonEncode(grouped[id])}', name: 'AuctionGroup');
         } else if (bid['isWinning'] == true) {
           grouped[id]!['isWinning'] = true;
         }
       }
 
-      // Fetch auction details and payment status
       final List<Map<String, dynamic>> mappedAuctions = [];
       for (final group in grouped.values) {
         final int id = group['auctionId'];
-        print(id);
+        developer.log('[$timestamp] Fetching Auction ID: $id', name: 'AuctionService');
+
         final Auction? auction = await AuctionService.fetchAuctionById(id);
+        if (auction == null) {
+          throw Exception('Failed to fetch auction with ID: $id');
+        }
+        developer.log('[$timestamp] Auction JSON Response for ID $id: ${jsonEncode(auction.toJson())}', name: 'AuctionService');
+
         final bool paid = await PaymentService.hasCompletedPayment(id, token);
+        developer.log('[$timestamp] Payment Status for Auction ID $id: $paid', name: 'PaymentService');
+
         mappedAuctions.add({
           'auction': auction,
           'title': group['title'],
@@ -67,34 +86,55 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
           'isWinning': group['isWinning'],
           'isPaid': paid,
         });
+        developer.log('[$timestamp] Mapped Auctions: ${jsonEncode(mappedAuctions)}', name: 'AuctionMapping');
       }
-
       setState(() {
         auctions = mappedAuctions;
         isLoading = false;
       });
     } catch (e) {
-      print('Error fetching auctions: $e');
-      setState(() => isLoading = false);
+      final timestamp = DateTime.now().toIso8601String();
+      developer.log('[$timestamp] Error fetching auctions: $e', name: 'ErrorHandler');
+      setState(() {
+        isLoading = false;
+        errorMessage = e.toString();
+      });
     }
   }
 
   List<Map<String, dynamic>> get filteredAuctions {
-    final filtered = auctions.where((entry) {
-      final matchesStatus = filterStatus == 'ALL' ||
-          (filterStatus == 'WINNING' && entry['isWinning'] == true) ||
-          (filterStatus == 'UNPAID' && entry['isWinning'] == true && entry['isPaid'] != true) ||
-          (filterStatus == 'ONGOING' && entry['status'] != 'ENDED');
+    final now = DateTime.now();
 
-      final matchesSearch = (entry['auction'] as Auction)
-          .title
-          .toLowerCase()
-          .contains(searchQuery.toLowerCase());
+    final filtered = auctions.where((entry) {
+      final Auction auction = entry['auction'];
+      final bool isWinning = entry['isWinning'];
+      final bool isPaid = entry['isPaid'];
+      final bool isOngoing = now.isBefore(auction.endTime);
+
+      bool matchesStatus = true;
+      switch (filterStatus) {
+        case 'WINNING':
+          matchesStatus = isWinning;
+          break;
+        case 'UNPAID':
+          matchesStatus = isWinning && !isPaid;
+          break;
+        case 'ONGOING':
+          matchesStatus = isOngoing;
+          break;
+        case 'ALL':
+        default:
+          matchesStatus = true;
+          break;
+      }
+
+      final matchesSearch = auction.title.toLowerCase().contains(searchQuery.toLowerCase());
       return matchesStatus && matchesSearch;
     }).toList();
 
     return showAll ? filtered : filtered.take(3).toList();
   }
+
 
   Widget _buildFilterChip(String value, String label) {
     final isSelected = filterStatus == value;
@@ -151,16 +191,11 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final totalCount = auctions.where((entry) {
-      return filterStatus == 'ALL' ||
-          (filterStatus == 'WINNING' && entry['isWinning'] == true) ||
-          (filterStatus == 'UNPAID' && entry['isWinning'] == true && entry['isPaid'] != true) ||
-          (filterStatus == 'ONGOING' && entry['status'] != 'ENDED');
-    }).length;
+    final totalCount = auctions.length;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Auctions', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Participated Auctions', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
@@ -176,7 +211,7 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 )
@@ -207,6 +242,8 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
+                : errorMessage != null
+                ? Center(child: Text('Error: $errorMessage', style: TextStyle(color: Colors.red)))
                 : filteredAuctions.isEmpty
                 ? Center(
               child: Column(
@@ -226,8 +263,7 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                 : ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              itemCount:
-              filteredAuctions.length + (filteredAuctions.length < totalCount ? 1 : 0),
+              itemCount: filteredAuctions.length + (filteredAuctions.length < totalCount ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index < filteredAuctions.length) {
                   final entry = filteredAuctions[index];
@@ -317,7 +353,7 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                   children: [
                     Icon(Icons.monetization_on, color: Colors.orange[700], size: 18),
                     const SizedBox(width: 6),
-                    Text('Start: ${numberFormat.format(a.startingPrice)} đ')
+                    Text('Starting Price: ${numberFormat.format(a.startingPrice)} \$')
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -325,7 +361,7 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                   children: [
                     Icon(Icons.gavel, color: Colors.green[700], size: 18),
                     const SizedBox(width: 6),
-                    Text('Current: ${numberFormat.format(a.currentBid ?? a.startingPrice)} đ')
+                    Text('Current Bid: ${numberFormat.format(a.currentBid ?? a.startingPrice)} \$')
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -333,9 +369,28 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                   children: [
                     Icon(Icons.people, color: Colors.deepPurple, size: 18),
                     const SizedBox(width: 6),
-                    Text('Bids: ${a.bidCount}')
+                    Text('Bids: ${a.bidCount}'),
                   ],
                 ),
+                if (isWinning && a.winnerPaymentDeadline != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.access_time, color: Colors.red, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Deadline Payment: ${DateFormat('yyyy-MM-dd HH:mm').format(a.winnerPaymentDeadline!)}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
