@@ -30,7 +30,7 @@ class PaymentService {
   static const String _paymentBaseUrl = ApiService.paymentBaseUrl;
   static Future<List<Map<String, dynamic>>> fetchPaymentsByAuction(int auctionId, String token) async {
     final response = await http.get(
-      Uri.parse('http://localhost:8080/payment-service/api/payment/auction/$auctionId'),
+      Uri.parse('$_paymentBaseUrl/auction/$auctionId'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {

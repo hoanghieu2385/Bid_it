@@ -235,7 +235,7 @@ class AuctionService {
     }
   }
   static Future<Auction?> fetchAuctionById(int auctionId) async {
-    final token = await _getToken();
+    final token = await UserService.getToken();
     if (token == null) {
       throw Exception('Missing token');
     }
