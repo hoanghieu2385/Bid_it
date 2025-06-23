@@ -15,7 +15,6 @@ import java.util.List;
 public class PaymentController {
 
     private final IPaymentService paymentService;
-
     // 1. Tạo thanh toán chung (deposit, auction, etc.)
     @PostMapping("/create")
     public ResponseEntity<PaymentResponseDto> createPayment(@RequestBody PaymentRequestDto request) {
@@ -25,7 +24,6 @@ public class PaymentController {
     // 2. Tạo thanh toán cuối phiên cho winner
     @PostMapping("/auction")
     public ResponseEntity<PaymentResponseDto> createAuctionPayment(@RequestBody AuctionPaymentRequestDto request) {
-        log.info("💡 [PAYMENT] createAuctionPayment received: {}", request);
         return ResponseEntity.ok(paymentService.createAuctionPayment(request));
     }
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProtectedAuctionDetailById } from '../../../services/auction-api';
+import { createAuctionPayment } from '../../../services/payment-api';
 import { UserContext } from '../../../contexts/UserContext';
 import dayjs from 'dayjs';
 import "../../../assets/styles/client/OrderDetail.css";
@@ -38,37 +39,26 @@ const OrderDetail = () => {
     setIsProcessingPayment(true);
 
     try {
-      const response = await fetch("/payment-service/api/payment/auction", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user.token}`,
-        },
-        body: JSON.stringify({
-          winnerId: user.id,
-          auctionId: auction.id,
-          finalAmount: auction.currentBid,
-          depositAmount: auction.depositAmount || 0,
-          paymentMethod: "PAYPAL",
-          returnUrl: `${window.location.origin}/payment/success`,
-          cancelUrl: `${window.location.origin}/payment/cancel`,
-        }),
-      });
+      const paymentRequest = {
+        winnerId: user.id,
+        auctionId: auction.id,
+        finalAmount: auction.currentBid,
+        depositAmount: auction.depositAmount || 0,
+        paymentMethod: "PAYPAL",
+        returnUrl: `${window.location.origin}/payment/success`,
+        cancelUrl: `${window.location.origin}/payment/cancel`,
+      };
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Failed to create payment: ${errText}`);
-      }
+      const data = await createAuctionPayment(paymentRequest);
 
-      const data = await response.json();
       if (data.approvalUrl) {
         window.location.href = data.approvalUrl;
       } else {
-        alert("Unable to retrieve PayPal approval URL.");
+        alert("No approval URL returned.");
       }
     } catch (err) {
       console.error("Payment creation error:", err);
-      alert("Payment initiation failed.");
+      alert("Payment initiation failed:\n" + (err?.response?.data?.message || err.message));
     } finally {
       setIsProcessingPayment(false);
     }

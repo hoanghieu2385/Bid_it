@@ -1,47 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { executePayPalPayment } from '../../../services/payment-api';
+import '../../../assets/styles/client/PaymentResult.css';
 
 const PaymentSuccess = () => {
-    const [params] = useSearchParams();
+    const [searchParams] = useSearchParams();
+    const [executing, setExecuting] = useState(false);
+    const [executed, setExecuted] = useState(false);
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
-    const [status, setStatus] = useState("Processing payment...");
 
-    useEffect(() => {
-        const payerId = params.get("PayerID");
-        const paymentId = params.get("token"); // Đây là orderId từ PayPal
+    const paymentId = searchParams.get('token');
+    const payerId = searchParams.get('PayerID');
 
-        const executePayment = async () => {
-            try {
-                const response = await fetch("/api/payment/execute", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ payerId, paymentId }),
-                });
-
-                const data = await response.json();
-
-                if (data.status === "COMPLETED") {
-                    setStatus("🎉 Payment successful!");
-                    setTimeout(() => navigate("/my-auctions"), 3000); // Chuyển hướng sau 3 giây
-                } else {
-                    setStatus("⚠️ Payment failed: " + data.message);
-                }
-            } catch (err) {
-                console.error("Execution error", err);
-                setStatus("❌ Error executing payment");
-            }
-        };
-
-        if (payerId && paymentId) {
-            executePayment();
-        } else {
-            setStatus("Missing payment information.");
+    const handleConfirmPayment = async () => {
+        if (!paymentId || !payerId) return;
+        setExecuting(true);
+        setError(null);
+        try {
+            await executePayPalPayment({ paymentId, payerId });
+            setExecuted(true);
+        } catch (err) {
+            setError('Failed to confirm payment. Please try again.');
+        } finally {
+            setExecuting(false);
         }
-    }, []);
+    };
 
     return (
-        <div style={{ padding: "2rem", textAlign: "center" }}>
-            <h2>{status}</h2>
+        <div className="payment-result-container">
+            <div className="payment-result-card">
+                <h1>🎉 Payment Successful!</h1>
+                <p>Your PayPal payment was successful. Please confirm below to finalize.</p>
+
+                {executed ? (
+                    <>
+                        <p className="status-message success">✅ Payment confirmed!</p>
+                        <button onClick={() => navigate('/profile?tab=my-auctions')}>Back to My Auctions</button>
+                    </>
+                ) : (
+                    <>
+                        {error && <p className="status-message error">{error}</p>}
+                        <button onClick={handleConfirmPayment} disabled={executing}>
+                            {executing ? 'Confirming...' : 'Confirm Payment'}
+                        </button>
+                    </>
+                )}
+            </div>
         </div>
     );
 };

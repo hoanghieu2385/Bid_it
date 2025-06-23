@@ -1,16 +1,18 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../../../assets/styles/client/PaymentResult.css';
 
 const PaymentCancel = () => {
     const navigate = useNavigate();
 
     return (
-        <div style={{ padding: "2rem", textAlign: "center" }}>
-            <h2>❌ Payment was cancelled.</h2>
-            <p>You can return to the auction detail to try again.</p>
-            <button onClick={() => navigate(-1)} style={{ marginTop: "1rem" }}>
-                Go Back
-            </button>
+        <div className="payment-result-container">
+            <div className="payment-result-card">
+                <h1>❌ Payment Cancelled</h1>
+                <p>You have cancelled the payment or closed the PayPal window.</p>
+                <button onClick={() => navigate('/profile?tab=my-auctions')}>Back to My Auctions</button>
+            </div>
         </div>
     );
 };
