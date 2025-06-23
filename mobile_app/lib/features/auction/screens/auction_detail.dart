@@ -84,7 +84,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
       final diff = widget.auction.startTime.difference(now).inMinutes;
       setState(() {
         isSeller = true;
-        canEdit = diff >= 60;
+        canEdit = diff >= 60 && widget.auction.status != 'CANCELLED'; // Thêm điều kiện loại trừ CANCELLED
       });
     }
   }
@@ -463,6 +463,8 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                   decoration: BoxDecoration(
                                     color: auction.status == "UPCOMING"
                                         ? Colors.orange.withOpacity(0.15)
+                                        : auction.status == "CANCELLED"
+                                        ? Colors.red.withOpacity(0.15)
                                         : Colors.green.withOpacity(0.11),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -471,6 +473,8 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                     style: TextStyle(
                                         color: auction.status == "UPCOMING"
                                             ? Colors.orange
+                                            : auction.status == "CANCELLED"
+                                            ? Colors.red
                                             : Colors.green[700],
                                         fontWeight: FontWeight.w600,
                                         fontSize: 13

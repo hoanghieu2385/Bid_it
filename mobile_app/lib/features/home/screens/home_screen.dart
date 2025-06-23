@@ -124,14 +124,13 @@ class HomeContentState extends State<HomeContent> {
     final rawId = user['id'];
     return rawId is int ? rawId : int.tryParse(rawId.toString());
   }
-
   Future<void> loadData() async {
     try {
       final fetchedCategories = await CategoryService.fetchCategories();
       final fetchedAuctions = await AuctionService.fetchAuctions();
       final now = DateTime.now();
 
-      final validAuctions = fetchedAuctions.where((a) => a.endTime.isAfter(now)).toList();
+      final validAuctions = fetchedAuctions.where((a) => a.endTime.isAfter(now) && a.status != 'CANCELLED').toList();
 
       final ongoing = validAuctions
           .where((a) => now.isAfter(a.startTime) && now.isBefore(a.endTime))
@@ -174,7 +173,7 @@ class HomeContentState extends State<HomeContent> {
     try {
       final fetched = await AuctionService.fetchAuctions();
       final now = DateTime.now();
-      final validAuctions = fetched.where((a) => a.endTime.isAfter(now)).toList();
+      final validAuctions = fetched.where((a) => a.endTime.isAfter(now) && a.status != 'CANCELLED').toList();
 
       final ongoing = validAuctions
           .where((a) => now.isAfter(a.startTime) && now.isBefore(a.endTime))
