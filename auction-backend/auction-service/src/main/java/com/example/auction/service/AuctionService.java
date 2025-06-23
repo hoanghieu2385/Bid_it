@@ -142,25 +142,33 @@ public class AuctionService implements IAuctionService {
     }
 
     // Update Auction STATUS
+    @Override
     public AuctionResponseDTO updateAuctionStatus(Long id, String status, Long requesterId) {
         Auction auction = auctionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
 
+        // Verify requester via user-service
         UserDTO requester;
         try {
             requester = userClient.getUserById(requesterId);
-            if (requester == null || requester.getRoles() == null || !requester.getRoles().contains("ADMIN")) {
-                throw new IllegalAccessError("Only admin users can update auction status.");
+            if (requester == null) {
+                throw new IllegalArgumentException("User not found with id: " + requesterId);
             }
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to verify requester identity", ex);
+        }
+
+        boolean isAdmin = requester.getRoles() != null && requester.getRoles().contains("ADMIN");
+        boolean isOwner = auction.getSellerId().equals(requesterId);
+        if (!isAdmin && !isOwner) {
+            throw new IllegalArgumentException("You don't have permission to update this auction status");
         }
 
         try {
             AuctionStatus newStatus = AuctionStatus.valueOf(status.toUpperCase());
             auction.setStatus(newStatus);
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Invalid auction status: " + status);
+            throw new IllegalArgumentException("Invalid auction status: " + status, ex);
         }
 
         Auction updated = auctionRepository.save(auction);

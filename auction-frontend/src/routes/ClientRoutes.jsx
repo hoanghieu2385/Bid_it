@@ -20,6 +20,8 @@ import CreateAuctionPage from '../pages/client/auction/CreateAuctionPage.jsx';
 import AuctionDetailPage from '../pages/client/auction/AuctionDetailPage.jsx';
 import EditAuctionPage from "../pages/client/auction/EditAuctionPage.jsx";
 import OrderDetail from '../pages/client/auction/OrderDetail.jsx';
+import PaymentSuccess from "../pages/client/payment/PaymentSuccess.jsx";
+import PaymentCancel from "../pages/client/payment/PaymentCancel.jsx";
 
 function ClientRoutes() {
 	const location = useLocation();
@@ -47,6 +49,8 @@ function ClientRoutes() {
 				<Route path="/auctions/:id" element={<AuctionDetailPage />} />
 				<Route path="/auctions/:id/edit" element={<EditAuctionPage />} />
 				<Route path="/orders/:auctionId" element={<OrderDetail />} />
+				<Route path="/payment/success" element={<PaymentSuccess />} />
+				<Route path="/payment/cancel" element={<PaymentCancel />} />
 			</Route>
 		</Routes>
 	);

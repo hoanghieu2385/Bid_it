@@ -53,6 +53,22 @@ export const createAuction = async (formData, requesterId) => {
 	return response.data;
 };
 
+// Cancel Auction (chuyển trạng thái về CANCELLED)
+export const cancelAuction = async (auctionId, requesterId) => {
+	const token = Cookies.get('jwt');
+	// body chứa status mới
+	const payload = { status: 'CANCELLED' };
+	const response = await api.put(
+		`/auction-service/api/auctions/${auctionId}/status?requesterId=${requesterId}`,
+		payload,
+		{
+			headers: {
+				Authorization: `Bearer ${token}`,
+			}
+		}
+	);
+	return response.data;
+};
 // Upload multiple images for auction
 export const uploadAuctionImages = async (auctionId, imageFiles) => {
 	const form = new FormData();
