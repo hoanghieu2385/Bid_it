@@ -138,5 +138,53 @@ class UserService {
       throw Exception("Error when load user's information: ${response.statusCode}");
     }
   }
+  Future<bool> sendPhoneOtp(String phone) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return false;
+      final response = await http.post(
+        Uri.parse('$_baseUrl/send-phone-otp'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'phone': phone}),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        throw Exception('Failed to send OTP: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error sending OTP: $e');
+    }
+  }
+  Future<bool> verifyPhoneOtp(String phone, String otp, String principal) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return false;
+      final response = await http.post(
+        Uri.parse('$_baseUrl/verify-phone-otp'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'phone': phone,
+          'otp': otp,
+          'principal': principal,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        throw Exception('Failed to verify OTP: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error verifying OTP: $e');
+    }
+  }
   static Future<String?> getToken() => _getToken();
 }

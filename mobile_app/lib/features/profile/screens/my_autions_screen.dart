@@ -4,7 +4,6 @@ import 'package:mobile_app/core/models/auction_model.dart';
 import 'package:mobile_app/core/services/auction_service.dart';
 import '../../../core/services/user_service.dart';
 import '../../auction/screens/auction_detail.dart';
-import '../../home/screens/home_screen.dart';
 
 class MyAuctionsPage extends StatefulWidget {
   const MyAuctionsPage({super.key});
@@ -43,7 +42,23 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
       }
     });
   }
-  void _confirmDeleteAuction(int auctionId) {
+
+  void _confirmCancelAuction(int auctionId, DateTime startTime) {
+    final now = DateTime.now(); // 11:25 PM +07, 23/06/2025
+    final diff = startTime.difference(now).inMinutes;
+
+    if (diff < 60) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Cannot cancel auction: Less than 1 hour remaining.'),
+          backgroundColor: Colors.red[600],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -59,7 +74,7 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
             Icon(Icons.warning_rounded, color: Colors.red[600], size: 28),
             const SizedBox(width: 12),
             Text(
-              'Delete Auction',
+              'Cancel Auction',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 20,
@@ -69,7 +84,7 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
           ],
         ),
         content: Text(
-          'Are you sure you want to delete this auction? This action is irreversible.',
+          'Are you sure you want to cancel this auction? This action will set the auction status to CANCELLED.',
           style: TextStyle(
             fontSize: 16,
             color: Colors.grey[700],
@@ -89,7 +104,7 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text(
-                  'Cancel',
+                  'No',
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
               ),
@@ -98,10 +113,11 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                   Navigator.of(ctx).pop();
                   try {
                     final user = await UserService.getCurrentUser();
-                    await AuctionService.deleteAuction(auctionId, user?['id']);
+                    await AuctionService.updateAuctionStatus(auctionId.toString(), user!['id'].toString(), 'CANCELLED');
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('Auction deleted successfully'),
+                        content: const Text('Auction cancelled successfully'),
                         backgroundColor: Colors.green[600],
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -109,9 +125,10 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                     );
                     _loadAuctions();
                   } catch (e) {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Failed to delete auction: $e'),
+                        content: Text('Failed to cancel auction: $e'),
                         backgroundColor: Colors.red[600],
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -126,7 +143,7 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text(
-                  'Delete',
+                  'Yes',
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
               ),
@@ -136,6 +153,7 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
       ),
     );
   }
+
   Color getStatusColor(String status) {
     switch (status.toUpperCase()) {
       case 'UPCOMING':
@@ -150,6 +168,8 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
         return Colors.red;
       case 'COMPLETED':
         return Colors.indigo;
+      case 'CANCELLED':
+        return Colors.redAccent;
       default:
         return Colors.black;
     }
@@ -229,7 +249,7 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                         Icon(
                           Icons.inbox_rounded,
                           size: 68,
-                          color: Colors.grey.withOpacity(0.3),
+                          color: Colors.grey,
                         ),
                         const SizedBox(height: 14),
                         Text(
@@ -281,6 +301,8 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                     final auction = displayAuctions[index];
                     final statusColor = getStatusColor(auction.status);
                     final imgUrl = getAuctionImage(auction);
+                    final now = DateTime.now(); // 11:25 PM +07, 23/06/2025
+                    final canCancel = auction.startTime.difference(now).inMinutes >= 60;
 
                     return Card(
                       elevation: 3,
@@ -341,8 +363,8 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                                   builder: (_) => AuctionDetailPage(auction: auction),
                                 ),
                               );
-                            } else if (value == 'delete') {
-                              _confirmDeleteAuction(auction.id);
+                            } else if (value == 'cancel' && canCancel) {
+                              _confirmCancelAuction(auction.id, auction.startTime);
                             }
                           },
                           itemBuilder: (BuildContext context) => [
@@ -356,20 +378,19 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                                 ],
                               ),
                             ),
-                            PopupMenuItem<String>(
-                              value: 'delete',
-                              child: Row(
-                                children: const [
-                                  Icon(Icons.delete, color: Colors.redAccent),
-                                  SizedBox(width: 10),
-                                  Text('Delete Auction'),
-                                ],
+                            if (canCancel)
+                              PopupMenuItem<String>(
+                                value: 'cancel',
+                                child: Row(
+                                  children: const [
+                                    Icon(Icons.cancel, color: Colors.redAccent),
+                                    SizedBox(width: 10),
+                                    Text('Cancel Auction'),
+                                  ],
+                                ),
                               ),
-                            ),
                           ],
                         ),
-
-
                         onTap: () {
                           Navigator.push(
                             context,
