@@ -23,8 +23,8 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
     'OPENED',
     'CLOSED',
     'SOLD',
-    'FAILED',
     'COMPLETED',
+    'CANCELLED',
   ];
 
   @override
@@ -44,7 +44,7 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
   }
 
   void _confirmCancelAuction(int auctionId, DateTime startTime) {
-    final now = DateTime.now(); // 11:25 PM +07, 23/06/2025
+    final now = DateTime.now(); // 11:34 PM +07, 23/06/2025
     final diff = startTime.difference(now).inMinutes;
 
     if (diff < 60) {
@@ -301,7 +301,7 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                     final auction = displayAuctions[index];
                     final statusColor = getStatusColor(auction.status);
                     final imgUrl = getAuctionImage(auction);
-                    final now = DateTime.now(); // 11:25 PM +07, 23/06/2025
+                    final now = DateTime.now(); // 11:34 PM +07, 23/06/2025
                     final canCancel = auction.startTime.difference(now).inMinutes >= 60;
 
                     return Card(
