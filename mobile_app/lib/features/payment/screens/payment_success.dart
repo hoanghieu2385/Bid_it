@@ -29,7 +29,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => HomeScreen(),
+            builder: (_) => HomePage(),
           ),
 
         );

@@ -8,7 +8,10 @@ import '../../../core/services/auction_service.dart';
 import '../../../core/services/bid_service.dart';
 import '../../../core/services/user_service.dart';
 import '../../../core/services/websocket_service.dart';
+import 'package:mobile_app/features/payment/screens/payment_screen.dart';
+import '../../order/screens/order_detail.dart';
 import 'edit_auction_page.dart';
+
 
 class AuctionDetailPage extends StatefulWidget {
   final Auction auction;
@@ -773,6 +776,55 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                             const SizedBox(height: 12),
                             BidHistoryCard(auctionId: widget.auction.id),
                             const SizedBox(height: 10),
+                            if (hasEnded && !isSeller && isLoggedIn)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => PaymentScreen(auctionId: auction.id),
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.payment),
+                                        label: const Text("Pay Now"),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => OrderDetailPage(auctionId: auction.id),
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.receipt_long),
+                                        label: const Text("Order Detail"),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.orange,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             if (!hasStarted)
                               Container(
                                 width: double.infinity,
