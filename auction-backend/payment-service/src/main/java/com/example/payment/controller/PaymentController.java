@@ -25,8 +25,10 @@ public class PaymentController {
     // 2. Tạo thanh toán cuối phiên cho winner
     @PostMapping("/auction")
     public ResponseEntity<PaymentResponseDto> createAuctionPayment(@RequestBody AuctionPaymentRequestDto request) {
+        log.info("💡 [PAYMENT] createAuctionPayment received: {}", request);
         return ResponseEntity.ok(paymentService.createAuctionPayment(request));
     }
+
 
     // 3. Sau khi approve PayPal, frontend gửi lại payerId để thực thi
     @PostMapping("/execute")
