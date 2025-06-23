@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile_app/features/order/screens/order_detail.dart';
 import 'package:mobile_app/features/payment/screens/paypal_payment.dart';
 import '../../../core/models/auction_model.dart';
 import '../../auction/screens/auction_winner.dart';
@@ -222,7 +223,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => AuctionWinnerPage(auctionId: widget.auctionId),
+                                            builder: (_) => OrderDetailPage(auctionId: widget.auctionId),
                                           ),
                                         );
                                       },
