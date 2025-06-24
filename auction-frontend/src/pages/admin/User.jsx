@@ -4,6 +4,9 @@ import Sidebar from "../../components/admin/Sidebar";
 import Topbar from "../../components/admin/Topbar";
 import "../../assets/styles/admin/User.css";
 import { getAllUsers } from "../../services/admin-user-api";
+import adminAuctionAPI from "../../services/admin-auction-api";
+import bidAPI from "../../services/bid-admin-api";
+import paymentAPI from "../../services/admin-payment-api";
 import { FaSearch, FaEye, FaCheckCircle } from "react-icons/fa";
 
 const User = () => {
@@ -37,6 +40,64 @@ const User = () => {
     }
   };
 
+  // Function to enhance user data with auction and bid information
+  const enhanceUserData = async (users) => {
+    const enhancedUsers = await Promise.all(
+      users.map(async (user) => {
+        try {
+          // Get user's auctions
+          const userAuctions = await adminAuctionAPI.getAuctionsBySeller(user.id);
+          
+          // Get user's bids
+          const userBids = await bidAPI.getBidsByUser(user.id);
+          
+          // Get user's payments
+          const userPayments = await paymentAPI.getPaymentsByUserId(user.id);
+          
+          // Calculate auction earnings
+          const completedAuctions = userAuctions.filter(auction => auction.status === 'COMPLETED');
+          const auctionEarnings = completedAuctions.reduce((total, auction) => {
+            return total + (auction.currentPrice || auction.startingPrice || 0);
+          }, 0);
+          
+          // Calculate total paid from successful payments
+          const successfulPayments = userPayments.filter(payment => payment.status === 'SUCCESS');
+          const totalPaid = successfulPayments.reduce((total, payment) => {
+            return total + (payment.amount || 0);
+          }, 0);
+          
+          // Calculate bids won
+          const bidsWon = userBids.filter(bid => bid.isWinning).length;
+          
+          return {
+            ...user,
+            totalAuctions: userAuctions.length,
+            auctionEarnings,
+            totalBids: userBids.length,
+            bidsWon,
+            totalPaid,
+            // Sử dụng score từ backend thay vì tính toán
+            points: user.score || 0
+          };
+        } catch (error) {
+          console.error(`Error enhancing data for user ${user.id}:`, error);
+          return {
+            ...user,
+            totalAuctions: 0,
+            auctionEarnings: 0,
+            totalBids: 0,
+            bidsWon: 0,
+            totalPaid: 0,
+            // Sử dụng score từ backend, fallback về 0
+            points: user.score || 0
+          };
+        }
+      })
+    );
+    
+    return enhancedUsers;
+  };
+
   useEffect(() => {
     fetchUsers();
     
@@ -56,17 +117,20 @@ const User = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const data = await getAllUsers();
+      const basicUserData = await getAllUsers();
       
       // Debug: Check returned data
-      console.log("API Response:", data);
-      if (data.length > 0) {
-        console.log("First user:", data[0]);
-        console.log("Available fields:", Object.keys(data[0]));
+      console.log("API Response:", basicUserData);
+      if (basicUserData.length > 0) {
+        console.log("First user:", basicUserData[0]);
+        console.log("Available fields:", Object.keys(basicUserData[0]));
       }
       
-      setUsers(data);
-      setFilteredUsers(data);
+      // Enhance user data with auction and bid information
+      const enhancedUserData = await enhanceUserData(basicUserData);
+      
+      setUsers(enhancedUserData);
+      setFilteredUsers(enhancedUserData);
     } catch (err) {
       console.error("Error fetching user data:", err);
       setError("Unable to load user list. Please try again later.");
@@ -109,6 +173,15 @@ const User = () => {
       case "Oldest":
         result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         break;
+      case "Score: High to Low":
+        result.sort((a, b) => (b.points || 0) - (a.points || 0));
+        break;
+      case "Score: Low to High":
+        result.sort((a, b) => (a.points || 0) - (b.points || 0));
+        break;
+      case "Most Active":
+        result.sort((a, b) => ((b.totalAuctions || 0) + (b.totalBids || 0)) - ((a.totalAuctions || 0) + (a.totalBids || 0)));
+        break;
       default:
         break;
     }
@@ -142,16 +215,6 @@ const User = () => {
     const date = new Date(dateString);
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${date.getDate()} ${months[date.getMonth()]}, ${date.getFullYear()} - ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  };
-
-  const formatMoney = (amount) => {
-    if (!amount) return "₫ 0";
-    return new Intl.NumberFormat('vi-VN', { 
-      style: 'currency', 
-      currency: 'VND',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount).replace('₫', '₫ ');
   };
 
   const getUserVerificationStatus = (verified) => {
@@ -250,6 +313,9 @@ const User = () => {
                 >
                   <option value="Newest">Newest</option>
                   <option value="Oldest">Oldest</option>
+                  <option value="Score: High to Low">Score: High to Low</option>
+                  <option value="Score: Low to High">Score: Low to High</option>
+                  <option value="Most Active">Most Active</option>
                 </select>
                 
                 <select
@@ -282,7 +348,7 @@ const User = () => {
               {loading ? (
                 <div className="loading-container">
                   <div className="spinner"></div>
-                  <p>Loading data...</p>
+                  <p>Loading user data and calculating statistics...</p>
                 </div>
               ) : error ? (
                 <div className="error-container">
@@ -368,18 +434,12 @@ const User = () => {
                                 <div className="auctions-count">
                                   <strong>{user.totalAuctions || 0} auctions listed</strong>
                                 </div>
-                                <div className="earnings">
-                                  Earned: <span className="earnings-amount">{formatMoney(user.auctionEarnings)}</span>
-                                </div>
                               </div>
                             </td>
                             <td>
                               <div className="bid-history">
                                 <div className="bid-stats">
                                   <strong>{user.totalBids || 0} bids / {user.bidsWon || 0} won</strong>
-                                </div>
-                                <div className="total-paid">
-                                  Total Paid: <span className="paid-amount">{formatMoney(user.totalPaid)}</span>
                                 </div>
                               </div>
                             </td>

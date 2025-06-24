@@ -3,7 +3,7 @@ import api from './api';
 import API_CONFIG from './apiConfig';
 
 const paymentAPI = {
-    // Lấy tất cả payments (thay cho getAllDeposits)
+    // Lấy tất cả payments
     getAllPayments: async () => {
         try {
             const response = await api.get(API_CONFIG.PAYMENT_SERVICE);
@@ -21,7 +21,8 @@ const paymentAPI = {
             return response.data;
         } catch (error) {
             console.error(`Error fetching payments for user ${userId}:`, error);
-            throw error;
+            // Return empty array instead of throwing to prevent breaking the UI
+            return [];
         }
     },
 
@@ -32,7 +33,7 @@ const paymentAPI = {
             return response.data;
         } catch (error) {
             console.error(`Error fetching payments for auction ${auctionId}:`, error);
-            throw error;
+            return [];
         }
     },
 
@@ -56,7 +57,7 @@ const paymentAPI = {
             return response.data;
         } catch (error) {
             console.error(`Error checking auction payment ${auctionId}:`, error);
-            throw error;
+            return false;
         }
     },
 
@@ -69,7 +70,7 @@ const paymentAPI = {
             return response.data;
         } catch (error) {
             console.error('Error checking user deposit:', error);
-            throw error;
+            return false;
         }
     },
 };
