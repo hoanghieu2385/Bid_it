@@ -246,7 +246,7 @@ const Payment = () => {
         style={{ flex: 1 }}
       >
         <Topbar />
-        <div className="payment-container">
+        <div className="payment-management-page">
           <div className="payment-content">
             {/* Header */}
             <div className="payment-header">
