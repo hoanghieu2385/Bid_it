@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_app/features/payment/screens/payment_success.dart';
+import 'package:mobile_app/features/payment/screens/paypal_payment.dart';
 
 import '../../../core/models/auction_model.dart';
+import '../../order/screens/order_detail.dart';
 import '../../payment/screens/payment_screen.dart';
 import 'package:mobile_app/core/services/auction_service.dart';
 
@@ -98,7 +100,7 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error: \$e';
+        errorMessage = 'Error: $e';
       });
     } finally {
       setState(() {
@@ -125,7 +127,6 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
         : double.tryParse(bidAmountRaw.toString()) ?? 0.0;
 
     final bidAmount = numberFormat.format(parsedBidAmount);
-
     final wonAt = winnerData != null
         ? DateFormat('yyyy-MM-dd HH:mm').format(DateTime.parse(winnerData!['bidTime']))
         : '';
@@ -248,7 +249,7 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                               context,
                               icon: Icons.attach_money,
                               title: 'Winning Bid',
-                              value: '\$\$bidAmount',
+                              value: '\$$bidAmount',
                               valueStyle: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -325,11 +326,10 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                                     )
                                         : ElevatedButton(
                                       onPressed: () async {
-                                        await _controller.reverse();
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => PaymentSuccessScreen(),
+                                            builder: (_) => OrderDetailPage(auctionId: widget.auctionId)
                                           ),
                                         );
                                         setState(() {
@@ -358,7 +358,7 @@ class _AuctionWinnerPageState extends State<AuctionWinnerPage> with SingleTicker
                                 ],
                               ),
                             ),
-                          ),
+                          )
                         ],
                       ),
                     ),

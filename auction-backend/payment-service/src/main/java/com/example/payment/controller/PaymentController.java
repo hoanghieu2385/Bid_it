@@ -15,7 +15,6 @@ import java.util.List;
 public class PaymentController {
 
     private final IPaymentService paymentService;
-
     // 1. Tạo thanh toán chung (deposit, auction, etc.)
     @PostMapping("/create")
     public ResponseEntity<PaymentResponseDto> createPayment(@RequestBody PaymentRequestDto request) {
@@ -27,6 +26,7 @@ public class PaymentController {
     public ResponseEntity<PaymentResponseDto> createAuctionPayment(@RequestBody AuctionPaymentRequestDto request) {
         return ResponseEntity.ok(paymentService.createAuctionPayment(request));
     }
+
 
     // 3. Sau khi approve PayPal, frontend gửi lại payerId để thực thi
     @PostMapping("/execute")

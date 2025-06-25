@@ -1,5 +1,3 @@
-// updated ParticipatedAuctionsPage UI with toggle Show More / Show Less as tappable text
-
 import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +7,8 @@ import 'package:mobile_app/core/services/auction_service.dart';
 import 'package:mobile_app/core/services/payment_service.dart';
 import 'package:mobile_app/features/auction/screens/auction_detail.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
+import 'dart:convert';
+import 'dart:developer' as developer;
 
 class ParticipatedAuctionsPage extends StatefulWidget {
   const ParticipatedAuctionsPage({super.key});
@@ -24,6 +24,8 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
   String filterStatus = 'ALL';
   String searchQuery = '';
   bool showAll = false;
+  String? errorMessage;
+
 
   @override
   void initState() {
@@ -33,54 +35,106 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
 
   Future<void> _fetchUserAuctions() async {
     try {
+      setState(() => errorMessage = null);
       final user = await UserService.getCurrentUser();
-      if (user == null) return;
+      if (user == null) {
+        throw Exception('User not logged in');
+      }
       final token = await UserService.getToken() ?? '';
+      final timestamp = DateTime.now().toIso8601String();
+      developer.log('[$timestamp] User ID: ${user['id']}', name: 'UserService');
+      developer.log('[$timestamp] Token: $token', name: 'UserService');
+
       final bids = await BidService.fetchAllUserBids(user['id'], token: token);
+      developer.log('[$timestamp] Bids JSON Response: ${jsonEncode(bids)}', name: 'BidService');
 
       final Map<int, Map<String, dynamic>> grouped = HashMap();
       for (final bid in bids) {
         final id = bid['auctionId'];
+        if (id == null) continue;
         if (!grouped.containsKey(id)) {
           grouped[id] = {
             'auctionId': id,
-            'title': bid['auctionTitle'],
-            'status': bid['status'],
-            'isWinning': bid['isWinning'],
-            'isPaid': false,
+            'title': bid['auctionTitle'] ?? 'Untitled Auction',
+            'status': bid['status'] ?? '',
+            'isWinning': bid['isWinning'] ?? false,
           };
+          developer.log('[$timestamp] Grouped Auction ID $id: ${jsonEncode(grouped[id])}', name: 'AuctionGroup');
         } else if (bid['isWinning'] == true) {
           grouped[id]!['isWinning'] = true;
         }
       }
-      for (final auction in grouped.values) {
-        final id = auction['auctionId'];
-        final paid = await PaymentService.hasCompletedPayment(id, token);
-        auction['isPaid'] = paid;
-      }
 
+      final List<Map<String, dynamic>> mappedAuctions = [];
+      for (final group in grouped.values) {
+        final int id = group['auctionId'];
+        developer.log('[$timestamp] Fetching Auction ID: $id', name: 'AuctionService');
+
+        final Auction? auction = await AuctionService.fetchAuctionById(id);
+        if (auction == null) {
+          throw Exception('Failed to fetch auction with ID: $id');
+        }
+        developer.log('[$timestamp] Auction JSON Response for ID $id: ${jsonEncode(auction.toJson())}', name: 'AuctionService');
+
+        final bool paid = await PaymentService.hasCompletedPayment(id, token);
+        developer.log('[$timestamp] Payment Status for Auction ID $id: $paid', name: 'PaymentService');
+
+        mappedAuctions.add({
+          'auction': auction,
+          'title': group['title'],
+          'status': group['status'],
+          'isWinning': group['isWinning'],
+          'isPaid': paid,
+        });
+        developer.log('[$timestamp] Mapped Auctions: ${jsonEncode(mappedAuctions)}', name: 'AuctionMapping');
+      }
       setState(() {
-        auctions = grouped.values.toList();
+        auctions = mappedAuctions;
         isLoading = false;
       });
     } catch (e) {
-      setState(() => isLoading = false);
+      final timestamp = DateTime.now().toIso8601String();
+      developer.log('[$timestamp] Error fetching auctions: $e', name: 'ErrorHandler');
+      setState(() {
+        isLoading = false;
+        errorMessage = e.toString();
+      });
     }
   }
 
   List<Map<String, dynamic>> get filteredAuctions {
-    final filtered = auctions.where((a) {
-      final matchesStatus = filterStatus == 'ALL' ||
-          (filterStatus == 'WINNING' && a['isWinning'] == true) ||
-          (filterStatus == 'UNPAID' && a['isWinning'] == true && a['isPaid'] != true) ||
-          (filterStatus == 'ONGOING' && a['status'] != 'ENDED');
+    final now = DateTime.now();
 
-      final matchesSearch = a['title']?.toString().toLowerCase().contains(searchQuery.toLowerCase()) ?? false;
+    final filtered = auctions.where((entry) {
+      final Auction auction = entry['auction'];
+      final bool isWinning = entry['isWinning'];
+      final bool isPaid = entry['isPaid'];
+      final bool isOngoing = now.isBefore(auction.endTime);
+
+      bool matchesStatus = true;
+      switch (filterStatus) {
+        case 'WINNING':
+          matchesStatus = isWinning;
+          break;
+        case 'UNPAID':
+          matchesStatus = isWinning && !isPaid;
+          break;
+        case 'ONGOING':
+          matchesStatus = isOngoing;
+          break;
+        case 'ALL':
+        default:
+          matchesStatus = true;
+          break;
+      }
+
+      final matchesSearch = auction.title.toLowerCase().contains(searchQuery.toLowerCase());
       return matchesStatus && matchesSearch;
     }).toList();
 
     return showAll ? filtered : filtered.take(3).toList();
   }
+
 
   Widget _buildFilterChip(String value, String label) {
     final isSelected = filterStatus == value;
@@ -137,16 +191,11 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final totalCount = auctions.where((a) {
-      return filterStatus == 'ALL' ||
-          (filterStatus == 'WINNING' && a['isWinning'] == true) ||
-          (filterStatus == 'UNPAID' && a['isWinning'] == true && a['isPaid'] != true) ||
-          (filterStatus == 'ONGOING' && a['status'] != 'ENDED');
-    }).length;
+    final totalCount = auctions.length;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Auctions', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Participated Auctions', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
@@ -162,7 +211,7 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 )
@@ -193,6 +242,8 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
+                : errorMessage != null
+                ? Center(child: Text('Error: $errorMessage', style: TextStyle(color: Colors.red)))
                 : filteredAuctions.isEmpty
                 ? Center(
               child: Column(
@@ -204,7 +255,7 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                       style: TextStyle(
                           fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey[700])),
                   const SizedBox(height: 8),
-                  Text('You haven\'t participated in any auctions yet.',
+                  Text('You haven’t participated in any auctions yet.',
                       style: TextStyle(fontSize: 16, color: Colors.grey[600]))
                 ],
               ),
@@ -212,30 +263,19 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                 : ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              itemCount: filteredAuctions.length + 1,
+              itemCount: filteredAuctions.length + (filteredAuctions.length < totalCount ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index < filteredAuctions.length) {
-                  final auction = filteredAuctions[index];
-                  return FutureBuilder(
-                    future: AuctionService.fetchAuctionById(auction['auctionId']),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasData) {
-                        final Auction a = snapshot.data!;
-                        return GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => AuctionDetailPage(auction: a)),
-                          ),
-                          child: _buildAuctionCard(auction, a),
-                        );
-                      } else {
-                        return const SizedBox();
-                      }
-                    },
+                  final entry = filteredAuctions[index];
+                  final Auction a = entry['auction'];
+                  return GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => AuctionDetailPage(auction: a)),
+                    ),
+                    child: _buildAuctionCard(a, entry['isWinning'], entry['isPaid']),
                   );
-                } else if (filteredAuctions.length < totalCount) {
+                } else {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
@@ -252,8 +292,6 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                       ),
                     ),
                   );
-                } else {
-                  return const SizedBox();
                 }
               },
             ),
@@ -263,9 +301,7 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
     );
   }
 
-  Widget _buildAuctionCard(Map<String, dynamic> bid, Auction a) {
-    final isWinning = bid['isWinning'] == true;
-    final isPaid = bid['isPaid'] == true;
+  Widget _buildAuctionCard(Auction a, bool isWinning, bool isPaid) {
     final numberFormat = NumberFormat("#,##0", "vi_VN");
     final imageUrl = a.mediaUrls.isNotEmpty ? a.mediaUrls.first : a.thumbnailUrl ?? '';
 
@@ -309,8 +345,7 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (isPaid)
-                      const Icon(Icons.verified, color: Colors.teal, size: 20),
+                    if (isPaid) const Icon(Icons.verified, color: Colors.teal, size: 20),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -318,7 +353,7 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                   children: [
                     Icon(Icons.monetization_on, color: Colors.orange[700], size: 18),
                     const SizedBox(width: 6),
-                    Text('Start: ${numberFormat.format(a.startingPrice)} đ')
+                    Text('Starting Price: ${numberFormat.format(a.startingPrice)} \$')
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -326,7 +361,7 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                   children: [
                     Icon(Icons.gavel, color: Colors.green[700], size: 18),
                     const SizedBox(width: 6),
-                    Text('Current: ${numberFormat.format(a.currentBid ?? a.startingPrice)} đ')
+                    Text('Current Bid: ${numberFormat.format(a.currentBid ?? a.startingPrice)} \$')
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -334,21 +369,44 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                   children: [
                     Icon(Icons.people, color: Colors.deepPurple, size: 18),
                     const SizedBox(width: 6),
-                    Text('Bids: ${a.bidCount}')
+                    Text('Bids: ${a.bidCount}'),
                   ],
                 ),
+                if (isWinning && a.winnerPaymentDeadline != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.access_time, color: Colors.red, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Deadline Payment: ${DateFormat('yyyy-MM-dd HH:mm').format(a.winnerPaymentDeadline!)}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: a.endTime.isBefore(DateTime.now())
-                        ? (isWinning ? (isPaid ? Colors.teal[100] : Colors.orange[100]) : Colors.red[100])
+                        ? (isWinning
+                        ? (isPaid ? Colors.teal[100] : Colors.orange[100])
+                        : Colors.red[100])
                         : Colors.blue[100],
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     a.endTime.isBefore(DateTime.now())
-                        ? (isWinning ? (isPaid ? '✅ Paid - You won!' : '🎉 You won! (Unpaid)') : 'You did not win')
+                        ? (isWinning
+                        ? (isPaid ? '✅ Paid - You won!' : '🎉 You won! (Unpaid)')
+                        : 'You did not win')
                         : 'Auction is ongoing',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,

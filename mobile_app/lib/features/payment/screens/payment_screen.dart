@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile_app/features/order/screens/order_detail.dart';
 import 'package:mobile_app/features/payment/screens/paypal_payment.dart';
+import '../../../core/models/auction_model.dart';
 import '../../auction/screens/auction_winner.dart';
 import '../../payment/screens/payment_success.dart';
 import 'package:mobile_app/core/services/auction_service.dart';
@@ -25,6 +27,8 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
   Map<String, dynamic>? winnerData;
   String? errorMessage;
   String _selectedMethod = 'PAYPAL';
+
+  Auction? auctionData;
 
   @override
   void initState() {
@@ -78,8 +82,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
       final double finalAmount = rawAmount is num
           ? rawAmount.toDouble()
           : double.tryParse(rawAmount.toString()) ?? 0.0;
-
-      setState(() => _isLoading = true);
+      final double depositAmount = auctionData?.securityDeposit ?? 0.0;      setState(() => _isLoading = true);
       await PaymentService.createAuctionPayment(
         winnerId: winnerData!['userId'],
         auctionId: widget.auctionId,
@@ -103,7 +106,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
               winnerId: winnerData!['userId'],
               auctionId: widget.auctionId,
               finalAmount: finalAmount,
-              depositAmount: 0.00,
+              depositAmount: depositAmount,
             ),
       ));
     } catch (e) {
@@ -220,7 +223,7 @@ class _PaymentScreenState extends State<PaymentScreen> with SingleTickerProvider
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => AuctionWinnerPage(auctionId: widget.auctionId),
+                                            builder: (_) => OrderDetailPage(auctionId: widget.auctionId),
                                           ),
                                         );
                                       },

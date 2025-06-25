@@ -8,16 +8,21 @@ import '../../../core/services/auction_service.dart';
 import '../../../core/services/bid_service.dart';
 import '../../../core/services/user_service.dart';
 import '../../../core/services/websocket_service.dart';
+import 'package:mobile_app/features/payment/screens/payment_screen.dart';
+import '../../order/screens/order_detail.dart';
+import 'edit_auction_page.dart';
+
 
 class AuctionDetailPage extends StatefulWidget {
   final Auction auction;
-  const AuctionDetailPage({super.key, required this.auction});
+  AuctionDetailPage({super.key, required this.auction});
+
   @override
   State<AuctionDetailPage> createState() => _AuctionDetailPageState();
 }
 
 class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTickerProviderStateMixin {
-  late final Auction auction;
+  late Auction currentAuction;
   late Duration remaining;
   Timer? countdownTimer;
   bool isDescriptionExpanded = false;
@@ -30,39 +35,84 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
   bool isWatchlisted = false;
   int? selectedBidAmount;
   bool isSeller = false;
+  bool isLoggedIn = false;
+  String countdownLabel = "Time Left";
+
+  bool canEdit = false;
 
 
   @override
   void initState() {
     super.initState();
+    currentAuction = widget.auction;
     fadeInController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..forward();
     updateRemaining();
     countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) => updateRemaining());
     _pageController = PageController(viewportFraction: 0.95, initialPage: 0);
 
     _generateBidSuggestions();
-
     _checkWatchlist();
     _initWebSocket();
-
     _checkIfSeller();
+    _checkLoginStatus();
   }
+
+  Future<void> _loadAuctionDetails() async {
+    try {
+      final updated = await AuctionService.fetchAuctionById(currentAuction.id);
+      if (updated != null) {
+        setState(() {
+          currentAuction = updated;
+          _generateBidSuggestions();
+          updateRemaining();
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Reload failed: $e')),
+      );
+    }
+  }
+
+
+
   Future<void> _checkIfSeller() async {
     final user = await UserService.getCurrentUser();
+    final now = DateTime.now();
+
     if (user != null && user['id'] == widget.auction.sellerId) {
+      final diff = widget.auction.startTime.difference(now).inMinutes;
       setState(() {
         isSeller = true;
+        canEdit = diff >= 60;
       });
     }
   }
 
 
+  Future<void> _checkLoginStatus() async {
+    final token = await UserService.getToken();
+    setState(() {
+      isLoggedIn = token != null && token.isNotEmpty;
+    });
+  }
+
   void updateRemaining() {
     final now = DateTime.now();
+    final start = widget.auction.startTime;
     final end = widget.auction.endTime;
 
     setState(() {
-      remaining = end.isAfter(now) ? end.difference(now) : Duration.zero;
+      if (now.isBefore(start)) {
+        remaining = start.difference(now);
+        countdownLabel = "Starts In";
+      } else if (now.isBefore(end)) {
+        remaining = end.difference(now);
+        countdownLabel = "Ends In";
+      } else {
+        remaining = Duration.zero;
+        countdownLabel = "Ended";
+      }
     });
   }
 
@@ -82,24 +132,18 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
 
   void _generateBidSuggestions() {
     final auction = widget.auction;
-
     final increment = auction.incrementAmount.toInt() ?? 0;
     final current = (auction.currentBid ?? auction.startingPrice).toInt() ?? 0;
-
     if (increment <= 0 || current <= 0) {
       debugPrint('[BidSuggest] Invalid increment: $increment or current: $current');
       return;
     }
-
     final start = current + increment;
-
     setState(() {
       bidSuggestions = List.generate(3, (i) => start + increment * i);
       debugPrint('[BidSuggest] Suggestions: $bidSuggestions');
     });
   }
-
-
 
   Future<void> _checkWatchlist() async {
     final prefs = await SharedPreferences.getInstance();
@@ -177,6 +221,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
             setState(() {
               widget.auction.currentBid = (data['currentHighestBid'] as num?)?.toDouble() ?? widget.auction.currentBid;
               widget.auction.bidCount = (data['totalBids'] as int?) ?? widget.auction.bidCount;
+              _generateBidSuggestions();
             });
           }
           if (data.containsKey('message')) {
@@ -219,11 +264,11 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
   }
 
   String formatDuration(Duration d) {
+    if (d == Duration.zero) return "Ended";
     final days = d.inDays;
     final hours = d.inHours % 24;
     final minutes = d.inMinutes % 60;
     final seconds = d.inSeconds % 60;
-    if (d == Duration.zero) return "Ended";
     if (days > 0) {
       return '${days}d ${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
@@ -239,7 +284,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    final auction = widget.auction;
+    var auction = currentAuction;
     final numberFormat = NumberFormat("#,##0", "vi_VN");
     final mediaList = auction.mediaUrls.isNotEmpty
         ? auction.mediaUrls
@@ -256,6 +301,24 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
         foregroundColor: Colors.black,
         elevation: 0.3,
         actions: [
+          if (canEdit)
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blue),
+              tooltip: 'Edit Auction',
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => UpdateAuctionPage(auction: currentAuction),
+                    ),
+                  );
+
+                  if (result == true) {
+                    await _loadAuctionDetails();
+                  }
+                }
+
+            ),
           IconButton(
             onPressed: _toggleWatchlist,
             icon: Icon(
@@ -490,7 +553,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                           ),
                                         ),
                                         const SizedBox(height: 3),
-                                        Text('Time Left',
+                                        Text(countdownLabel,
                                             style: TextStyle(
                                               color: getCountdownColor(remaining),
                                               fontSize: 13,
@@ -523,7 +586,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       const SizedBox(height: 12),
-                                      if (bidSuggestions.isNotEmpty)
+                                      if (isLoggedIn && !isSeller && bidSuggestions.isNotEmpty)
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
@@ -597,6 +660,36 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                             ),
                                           ],
                                         ),
+                                      if (!isLoggedIn)
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.shade50,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.red.shade100),
+                                          ),
+                                          child: const Text(
+                                            'Please log in to place a bid.',
+                                            style: TextStyle(color: Colors.red, fontSize: 16),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      if (isLoggedIn && isSeller)
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.orange.shade50,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.orange.shade100),
+                                          ),
+                                          child: const Text(
+                                            'You cannot bid on your own auction.',
+                                            style: TextStyle(color: Colors.orange, fontSize: 16),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
                                       const SizedBox(height: 16),
                                       SizedBox(
                                         width: double.infinity,
@@ -610,7 +703,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                             ),
                                             elevation: 2,
                                           ),
-                                          onPressed: (!hasStarted || hasEnded || selectedBidAmount == null)
+                                          onPressed: (!hasStarted || hasEnded || selectedBidAmount == null || isSeller || !isLoggedIn)
                                               ? null
                                               : () async {
                                             final token = await UserService.getToken() ?? '';
@@ -643,6 +736,9 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                                 userId: userId,
                                                 bidAmount: selectedBidAmount!.toInt(),
                                               );
+                                              await Future.delayed(Duration(milliseconds: 500));
+                                              await fetchAuctionDetail();
+                                              _generateBidSuggestions();
 
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 const SnackBar(
@@ -670,7 +766,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
-                                        ), // End of ElevatedButton
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -680,6 +776,55 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                             const SizedBox(height: 12),
                             BidHistoryCard(auctionId: widget.auction.id),
                             const SizedBox(height: 10),
+                            if (hasEnded && !isSeller && isLoggedIn)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => PaymentScreen(auctionId: auction.id),
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.payment),
+                                        label: const Text("Pay Now"),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => OrderDetailPage(auctionId: auction.id),
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.receipt_long),
+                                        label: const Text("Order Detail"),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.orange,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             if (!hasStarted)
                               Container(
                                 width: double.infinity,
@@ -775,6 +920,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
     );
   }
 }
+
 class BidHistoryCard extends StatefulWidget {
   final int auctionId;
   const BidHistoryCard({super.key, required this.auctionId});
@@ -797,9 +943,6 @@ class _BidHistoryCardState extends State<BidHistoryCard> {
     super.initState();
     _loadBidHistory();
     _initWebSocket();
-    refreshTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
-      if (mounted) await _loadBidHistory();
-    });
   }
 
   @override
@@ -838,13 +981,12 @@ class _BidHistoryCardState extends State<BidHistoryCard> {
       });
     }
   }
+
   Future<void> _initWebSocket() async {
     final user = await UserService.getCurrentUser();
     if (user == null) return;
-    print(widget.auctionId);
-    print(user['id']);
-    print( user['username']);
     final token = await UserService.getToken();
+
     WebSocketService().connect(
       auctionId: widget.auctionId,
       userId: user['id'],
@@ -852,7 +994,10 @@ class _BidHistoryCardState extends State<BidHistoryCard> {
       token: token!,
       onActivity: (data) {
         if (data['type'] == 'NEW_BID') {
-          _loadBidHistory();
+          setState(() {
+            _loadBidHistory();
+            if (mounted) setState(() {});
+          });
         }
       },
       onError: (err) {
@@ -985,9 +1130,3 @@ class _BidHistoryCardState extends State<BidHistoryCard> {
     );
   }
 }
-
-
-
-
-
-

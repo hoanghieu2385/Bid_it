@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:mobile_app/core/services/api_service.dart';
 import 'package:mobile_app/core/services/user_service.dart';
 
+import '../models/payment_model.dart';
+
 class PaymentResponse {
   final String id;
   final String status;
@@ -28,7 +30,7 @@ class PaymentService {
   static const String _paymentBaseUrl = ApiService.paymentBaseUrl;
   static Future<List<Map<String, dynamic>>> fetchPaymentsByAuction(int auctionId, String token) async {
     final response = await http.get(
-      Uri.parse('http://localhost:8080/payment-service/api/payment/auction/$auctionId'),
+      Uri.parse('$_paymentBaseUrl/auction/$auctionId'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {

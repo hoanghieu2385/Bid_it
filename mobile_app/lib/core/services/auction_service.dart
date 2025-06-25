@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auction_model.dart';
 import 'package:mobile_app/core/services/api_service.dart';
@@ -42,6 +43,14 @@ class AuctionService {
     }
     return [];
   }
+  static Future<void> deleteImageById(int id) async {
+    final url = '$baseAuctionUrl/api/media/$id';
+    final response = await http.delete(Uri.parse(url));
+    if (response.statusCode != 204) {
+      throw Exception("Failed to delete image");
+    }
+  }
+
   static Future<Map<String, dynamic>?> createAuction(Map<String, dynamic> data) async {
     final token = await _getToken();
     if (token == null) return null;
@@ -226,7 +235,7 @@ class AuctionService {
     }
   }
   static Future<Auction?> fetchAuctionById(int auctionId) async {
-    final token = await _getToken();
+    final token = await UserService.getToken();
     if (token == null) {
       throw Exception('Missing token');
     }
@@ -269,6 +278,73 @@ class AuctionService {
       }
     } catch (e) {
       throw Exception('Error fetching winner: $e');
+    }
+  }
+  static Future<void> deleteAuction(int auctionId, int requesterId) async {
+    final token = await UserService.getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Authentication token missing. Please login again.');
+    }
+
+    final uri = Uri.parse('$baseAuctionUrl/auctions/$auctionId')
+        .replace(queryParameters: {'requesterId': requesterId.toString()});
+
+    final response = await http.delete(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      final errorMsg = response.body.isNotEmpty
+          ? response.body
+          : 'Failed to delete auction with ID $auctionId';
+      throw Exception('Error ${response.statusCode}: $errorMsg');
+    }
+  }
+
+
+  static Future<Auction> updateAuction({
+    required int id,
+    required String title,
+    required String description,
+    required int startingPrice,
+    required int incrementAmount,
+    required DateTime startTime,
+    required DateTime endTime,
+    required int requesterId,
+    required int categoryId,
+  }) async {
+    final token = await UserService.getToken();
+    final uri = Uri.parse('$baseAuctionUrl/auctions/$id?requesterId=$requesterId');
+
+    final formatter = DateFormat("yyyy-MM-ddTHH:mm");
+    final response = await http.put(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'title': title,
+        'description': description,
+        'startingPrice': startingPrice,
+        'incrementAmount': incrementAmount,
+        'startTime': formatter.format(startTime.toLocal()),
+        'endTime': formatter.format(endTime.toLocal()),
+        'categoryId': categoryId,
+        'status': 'UPCOMING',
+        'mediaUrls': [],
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return Auction.fromJson(data);
+    } else {
+      throw Exception('Failed to update auction: ${response.statusCode} ${response.body}');
     }
   }
   Future<Map<String, dynamic>?> fetchUser(int userId) async {

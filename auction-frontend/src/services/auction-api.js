@@ -7,6 +7,39 @@ export const getAllAuctions = async () => {
 	return response.data;
 };
 
+// Create auction + upload media (multipart/form-data)
+export const createAuctionWithMedia = async (payload, imageFiles, requesterId) => {
+	const token = Cookies.get('jwt');
+
+	const formData = new FormData();
+
+	// Đính kèm JSON auction
+	formData.append(
+		'auction',
+		new Blob([JSON.stringify(payload)], { type: 'application/json' })
+	);
+
+	// Đính kèm các ảnh
+	imageFiles.forEach((file) => {
+		formData.append('files', file);
+	});
+
+	// Gửi request
+	const response = await api.post(
+		`/auction-service/api/auctions/with-media?requesterId=${requesterId}`,
+		formData,
+		{
+			headers: {
+				Authorization: `Bearer ${token}`,
+				'Content-Type': 'multipart/form-data'
+			}
+		}
+	);
+
+	return response.data;
+};
+
+
 // Create new auction
 export const createAuction = async (formData, requesterId) => {
 	const token = Cookies.get('jwt');
@@ -20,6 +53,22 @@ export const createAuction = async (formData, requesterId) => {
 	return response.data;
 };
 
+// Cancel Auction (chuyển trạng thái về CANCELLED)
+export const cancelAuction = async (auctionId, requesterId) => {
+	const token = Cookies.get('jwt');
+	// body chứa status mới
+	const payload = { status: 'CANCELLED' };
+	const response = await api.put(
+		`/auction-service/api/auctions/${auctionId}/status?requesterId=${requesterId}`,
+		payload,
+		{
+			headers: {
+				Authorization: `Bearer ${token}`,
+			}
+		}
+	);
+	return response.data;
+};
 // Upload multiple images for auction
 export const uploadAuctionImages = async (auctionId, imageFiles) => {
 	const form = new FormData();
@@ -134,6 +183,18 @@ export const getAuctionsByStatus = async (status) => {
 export const getAuctionDetailById = async (auctionId) => {
 	const response = await api.get(
 		`/auction-service/api/auctions/${auctionId}`
+	);
+	return response.data;
+};
+
+// Get auction details by ID with JWT
+export const getProtectedAuctionDetailById = async (auctionId) => {
+	const token = Cookies.get('jwt');
+	const response = await api.get(
+		`/auction-service/api/auctions/${auctionId}`,
+		{
+			headers: { Authorization: `Bearer ${token}` }
+		}
 	);
 	return response.data;
 };

@@ -360,3 +360,27 @@
   background: linear-gradient(45deg, #17a2b8, #117a8b);
   color: white;
 }
+
+/* Participated-specific custom fixes */
+
+.participated-auctions .participated-order-link {
+  text-decoration: none;
+}
+
+.participated-auctions .participated-btn-order {
+  background: linear-gradient(45deg, #1e90ff, #1c7ed6);
+  color: white;
+  border: none;
+}
+
+.participated-auctions .participated-btn-order:hover {
+  background: linear-gradient(45deg, #0b74c4, #0a5fa2);
+}
+
+.participated-auctions .price-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}

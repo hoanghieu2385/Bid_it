@@ -6,14 +6,9 @@ import 'package:mobile_app/features/home/screens/home_screen.dart';
 import 'package:mobile_app/features/auction/screens/auction_detail.dart';
 import 'package:mobile_app/features/payment/screens/payment_screen.dart';
 import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
-import 'firebase_options.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async{
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
   runApp(const AuctionHubApp());
 }
 
