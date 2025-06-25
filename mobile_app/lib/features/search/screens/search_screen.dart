@@ -153,8 +153,10 @@ class _SearchResultsState extends State<SearchResults> {
 
         auctions = auctions.where((a) =>
         (a.status?.toUpperCase() != 'ENDED') &&
+            (a.status?.toUpperCase() != 'CANCELLED') &&
             a.endTime.isAfter(DateTime.now())
         ).toList();
+
 
         if (widget.searchKeyword.isNotEmpty) {
           auctions = auctions.where((a) =>
@@ -329,34 +331,6 @@ class _SearchResultsState extends State<SearchResults> {
                                 style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 5),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 30,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.black,
-                                foregroundColor: AppColors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                elevation: 0,
-                                padding: EdgeInsets.zero,
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => AuctionDetailPage(auction: auction),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'Join Auction',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                              ),
-                            ),
                           ),
                         ],
                       ),

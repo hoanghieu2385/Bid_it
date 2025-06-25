@@ -24,6 +24,8 @@ class WebSocketService {
   void Function()? _onConnected;
   void Function()? _onDisconnected;
 
+  bool _connecting = false;
+
   void connect({
     required int auctionId,
     required int userId,
@@ -35,7 +37,15 @@ class WebSocketService {
     void Function()? onDisconnected,
     void Function(Map<String, dynamic>)? onInit,
   }) {
-    if (_stompClient != null && _stompClient!.connected) return;
+    if (_stompClient != null && _stompClient!.connected) {
+      print('[WebSocket] Already connected.');
+      return;
+    }
+
+    if (_connecting) {
+      print('[WebSocket] Connection already in progress.');
+      return;
+    }
 
     _auctionId = auctionId;
     _userId = userId;
@@ -48,33 +58,30 @@ class WebSocketService {
     _onDisconnected = onDisconnected;
 
     print('[WebSocket] Connecting to server...');
+    _connecting = true;
 
     _stompClient = StompClient(
       config: StompConfig.SockJS(
         url: 'http://10.0.2.2:8085/ws',
-
-        webSocketConnectHeaders: {
-          'Authorization': 'Bearer $_token',
-        },
-
-        stompConnectHeaders: {
-          'Authorization': 'Bearer $_token',
-        },
-
+        webSocketConnectHeaders: {'Authorization': 'Bearer $_token'},
+        stompConnectHeaders: {'Authorization': 'Bearer $_token'},
         onConnect: _onConnectHandler,
         onWebSocketError: (error) {
           print('[WebSocket] WebSocket error: $error');
           _onError(error.toString());
+          _connecting = false;
           _tryReconnect();
         },
         onStompError: (frame) {
           print('[WebSocket] STOMP error: ${frame.body}');
           _onError(frame.body ?? 'Unknown STOMP error');
+          _connecting = false;
           _tryReconnect();
         },
         onDisconnect: (_) {
           print('[WebSocket] Disconnected.');
           isConnected = false;
+          _connecting = false;
           _onDisconnected?.call();
           _tryReconnect();
         },
@@ -91,39 +98,52 @@ class WebSocketService {
     _stompClient!.activate();
   }
 
-  void _onConnectHandler(StompFrame frame) {
+  void _onConnectHandler(StompFrame frame) async {
     isConnected = true;
     _retryCount = 0;
+    _connecting = false;
     print('[WebSocket] Connected successfully.');
     _onConnected?.call();
 
-    // Subscribe nhận bid mới
-    _stompClient!.subscribe(
-      destination: '/topic/auction/$_auctionId/bids',
+    await Future.delayed(const Duration(milliseconds: 100)); // prevent StompHandler=null
+
+    // Subscribe to STATS
+    _stompClient?.subscribe(
+      destination: '/topic/auction/$_auctionId/stats',
       callback: (frame) {
         if (frame.body != null) {
           try {
             final data = jsonDecode(frame.body!);
-            print('[WebSocket] Message received: $data');
-            switch (data['type']) {
-              case 'NEW_BID':
-                _onActivity(data);
-                break;
-              case 'INIT':
-                _onInit?.call(data);
-                break;
-              default:
-                _onError('Unknown message type: ${data['type']}');
-            }
+            print('[WebSocket] Stats received: $data');
+            _onActivity(data);
           } catch (e) {
-            print('[WebSocket] Error decoding message: $e');
-            _onError('Error parsing message: $e');
+            print('[WebSocket] Error parsing stats: $e');
+            _onError('Failed to parse stats');
           }
         }
       },
     );
 
-    // Gửi init để backend có thể khởi tạo phiên
+    // Subscribe to NEW_BID
+    _stompClient?.subscribe(
+      destination: '/topic/auction/$_auctionId/bids',
+      callback: (frame) {
+        if (frame.body != null) {
+          try {
+            final data = jsonDecode(frame.body!);
+            print('[WebSocket] New bid received: $data');
+            if (data['type'] == 'NEW_BID') {
+              _onActivity(data);
+            }
+          } catch (e) {
+            print('[WebSocket] Error parsing bid: $e');
+            _onError('Failed to parse bid');
+          }
+        }
+      },
+    );
+
+    // Send init
     _stompClient!.send(
       destination: '/app/auction/$_auctionId/init',
       body: jsonEncode({
@@ -162,6 +182,7 @@ class WebSocketService {
     _retryCount++;
     final delay = Duration(seconds: 2 * _retryCount);
     print('[WebSocket] Reconnecting in ${delay.inSeconds}s (attempt: $_retryCount)...');
+
     Future.delayed(delay, () {
       connect(
         auctionId: _auctionId!,
@@ -181,5 +202,6 @@ class WebSocketService {
     print('[WebSocket] Disconnecting...');
     _stompClient?.deactivate();
     isConnected = false;
+    _connecting = false;
   }
 }
