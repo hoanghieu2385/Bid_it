@@ -43,6 +43,12 @@ public class AuctionService implements IAuctionService {
             if (seller == null || !Boolean.TRUE.equals(seller.getVerified())) {
                 throw new IllegalArgumentException("Seller not verified or does not exist");
             }
+
+            Integer sellerScore = userClient.getUserScore(requesterId);
+            if (sellerScore < 70) {
+                throw new IllegalArgumentException("At least 70 points are required to create an auction");
+            }
+
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to fetch seller from user-service", ex);
         }

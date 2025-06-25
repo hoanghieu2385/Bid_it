@@ -11,6 +11,9 @@ public interface UserServiceClient {
     @GetMapping("/api/users/{id}")
     UserResponse getUserById(@PathVariable("id") Long id);
 
+    @GetMapping("/internal/users/{id}/score")
+    Integer getUserScore(@PathVariable("id") Long userId);
+
     class UserResponse {
         private Long id;
         private String firstName;

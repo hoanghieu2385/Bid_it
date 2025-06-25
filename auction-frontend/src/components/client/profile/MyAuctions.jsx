@@ -6,21 +6,26 @@ import { UserContext } from '../../../contexts/UserContext';
 import useToastMessage from '../../../hooks/useToastMessage';
 import Swal from 'sweetalert2';
 
-const DISPLAY_STATUSES = [
-	'UPCOMING','OPENED','CANCELLED','CLOSED',
-	'SOLD','FAILED','COMPLETED'
-];
+const DISPLAY_STATUSES = ['UPCOMING', 'OPENED', 'CANCELLED', 'CLOSED', 'SOLD', 'FAILED', 'COMPLETED'];
 const ITEMS_PER_PAGE = 6;
-const getStatusBadgeClass = status => {
+const getStatusBadgeClass = (status) => {
 	switch (status) {
-		case 'UPCOMING':   return 'bg-info';
-		case 'OPENED':     return 'bg-success';
-		case 'CANCELLED':  return 'bg-warning text-dark';
-		case 'CLOSED':     return 'bg-secondary';
-		case 'SOLD':       return 'bg-primary';
-		case 'FAILED':     return 'bg-danger';
-		case 'COMPLETED':  return 'bg-dark';
-		default:           return 'bg-light text-dark';
+		case 'UPCOMING':
+			return 'bg-info';
+		case 'OPENED':
+			return 'bg-success';
+		case 'CANCELLED':
+			return 'bg-warning text-dark';
+		case 'CLOSED':
+			return 'bg-secondary';
+		case 'SOLD':
+			return 'bg-primary';
+		case 'FAILED':
+			return 'bg-danger';
+		case 'COMPLETED':
+			return 'bg-dark';
+		default:
+			return 'bg-light text-dark';
 	}
 };
 
@@ -42,8 +47,8 @@ const MyAuctions = () => {
 			try {
 				const response = await getAuctionsBySeller(user.id);
 				const filtered = response
-					.filter(a => DISPLAY_STATUSES.includes(a.status))
-					.sort((a,b) => new Date(b.startTime) - new Date(a.startTime));
+					.filter((a) => DISPLAY_STATUSES.includes(a.status))
+					.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
 				setAuctions(filtered);
 			} catch (err) {
 				console.error('MyAuctions fetch error:', err);
@@ -56,30 +61,24 @@ const MyAuctions = () => {
 		fetchData();
 	}, [user?.id, showError]);
 
-	const filteredAuctions = filterStatus
-		? auctions.filter(a => a.status === filterStatus)
-		: auctions;
+	const filteredAuctions = filterStatus ? auctions.filter((a) => a.status === filterStatus) : auctions;
 
 	const totalPages = Math.ceil(filteredAuctions.length / ITEMS_PER_PAGE);
-	const paginatedAuctions = filteredAuctions.slice(
-		(currentPage - 1) * ITEMS_PER_PAGE,
-		currentPage * ITEMS_PER_PAGE
-	);
+	const paginatedAuctions = filteredAuctions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-	const handlePageChange = page => setCurrentPage(page);
+	const handlePageChange = (page) => setCurrentPage(page);
 
 	if (loading) return <div>Loading your auctions...</div>;
-	if (!loading && auctions.length === 0)
-		return <div>You have not created any auctions yet.</div>;
+	if (!loading && auctions.length === 0) return <div>You have not created any auctions yet.</div>;
 
-	const handleCancel = async auctionId => {
+	const handleCancel = async (auctionId) => {
 		const result = await Swal.fire({
 			title: 'Confirm Cancel',
 			text: 'Are you sure you want to cancel this auction?',
 			icon: 'warning',
 			showCancelButton: true,
 			confirmButtonText: 'Yes, cancel it',
-			cancelButtonText: 'Keep it'
+			cancelButtonText: 'Keep it',
 		});
 
 		if (!result.isConfirmed) return;
@@ -88,11 +87,7 @@ const MyAuctions = () => {
 			// gọi API đổi trạng thái
 			const updated = await cancelAuction(auctionId, user.id);
 			// cập nhật state: thay status của auction thành CANCELLED
-			setAuctions(prev =>
-				prev.map(a =>
-					a.id === auctionId ? { ...a, status: updated.status } : a
-				)
-			);
+			setAuctions((prev) => prev.map((a) => (a.id === auctionId ? { ...a, status: updated.status } : a)));
 			showSuccess('Auction has been cancelled.');
 		} catch (err) {
 			console.error('Cancel error:', err);
@@ -109,13 +104,13 @@ const MyAuctions = () => {
 				<select
 					className="form-select"
 					value={filterStatus}
-					onChange={e => {
+					onChange={(e) => {
 						setFilterStatus(e.target.value);
 						setCurrentPage(1);
 					}}
 				>
 					<option value="">All</option>
-					{DISPLAY_STATUSES.map(status => (
+					{DISPLAY_STATUSES.map((status) => (
 						<option key={status} value={status}>
 							{status}
 						</option>
@@ -124,7 +119,7 @@ const MyAuctions = () => {
 			</div>
 
 			<div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-				{paginatedAuctions.map(auction => {
+				{paginatedAuctions.map((auction) => {
 					const imageUrl = auction.media?.[0]?.url || '/default-image.jpg';
 					const now = new Date();
 					const startTime = new Date(auction.startTime);
@@ -135,61 +130,60 @@ const MyAuctions = () => {
 						<div key={auction.id} className="col">
 							<div className="card h-100 shadow-sm border-0">
 								<div className="position-relative">
-									<img
-										src={imageUrl}
-										onError={e => {
-											e.target.onerror = null;
-											e.target.src = '/default-image.jpg';
+									<div
+										style={{
+											height: '200px',
+											backgroundColor: '#fff',
+											display: 'flex',
+											alignItems: 'center',
+											justifyContent: 'center',
+											overflow: 'hidden',
 										}}
-										className="card-img-top rounded-top"
-										alt={auction.title}
-										style={{ height: '200px', objectFit: 'cover' }}
-									/>
-									<span
-										className={`badge position-absolute top-0 start-0 m-2 ${
-											getStatusBadgeClass(auction.status)
-										}`}
 									>
-                    {auction.status}
-                  </span>
+										<img
+											src={imageUrl}
+											onError={(e) => {
+												e.target.onerror = null;
+												e.target.src = '/default-image.jpg';
+											}}
+											alt={auction.title}
+											style={{
+												maxHeight: '100%',
+												maxWidth: '100%',
+												objectFit: 'contain',
+											}}
+										/>
+									</div>
+
+									<span className={`badge position-absolute top-0 start-0 m-2 ${getStatusBadgeClass(auction.status)}`}>
+										{auction.status}
+									</span>
 								</div>
 								<div className="card-body d-flex flex-column">
 									<h5 className="card-title fw-bold">{auction.title}</h5>
 									<p className="mb-1 text-muted">
-										<b>Start:</b>{' '}
-										{new Date(auction.startTime).toLocaleString('vi-VN')}
+										<b>Start:</b> {new Date(auction.startTime).toLocaleString('vi-VN')}
 									</p>
 									<p className="mb-1 text-muted">
-										<b>End:</b>{' '}
-										{new Date(auction.endTime).toLocaleString('vi-VN')}
+										<b>End:</b> {new Date(auction.endTime).toLocaleString('vi-VN')}
 									</p>
 									<p className="mb-1">
-										<b>Price:</b>{' '}
-										{Number(auction.startingPrice).toLocaleString('vi-VN')}₫
+										<b>Price:</b> {Number(auction.startingPrice).toLocaleString('vi-VN')}₫
 									</p>
 									<p className="mb-1">
 										<b>Bids:</b> {auction.bidCount ?? 0}
 									</p>
 									<div className="mt-auto">
-										<Link
-											to={`/auctions/${auction.id}`}
-											className="btn btn-outline-primary btn-sm w-100 mb-2"
-										>
+										<Link to={`/auctions/${auction.id}`} className="btn btn-outline-primary btn-sm w-100 mb-2">
 											View Details
 										</Link>
 										{canCancel && auction.status === 'UPCOMING' && (
-											<button
-												className="btn btn-outline-danger btn-sm w-100"
-												onClick={() => handleCancel(auction.id)}
-											>
+											<button className="btn btn-outline-danger btn-sm w-100" onClick={() => handleCancel(auction.id)}>
 												Cancel
 											</button>
 										)}
 										{canCancel && auction.status === 'UPCOMING' && (
-											<Link
-												to={`/auctions/${auction.id}/edit`}
-												className="btn btn-outline-warning btn-sm w-100 mt-2"
-											>
+											<Link to={`/auctions/${auction.id}/edit`} className="btn btn-outline-warning btn-sm w-100 mt-2">
 												Edit
 											</Link>
 										)}
@@ -204,23 +198,13 @@ const MyAuctions = () => {
 			{totalPages > 1 && (
 				<nav className="mt-4">
 					<ul className="pagination justify-content-center">
-						{Array.from({ length: totalPages }, (_, idx) => idx + 1).map(
-							page => (
-								<li
-									key={page}
-									className={`page-item ${
-										page === currentPage ? 'active' : ''
-									}`}
-								>
-									<button
-										className="page-link"
-										onClick={() => handlePageChange(page)}
-									>
-										{page}
-									</button>
-								</li>
-							)
-						)}
+						{Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
+							<li key={page} className={`page-item ${page === currentPage ? 'active' : ''}`}>
+								<button className="page-link" onClick={() => handlePageChange(page)}>
+									{page}
+								</button>
+							</li>
+						))}
 					</ul>
 				</nav>
 			)}
