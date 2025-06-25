@@ -9,4 +9,10 @@ import org.springframework.web.bind.annotation.*;
 public interface UserClient {
     @GetMapping("/api/users/{id}")
     UserDTO getUserById(@PathVariable("id") Long id);
+
+    @PutMapping("/internal/users/{id}/deduct-score")
+    void deductScore(
+            @PathVariable("id") Long userId,
+            @RequestParam("amount") int amount
+    );
 }

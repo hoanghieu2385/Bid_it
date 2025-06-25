@@ -28,4 +28,8 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     // Tìm auction CLOSED có payment deadline đã qua
     List<Auction> findByStatusAndWinnerPaymentDeadlineBefore(
             AuctionStatus status, LocalDateTime deadline);
+
+    List<Auction> findByStatusAndWinnerPaymentDeadlineBeforeAndWinnerIdIsNull(
+            AuctionStatus status, LocalDateTime deadline);
+
 }

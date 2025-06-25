@@ -27,4 +27,13 @@ public class InternalUserController {
         return user.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/{id}/deduct-score")
+    public ResponseEntity<Void> deductScore(
+            @PathVariable Long id,
+            @RequestParam("amount") int amount
+    ) {
+        userService.deductScore(id, amount);
+        return ResponseEntity.ok().build();
+    }
 }
