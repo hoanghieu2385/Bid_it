@@ -10,6 +10,9 @@ public interface UserClient {
     @GetMapping("/api/users/{id}")
     UserDTO getUserById(@PathVariable("id") Long id);
 
+    @GetMapping("/internal/users/{id}/score")
+    Integer getUserScore(@PathVariable("id") Long userId);
+
     @PutMapping("/internal/users/{id}/deduct-score")
     void deductScore(
             @PathVariable("id") Long userId,
