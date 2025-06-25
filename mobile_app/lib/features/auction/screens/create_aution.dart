@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -36,8 +37,12 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
   DateTime? _endTime;
   bool _requiresDeposit = false;
 
+  bool _isEkycVerified = false;
+
   final _dateFormatter = DateFormat("yyyy-MM-ddTHH:mm");
   String formatDate(DateTime dt) => _dateFormatter.format(dt);
+
+  Timer? _statusCheckTimer;
 
   @override
   void initState() {
@@ -46,20 +51,56 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
     _startTime = now.add(const Duration(hours: 1));
     _endTime = _startTime!.add(const Duration(hours: 1, minutes: 30));
     _checkLoginStatus();
+    _startStatusPolling();
+  }
+
+  void _startStatusPolling() {
+    _statusCheckTimer?.cancel();
+    _statusCheckTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+      final oldVerifiedStatus = _isEkycVerified;
+      await _checkLoginStatus();
+      if (oldVerifiedStatus && !_isEkycVerified) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Trạng thái eKYC đã thay đổi. Vui lòng xác minh lại.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _checkLoginStatus() async {
     final user = await UserService.getCurrentUser();
     if (user != null && user['id'] != null) {
-      setState(() {
-        _isLoggedIn = true;
-        _checkingLogin = false;
-      });
-      _loadCategories();
+      try {
+        final ekycStatus = await UserService().getCurrentUserVerificationStatus();
+        final isVerified = ekycStatus['cccdStatus']?.toUpperCase() == 'APPROVED';
+        print('eKYC Status response: $ekycStatus');
+        print('cccdStatus upper: ${ekycStatus['cccdStatus']?.toUpperCase()}');
+        setState(() {
+          _isLoggedIn = true;
+          _isEkycVerified = isVerified;
+          _checkingLogin = false;
+        });
+        _loadCategories();
+      } catch (e) {
+        setState(() {
+          _isLoggedIn = true;
+          _isEkycVerified = false;
+          _checkingLogin = false;
+        });
+        _loadCategories();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể kiểm tra trạng thái eKYC.')),
+        );
+      }
     } else {
       setState(() {
         _isLoggedIn = false;
         _checkingLogin = false;
+        _isEkycVerified = false;
       });
       _loadCategories();
     }
@@ -176,6 +217,12 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
   }
 
   Future<void> _submitForm() async {
+    if (!_isEkycVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng hoàn tất xác minh eKYC để tạo đấu giá.')),
+      );
+      return;
+    }
     if (!_isLoggedIn) return;
     if (!_formKey.currentState!.validate()) return;
     final now = DateTime.now();
@@ -241,8 +288,12 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
     }
     final user = await UserService.getCurrentUser();
     if (user == null || user['id'] == null) {
+      setState(() {
+        _isLoggedIn = false;
+        _isEkycVerified = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login to create auction.')),
+        const SnackBar(content: Text('Vui lòng đăng nhập để tạo đấu giá.')),
       );
       return;
     }
@@ -292,6 +343,11 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
     );
   }
 
+  @override
+  void dispose() {
+    _statusCheckTimer?.cancel();
+    super.dispose();
+  }
 
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
@@ -300,8 +356,13 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label,
-      {int maxLines = 1, TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextField(
+      TextEditingController controller,
+      String label, {
+        int maxLines = 1,
+        TextInputType keyboardType = TextInputType.text,
+        required bool disabled,
+      }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -310,10 +371,12 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
           decoration: _inputDecoration(label),
           keyboardType: keyboardType,
           maxLines: maxLines,
-          enabled: _isLoggedIn,
+          enabled: !disabled,
           validator: (value) {
-            if (_isLoggedIn == false) return null;
-            if (value == null || value.isEmpty) return 'Please enter ${label.toLowerCase()}';
+            if (disabled) return null;
+            if (value == null || value.isEmpty) {
+              return 'Please enter ${label.toLowerCase()}';
+            }
             if ((label.contains('Price') || label.contains('Amount')) &&
                 (double.tryParse(value) == null || double.parse(value) <= 0)) {
               return 'Please enter a valid ${label.toLowerCase()}';
@@ -322,12 +385,11 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
           },
           onChanged: (_) => setState(() {}),
         ),
-        if ((label.contains('Price') || label.contains('Amount')) && _isLoggedIn)
+        if ((label.contains('Price') || label.contains('Amount')) && !disabled)
           _buildSuggestions(controller.text, controller),
       ],
     );
   }
-
   Widget _buildImagePicker() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,6 +479,9 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
+
+    final bool _disabled = !_isLoggedIn || !_isEkycVerified;
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -435,9 +500,9 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
             children: [
               const Text("Auction Information", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              _buildTextField(_titleController, 'Title'),
+              _buildTextField(_titleController, 'Title', disabled: _disabled),
               const SizedBox(height: 12),
-              _buildTextField(_descriptionController, 'Description', maxLines: 3),
+              _buildTextField(_descriptionController, 'Description', maxLines: 3, disabled: _disabled),
               const SizedBox(height: 12),
               DropdownButtonFormField<Category>(
                 decoration: _inputDecoration('Category'),
@@ -448,35 +513,33 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
                   value: category,
                   child: Text(category.name),
                 )).toList(),
-                onChanged: _isLoggedIn ? (value) => setState(() => _selectedCategory = value) : null,
-                validator: (value) => !_isLoggedIn ? null : value == null ? 'Please select a category' : null,
-                disabledHint: const Text('Please login'),
+                onChanged: !_disabled ? (value) => setState(() => _selectedCategory = value) : null,
+                validator: (value) => _disabled ? null : value == null ? 'Please select a category' : null,
+                disabledHint: Text(!_isLoggedIn
+                    ? 'Please login'
+                    : 'Please complete eKYC verification'),
+
               ),
               const SizedBox(height: 24),
               const Text("Pricing", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
-              _buildTextField(_startingPriceController, 'Starting Price (\$)', keyboardType: TextInputType.number),
+              _buildTextField(_startingPriceController, 'Starting Price (\$)', keyboardType: TextInputType.number, disabled: _disabled),
               const SizedBox(height: 12),
-              _buildTextField(_incrementAmountController, 'Increment Amount (\$)', keyboardType: TextInputType.number),
+              _buildTextField(_incrementAmountController, 'Increment Amount (\$)', keyboardType: TextInputType.number, disabled: _disabled),
               SwitchListTile(
                 value: _requiresDeposit,
-                onChanged: _isLoggedIn
-                    ? (val) {
+                onChanged: !_disabled ? (val) {
                   setState(() => _requiresDeposit = val);
                   if (!val) _depositAmountController.clear();
-                }
-                    : null,
+                } : null,
+
                 title: const Text('Requires Deposit?', style: TextStyle(fontWeight: FontWeight.w500)),
                 activeColor: Colors.orange,
                 contentPadding: EdgeInsets.zero,
               ),
               if (_requiresDeposit) ...[
                 const SizedBox(height: 8),
-                _buildTextField(
-                  _depositAmountController,
-                  'Deposit Amount (\$)',
-                  keyboardType: TextInputType.number,
-                ),
+                _buildTextField(_depositAmountController, 'Deposit Amount (\$)', keyboardType: TextInputType.number, disabled: _disabled),
               ],
               const SizedBox(height: 24),
               const Text("Auction Schedule", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -485,7 +548,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: _isLoggedIn ? () => _selectDate(context, true) : null,
+                      onTap: !_disabled ? _pickGalleryImages : null,
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                         decoration: BoxDecoration(
@@ -533,7 +596,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
               const SizedBox(height: 24),
               _buildImagePicker(),
               const SizedBox(height: 32),
-              if (_isLoggedIn)
+              if (_isLoggedIn && _isEkycVerified)
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -554,14 +617,16 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
                     ),
                   ),
                 ),
-              if (!_isLoggedIn)
+              if (_disabled)
                 Container(
                   margin: const EdgeInsets.only(top: 12),
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   width: double.infinity,
-                  child: const Text(
-                    'Please login to create an auction',
-                    style: TextStyle(
+                  child: Text(
+                    !_isLoggedIn
+                        ? 'Please login to create an auction'
+                        : 'Please complete eKYC verification to create an auction',
+                    style: const TextStyle(
                       color: Colors.orange,
                       fontWeight: FontWeight.bold,
                       fontSize: 17,
