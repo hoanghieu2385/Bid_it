@@ -372,4 +372,19 @@ class AuctionService {
       throw Exception('Error fetching user: $e');
     }
   }
+  static Future<bool> updateAuctionStatus(String auctionId, String requesterId, String status) async {
+    final url = Uri.parse('$baseAuctionUrl/auctions/$auctionId/status?requesterId=$requesterId');
+    final token = await UserService.getToken();
+    print(status);
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'status': status}),
+    );
+
+    return response.statusCode == 200;
+  }
 }

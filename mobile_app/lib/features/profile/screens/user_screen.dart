@@ -6,6 +6,7 @@ import 'package:mobile_app/features/auth/screens/start_screen.dart';
 import 'package:mobile_app/features/auction/screens/bid_history.dart';
 import 'package:mobile_app/features/auction/screens/participated_auctions.dart';
 import 'package:mobile_app/features/profile/screens/change_password.dart';
+import 'package:mobile_app/features/profile/screens/ekyc_verification.dart';
 import 'package:mobile_app/features/profile/screens/my_autions_screen.dart';
 import 'package:mobile_app/features/profile/screens/profile_screen.dart';
 
@@ -151,6 +152,15 @@ class _UserPageState extends State<UserPage> {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const ProfilePage()),
+                  ),
+                ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.how_to_vote_outlined,
+                  title: 'eKYC Verification',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const EkycVerificationPage()),
                   ),
                 ),
                 _buildMenuItem(

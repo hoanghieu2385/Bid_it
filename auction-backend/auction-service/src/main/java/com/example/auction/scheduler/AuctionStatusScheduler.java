@@ -1,6 +1,7 @@
 package com.example.auction.scheduler;
 
 import com.example.auction.client.BidServiceClient;
+import com.example.auction.client.UserClient;
 import com.example.auction.model.Auction;
 import com.example.auction.model.AuctionStatus;
 import com.example.auction.repository.AuctionRepository;
@@ -23,15 +24,19 @@ public class AuctionStatusScheduler {
 
     private final AuctionRepository auctionRepository;
     private final BidServiceClient bidServiceClient;
+    private final UserClient userClient;
 
     @Autowired
-    public AuctionStatusScheduler(AuctionRepository auctionRepository, BidServiceClient bidServiceClient) {
+    public AuctionStatusScheduler(AuctionRepository auctionRepository,
+                                  BidServiceClient bidServiceClient,
+                                  UserClient userClient) {
         this.auctionRepository = auctionRepository;
         this.bidServiceClient = bidServiceClient;
+        this.userClient = userClient;
     }
 
-    // Giảm tần suất từ 7s xuống 30s
-    @Scheduled(fixedRate = 30000)
+    // Tăng tần suất từ 30s thành 10s
+    @Scheduled(fixedRate = 10000)
     @Transactional
     public void updateAuctionStatuses() {
         LocalDateTime now = LocalDateTime.now();
@@ -40,7 +45,7 @@ public class AuctionStatusScheduler {
         try {
             hasChanges |= openUpcomingAuctions(now);
             hasChanges |= closeEndedAuctions(now);
-            hasChanges |= failUnpaidAuctions(now);
+            hasChanges |= handleExpiredPayments(now); // Gộp logic xử lý expired payment
 
             if (hasChanges) {
                 logger.info("AuctionStatusScheduler applied updates at {}", now);
@@ -67,7 +72,6 @@ public class AuctionStatusScheduler {
     }
 
     private boolean closeEndedAuctions(LocalDateTime now) {
-        // thêm buffer 5s để chắc chắn endTime đã qua
         LocalDateTime buffer = now.minusSeconds(5);
         List<Auction> toClose = auctionRepository.findByStatusAndEndTimeBefore(AuctionStatus.OPENED, buffer);
 
@@ -76,7 +80,7 @@ public class AuctionStatusScheduler {
         toClose.forEach(a -> {
             a.setStatus(AuctionStatus.CLOSED);
             a.setUpdatedAt(now);
-            a.setWinnerPaymentDeadline(now.plusDays(3));
+            a.setWinnerPaymentDeadline(now.plusDays(1)); // 1 ngày để thanh toán
             logger.info("Auction {}: OPENED → CLOSED", a.getId());
         });
         auctionRepository.saveAll(toClose);
@@ -84,19 +88,45 @@ public class AuctionStatusScheduler {
         return true;
     }
 
-    private boolean failUnpaidAuctions(LocalDateTime now) {
-        List<Auction> expired = auctionRepository.findByStatusAndWinnerPaymentDeadlineBefore(
-                AuctionStatus.CLOSED, now);
+    private boolean handleExpiredPayments(LocalDateTime now) {
+        List<Auction> expiredAuctions = auctionRepository
+                .findByStatusAndWinnerPaymentDeadlineBefore(AuctionStatus.CLOSED, now);
 
-        if (expired.isEmpty()) return false;
+        if (expiredAuctions.isEmpty()) return false;
 
-        expired.forEach(a -> {
-            a.setStatus(AuctionStatus.FAILED);
-            a.setUpdatedAt(now);
-            logger.info("Auction {}: CLOSED → FAILED (no payment)", a.getId());
-        });
-        auctionRepository.saveAll(expired);
-        logger.info("Marked {} auctions as FAILED", expired.size());
-        return true;
+        boolean hasChanges = false;
+
+        for (Auction auction : expiredAuctions) {
+            try {
+                if (auction.getWinnerId() != null) {
+                    // Có winner nhưng không thanh toán đúng hạn
+                    userClient.deductScore(auction.getWinnerId(), 10);
+                    auction.setStatus(AuctionStatus.EXPIRED_PAYMENT);
+                    auction.setUpdatedAt(now);
+
+                    logger.info("Auction {}: CLOSED → EXPIRED_PAYMENT, deducted score for user {}",
+                            auction.getId(), auction.getWinnerId());
+                    hasChanges = true;
+
+                } else {
+                    // Không có winner nào
+                    auction.setStatus(AuctionStatus.FAILED);
+                    auction.setUpdatedAt(now);
+
+                    logger.info("Auction {}: CLOSED → FAILED (no winner)", auction.getId());
+                    hasChanges = true;
+                }
+
+            } catch (Exception e) {
+                logger.error("Error processing expired auction {}: {}", auction.getId(), e.getMessage());
+            }
+        }
+
+        if (hasChanges) {
+            auctionRepository.saveAll(expiredAuctions);
+            logger.info("Processed {} expired auctions", expiredAuctions.size());
+        }
+
+        return hasChanges;
     }
 }
