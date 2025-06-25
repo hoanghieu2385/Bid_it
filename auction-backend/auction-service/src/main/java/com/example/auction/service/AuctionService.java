@@ -38,19 +38,26 @@ public class AuctionService implements IAuctionService {
             throw new IllegalArgumentException("Seller (requester) ID is required");
         }
 
+        UserDTO seller;
         try {
-            UserDTO seller = userClient.getUserById(requesterId);
-            if (seller == null || !Boolean.TRUE.equals(seller.getVerified())) {
-                throw new IllegalArgumentException("Seller not verified or does not exist");
-            }
-
-            Integer sellerScore = userClient.getUserScore(requesterId);
-            if (sellerScore < 70) {
-                throw new IllegalArgumentException("At least 70 points are required to create an auction");
-            }
-
+            seller = userClient.getUserById(requesterId);
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to fetch seller from user-service", ex);
+        }
+
+        if (seller == null || !Boolean.TRUE.equals(seller.getVerified())) {
+            throw new IllegalArgumentException("Seller not verified or does not exist");
+        }
+
+        Integer sellerScore;
+        try {
+            sellerScore = userClient.getUserScore(requesterId);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to fetch score from user-service", ex);
+        }
+
+        if (sellerScore < 70) {
+            throw new IllegalArgumentException("At least 70 points are required to create an auction");
         }
 
         Auction auction = new Auction();
