@@ -217,7 +217,7 @@ public class BidService implements IBidService {
             }
 
             if (score < 50) {
-                throw new RuntimeException("You need at least 50 points to place a bid. Your current points: " + score);
+                throw new IllegalArgumentException("You need at least 50 points to place a bid.");
             }
 
         } catch (Exception e) {
