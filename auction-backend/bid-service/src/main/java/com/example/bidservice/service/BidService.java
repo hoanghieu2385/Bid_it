@@ -204,12 +204,22 @@ public class BidService implements IBidService {
             throw new RuntimeException("Failed to validate auction: " + e.getMessage());
         }
 
-        // Kiểm tra user có tồn tại không
+        // Kiểm tra user có tồn tại không và đủ điểm không
         try {
             UserServiceClient.UserResponse user = userServiceClient.getUserById(userId);
             if (user == null) {
                 throw new RuntimeException("User not found");
             }
+
+            Integer score = userServiceClient.getUserScore(userId);
+            if (score == null) {
+                throw new RuntimeException("Can't get user points. Please try again later.");
+            }
+
+            if (score < 50) {
+                throw new IllegalArgumentException("You need at least 50 points to place a bid.");
+            }
+
         } catch (Exception e) {
             if (e instanceof RuntimeException) {
                 throw e;

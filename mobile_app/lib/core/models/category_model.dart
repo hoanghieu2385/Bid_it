@@ -13,4 +13,20 @@ class Category {
       name: json['name'],
     );
   }
+
+  // 👇 Add value equality override
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is Category &&
+              runtimeType == other.runtimeType &&
+              id == other.id &&
+              name == other.name;
+
+  @override
+  int get hashCode => id.hashCode ^ name.hashCode;
+
+  // 👇 Optional: Helpful for debugging
+  @override
+  String toString() => 'Category(id: $id, name: $name)';
 }

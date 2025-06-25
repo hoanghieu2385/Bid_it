@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
-
 import '../../../core/services/auction_service.dart';
 import '../../../core/services/bid_service.dart';
 import '../../../core/services/user_service.dart';
@@ -11,7 +10,6 @@ import '../../../core/services/websocket_service.dart';
 import 'package:mobile_app/features/payment/screens/payment_screen.dart';
 import '../../order/screens/order_detail.dart';
 import 'edit_auction_page.dart';
-
 
 class AuctionDetailPage extends StatefulWidget {
   final Auction auction;
@@ -36,9 +34,19 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
   int? selectedBidAmount;
   bool isSeller = false;
   bool isLoggedIn = false;
+  bool isWinner = false;
   String countdownLabel = "Time Left";
-
   bool canEdit = false;
+  bool isEkycVerified = false;
+
+  int? currentUserId;
+
+  String ekycStatus = 'NOT_VERIFIED';
+
+  final GlobalKey<_BidHistoryCardState> _bidHistoryKey = GlobalKey();
+
+  final WebSocketService _webSocketService = WebSocketService();
+
 
 
   @override
@@ -55,6 +63,53 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
     _initWebSocket();
     _checkIfSeller();
     _checkLoginStatus();
+    _checkEkycStatus();
+    _checkWinner();
+  }
+
+  Future<void> _checkWinner() async {
+    try {
+      final token = await UserService.getToken() ?? '';
+      final user = await UserService.getCurrentUser();
+      if (token.isEmpty || user == null) {
+        setState(() {
+          isLoggedIn = false;
+        });
+        return;
+      }
+      setState(() {
+        currentUserId = user['id'];
+        isWinner = widget.auction.winnerId == currentUserId;
+      });
+    } catch (e) {
+      debugPrint('Error checking winner: $e');
+    }
+  }
+
+  Future<void> _checkEkycStatus() async {
+    try {
+      final user = await UserService.getCurrentUser();
+      if (user == null) {
+        debugPrint('Error checking eKYC: User not found');
+        setState(() {
+          isEkycVerified = false;
+          ekycStatus = 'NOT_VERIFIED';
+        });
+        return;
+      }
+      final ekycResponse = await UserService.checkEkycStatus(user['id']);
+      final status = ekycResponse['cccdStatus']?.toString().toUpperCase() ?? 'NOT_VERIFIED';
+      setState(() {
+        ekycStatus = status;
+        isEkycVerified = status == 'APPROVED';
+      });
+    } catch (e) {
+      debugPrint('Error checking eKYC: $e');
+      setState(() {
+        isEkycVerified = false;
+        ekycStatus = 'NOT_VERIFIED';
+      });
+    }
   }
 
   Future<void> _loadAuctionDetails() async {
@@ -74,8 +129,6 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
     }
   }
 
-
-
   Future<void> _checkIfSeller() async {
     final user = await UserService.getCurrentUser();
     final now = DateTime.now();
@@ -84,11 +137,10 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
       final diff = widget.auction.startTime.difference(now).inMinutes;
       setState(() {
         isSeller = true;
-        canEdit = diff >= 60 && widget.auction.status != 'CANCELLED'; // Thêm điều kiện loại trừ CANCELLED
+        canEdit = diff >= 60 && widget.auction.status != 'CANCELLED';
       });
     }
   }
-
 
   Future<void> _checkLoginStatus() async {
     final token = await UserService.getToken();
@@ -121,8 +173,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
       final updatedAuction = await AuctionService.fetchAuctionById(widget.auction.id);
       if (updatedAuction != null) {
         setState(() {
-          widget.auction.currentBid = updatedAuction.currentBid;
-          widget.auction.bidCount = updatedAuction.bidCount;
+          currentAuction = updatedAuction;
         });
       }
     } catch (e) {
@@ -131,7 +182,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
   }
 
   void _generateBidSuggestions() {
-    final auction = widget.auction;
+    final auction = currentAuction;
     final increment = auction.incrementAmount.toInt() ?? 0;
     final current = (auction.currentBid ?? auction.startingPrice).toInt() ?? 0;
     if (increment <= 0 || current <= 0) {
@@ -202,57 +253,55 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
   void _initWebSocket() async {
     final user = await UserService.getCurrentUser();
     final token = await UserService.getToken();
-
     if (user != null && token != null) {
-      WebSocketService().connect(
+      _webSocketService.connect(
         auctionId: widget.auction.id,
         userId: user['id'],
         username: user['username'] ?? 'anonymous',
         token: token,
-        onInit: (data) {
-          setState(() {
-            widget.auction.currentBid = (data['currentHighestBid'] as num?)?.toDouble();
-            widget.auction.bidCount = data['totalBids'] ?? 0;
-          });
-        },
         onActivity: (data) {
-          debugPrint('[WebSocket] Received: $data');
-          if (data['type'] == 'NEW_BID') {
+          print('[WebSocket] Activity: $data');
+
+          // Handle NEW_BID
+          if (data['type'] == 'NEW_BID' && data['bidInfo'] != null) {
+            final bidInfo = data['bidInfo'] as Map<String, dynamic>;
+            final bidAmount = (bidInfo['bidAmount'] as num?)?.toDouble();
+
             setState(() {
-              widget.auction.currentBid = (data['currentHighestBid'] as num?)?.toDouble() ?? widget.auction.currentBid;
-              widget.auction.bidCount = (data['totalBids'] as int?) ?? widget.auction.bidCount;
+              // Always use bidAmount if possible
+              if (bidAmount != null) {
+                currentAuction.currentBid = bidAmount;
+              } else {
+                currentAuction.currentBid = (data['currentHighestBid'] as num?)?.toDouble() ?? currentAuction.currentBid;
+              }
+
+              // Fallback increment bid count manually
+              currentAuction.bidCount = (currentAuction.bidCount ?? 0) + 1;
+              _generateBidSuggestions();
+            });
+
+            _bidHistoryKey.currentState?.addNewBid(bidInfo);
+          }
+
+          // Handle STATS fallback update
+          else if (data.containsKey('highestBid')) {
+            print('[WebSocket] STATS received in AuctionDetailPage');
+            setState(() {
+              currentAuction.currentBid = (data['highestBid'] as num?)?.toDouble() ?? currentAuction.currentBid;
+              currentAuction.bidCount = (data['totalBids'] as int?) ?? currentAuction.bidCount;
               _generateBidSuggestions();
             });
           }
-          if (data.containsKey('message')) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(data['message']),
-                backgroundColor: Colors.black87,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          }
         },
-        onError: (err) {
+        onError: (errMsg) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('WebSocket Error: ${err.toString()}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-            ),
+            SnackBar(content: Text('Lỗi WebSocket: $errMsg')),
           );
-          Timer.periodic(const Duration(seconds: 1), (timer) async {
-            if (!mounted) {
-              timer.cancel();
-              return;
-            }
-            await fetchAuctionDetail();
-          });
         },
       );
     }
   }
+
 
   @override
   void dispose() {
@@ -260,6 +309,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
     fadeInController.dispose();
     _pageController.dispose();
     bidController.dispose();
+    _webSocketService.disconnect();
     super.dispose();
   }
 
@@ -305,19 +355,17 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
             IconButton(
               icon: const Icon(Icons.edit, color: Colors.blue),
               tooltip: 'Edit Auction',
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => UpdateAuctionPage(auction: currentAuction),
-                    ),
-                  );
-
-                  if (result == true) {
-                    await _loadAuctionDetails();
-                  }
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UpdateAuctionPage(auction: currentAuction),
+                  ),
+                );
+                if (result == true) {
+                  await _loadAuctionDetails();
                 }
-
+              },
             ),
           IconButton(
             onPressed: _toggleWatchlist,
@@ -385,13 +433,12 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                                 fit: BoxFit.contain,
                                                 width: double.infinity,
                                                 height: double.infinity,
-                                                errorBuilder: (_, __, ___) =>
-                                                    Image.asset(
-                                                      'assets/images/product-img.png',
-                                                      fit: BoxFit.contain,
-                                                      width: double.infinity,
-                                                      height: double.infinity,
-                                                    ),
+                                                errorBuilder: (_, __, ___) => Image.asset(
+                                                  'assets/images/product-img.png',
+                                                  fit: BoxFit.contain,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -416,9 +463,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                       height: currentImageIndex == index ? 12 : 8,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: currentImageIndex == index
-                                            ? Colors.orange
-                                            : Colors.grey[300],
+                                        color: currentImageIndex == index ? Colors.orange : Colors.grey[300],
                                       ),
                                     ),
                                   ),
@@ -452,9 +497,9 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                   child: Text(
                                     auction.title,
                                     style: const TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF22223B)
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF22223B),
                                     ),
                                   ),
                                 ),
@@ -471,13 +516,13 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                   child: Text(
                                     auction.status,
                                     style: TextStyle(
-                                        color: auction.status == "UPCOMING"
-                                            ? Colors.orange
-                                            : auction.status == "CANCELLED"
-                                            ? Colors.red
-                                            : Colors.green[700],
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13
+                                      color: auction.status == "UPCOMING"
+                                          ? Colors.orange
+                                          : auction.status == "CANCELLED"
+                                          ? Colors.red
+                                          : Colors.green[700],
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
                                     ),
                                   ),
                                 ),
@@ -500,7 +545,10 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                     child: Text(
                                       isDescriptionExpanded ? "Show less" : "Read more",
                                       style: const TextStyle(
-                                          color: Color(0xFFFF8C32), fontWeight: FontWeight.w500, fontSize: 13),
+                                        color: Color(0xFFFF8C32),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -524,14 +572,18 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                           child: Text(
                                             '${numberFormat.format(auction.currentBid ?? 0)} đ',
                                             style: const TextStyle(
-                                                fontSize: 20,
-                                                color: Color(0xFFF97316),
-                                                fontWeight: FontWeight.bold),
+                                              fontSize: 20,
+                                              color: Color(0xFFF97316),
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                             maxLines: 1,
                                           ),
                                         ),
                                         const SizedBox(height: 3),
-                                        const Text('Current Price', style: TextStyle(color: Color(0xFFF97316), fontSize: 13)),
+                                        const Text(
+                                          'Current Price',
+                                          style: TextStyle(color: Color(0xFFF97316), fontSize: 13),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -557,11 +609,13 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                           ),
                                         ),
                                         const SizedBox(height: 3),
-                                        Text(countdownLabel,
-                                            style: TextStyle(
-                                              color: getCountdownColor(remaining),
-                                              fontSize: 13,
-                                            )),
+                                        Text(
+                                          countdownLabel,
+                                          style: TextStyle(
+                                            color: getCountdownColor(remaining),
+                                            fontSize: 13,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -590,7 +644,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       const SizedBox(height: 12),
-                                      if (isLoggedIn && !isSeller && bidSuggestions.isNotEmpty)
+                                      if (isLoggedIn && !isSeller && isEkycVerified && bidSuggestions.isNotEmpty)
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
@@ -679,6 +733,25 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                             textAlign: TextAlign.center,
                                           ),
                                         ),
+                                      if (isLoggedIn && !isEkycVerified)
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.yellow.shade50,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.yellow.shade100),
+                                          ),
+                                          child: Column(
+                                            children: [
+                                              const Text(
+                                                'Please complete eKYC verification to place a bid.',
+                                                style: TextStyle(color: Colors.orange, fontSize: 16),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       if (isLoggedIn && isSeller)
                                         Container(
                                           width: double.infinity,
@@ -707,7 +780,8 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                             ),
                                             elevation: 2,
                                           ),
-                                          onPressed: (!hasStarted || hasEnded || selectedBidAmount == null || isSeller || !isLoggedIn)
+
+                                          onPressed: (!hasStarted || hasEnded || selectedBidAmount == null || isSeller || !isLoggedIn || !isEkycVerified)
                                               ? null
                                               : () async {
                                             final token = await UserService.getToken() ?? '';
@@ -730,7 +804,6 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                               );
                                               return;
                                             }
-
                                             try {
                                               final user = await UserService.getCurrentUser();
                                               if (user == null) throw 'User not found';
@@ -778,9 +851,10 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                               ),
                             ),
                             const SizedBox(height: 12),
-                            BidHistoryCard(auctionId: widget.auction.id),
+                            BidHistoryCard(auctionId: widget.auction.id, key: _bidHistoryKey),
                             const SizedBox(height: 10),
-                            if (hasEnded && !isSeller && isLoggedIn)
+                            const SizedBox(height: 10),
+                            if (hasEnded && !isSeller && isLoggedIn && isWinner)
                               Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8),
                                 child: Row(
@@ -791,7 +865,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (_) => PaymentScreen(auctionId: auction.id),
+                                              builder: (_) => PaymentScreen(auctionId: widget.auction.id),
                                             ),
                                           );
                                         },
@@ -812,7 +886,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (_) => OrderDetailPage(auctionId: auction.id),
+                                              builder: (_) => OrderDetailPage(auctionId: widget.auction.id),
                                             ),
                                           );
                                         },
@@ -886,12 +960,11 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                 mediaList[currentImageIndex],
                                 fit: BoxFit.contain,
                                 width: double.infinity,
-                                errorBuilder: (_, __, ___) =>
-                                    Image.asset(
-                                      'assets/images/product-img.png',
-                                      fit: BoxFit.contain,
-                                      width: double.infinity,
-                                    ),
+                                errorBuilder: (_, __, ___) => Image.asset(
+                                  'assets/images/product-img.png',
+                                  fit: BoxFit.contain,
+                                  width: double.infinity,
+                                ),
                               ),
                             ),
                           ),
@@ -986,29 +1059,73 @@ class _BidHistoryCardState extends State<BidHistoryCard> {
     }
   }
 
+  void addNewBid(Map<String, dynamic> bid) {
+    if (bid['id'] == null || bid['bidAmount'] == null) {
+      debugPrint('Invalid bid data: $bid');
+      return;
+    }
+    setState(() {
+      if (!allBids.any((existingBid) => existingBid['id'] == bid['id'])) {
+        allBids.insert(0, {
+          'id': bid['id'],
+          'userId': bid['userId'],
+          'bidAmount': bid['bidAmount'],
+          'bidTime': bid['bidTime'],
+          'username': bid['userName'] ?? 'Anonymous',
+        });
+        if (_scrollController.hasClients && showAll) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOut,
+            );
+          });
+        }
+      }
+    });
+  }
+
   Future<void> _initWebSocket() async {
     final user = await UserService.getCurrentUser();
     if (user == null) return;
     final token = await UserService.getToken();
+    if (token == null) return;
 
     WebSocketService().connect(
       auctionId: widget.auctionId,
       userId: user['id'],
-      username: user['username'],
-      token: token!,
+      username: user['username'] ?? 'anonymous',
+      token: token,
       onActivity: (data) {
-        if (data['type'] == 'NEW_BID') {
+        if (data['type'] == 'NEW_BID' && data['bidInfo'] != null) {
+          final bidInfo = data['bidInfo'] as Map<String, dynamic>;
+          final newBid = {
+            'id': bidInfo['id'],
+            'userId': bidInfo['userId'],
+            'bidAmount': bidInfo['bidAmount'],
+            'bidTime': bidInfo['bidTime'] ?? DateTime.now().toIso8601String(),
+            'username': bidInfo['username'] ?? 'Anonymous',
+          };
+          addNewBid(newBid);
+        }
+
+        // 👇 Xử lý thống kê từ REST API (qua /stats topic)
+        else if (data.containsKey('highestBid')) {
+          print('[WebSocket] Stats received in BidHistoryCard: $data');
+          // Không cần addNewBid vì không có bidInfo (chỉ cập nhật nếu muốn hiển thị bidCount realtime)
           setState(() {
-            _loadBidHistory();
-            if (mounted) setState(() {});
+            // Optional: update bid count nếu bạn muốn hiển thị con số
+            // Hoặc xử lý gì thêm tùy vào logic
           });
         }
       },
       onError: (err) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('WebSocket Error: $err'),
+            content: Text('WebSocket Error: ${err.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       },
@@ -1032,7 +1149,7 @@ class _BidHistoryCardState extends State<BidHistoryCard> {
             color: Colors.black.withOpacity(0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: loading
