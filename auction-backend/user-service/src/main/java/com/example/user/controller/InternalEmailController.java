@@ -17,6 +17,7 @@ public class InternalEmailController {
 
     @PostMapping("/auction-winner")
     public ResponseEntity<Void> sendAuctionWinnerEmail(@RequestBody AuctionWinEmailRequest request) {
+        System.out.println("👉 Nhận request gửi email cho winner: " + request.getEmail());
         emailService.sendAuctionWinEmail(
                 request.getEmail(),
                 request.getAuctionTitle(),

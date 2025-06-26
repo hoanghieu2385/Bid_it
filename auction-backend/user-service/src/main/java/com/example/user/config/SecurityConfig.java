@@ -57,6 +57,7 @@ public class SecurityConfig {
                                 "/auth/change-password",
                                 "/api/users/verify-phone-otp",
                                 "/api/users/send-phone-otp",
+                                "/api/internal/**",
                                 "/internal/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/seller/*").permitAll()

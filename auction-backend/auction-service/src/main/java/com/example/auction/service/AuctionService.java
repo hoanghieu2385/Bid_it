@@ -1,7 +1,7 @@
 package com.example.auction.service;
 
-import com.example.auction.client.UserClient;
 import com.example.auction.client.EmailClient;
+import com.example.auction.client.UserClient;
 import com.example.auction.dto.AuctionRequestDTO;
 import com.example.auction.dto.AuctionResponseDTO;
 import com.example.auction.dto.AuctionWinEmailRequest;
