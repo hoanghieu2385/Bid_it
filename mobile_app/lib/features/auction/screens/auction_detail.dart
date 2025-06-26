@@ -88,29 +88,20 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
 
   Future<void> _checkEkycStatus() async {
     try {
-      final user = await UserService.getCurrentUser();
-      if (user == null) {
-        debugPrint('Error checking eKYC: User not found');
-        setState(() {
-          isEkycVerified = false;
-          ekycStatus = 'NOT_VERIFIED';
-        });
-        return;
-      }
-      final ekycResponse = await UserService.checkEkycStatus(user['id']);
-      final status = ekycResponse['cccdStatus']?.toString().toUpperCase() ?? 'NOT_VERIFIED';
+      final ekyc = await UserService().getCurrentUserVerificationStatus();
+      final status = ekyc['cccdStatus']?.toUpperCase() ?? 'NOT_VERIFIED';
       setState(() {
         ekycStatus = status;
         isEkycVerified = status == 'APPROVED';
       });
     } catch (e) {
-      debugPrint('Error checking eKYC: $e');
       setState(() {
         isEkycVerified = false;
         ekycStatus = 'NOT_VERIFIED';
       });
     }
   }
+
 
   Future<void> _loadAuctionDetails() async {
     try {

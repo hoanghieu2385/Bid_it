@@ -145,12 +145,11 @@ class UserService {
       final token = await _getToken();
       if (token == null) return false;
       final response = await http.post(
-        Uri.parse('$_baseUrl/send-phone-otp'),
+        Uri.parse('$_baseUrl/send-phone-otp?phone=$phone'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode({'phone': phone}),
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {

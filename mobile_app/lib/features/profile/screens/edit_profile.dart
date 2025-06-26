@@ -24,6 +24,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController phone = TextEditingController();
   final TextEditingController detail = TextEditingController();
 
+  final TextEditingController otp = TextEditingController();
+  bool isOtpSent = false;
+  bool isVerifyingOtp = false;
+
+
   List<dynamic> provinces = [], districts = [], wards = [];
   String? selectedProvince, selectedDistrict, selectedWard;
 
@@ -35,6 +40,67 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.initState();
     _loadUserAndProvinces();
   }
+
+  Future<void> _sendOtp() async {
+    if (phone.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter phone number')),
+      );
+      return;
+    }
+    try {
+      final userService = UserService();
+      setState(() => isOtpSent = true);
+      final success = await userService.sendPhoneVerificationOtp(phone.text.trim());
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('OTP sent successfully')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to send OTP')),
+        );
+        setState(() => isOtpSent = false);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error sending OTP: $e')),
+      );
+      setState(() => isOtpSent = false);
+    }
+  }
+
+  Future<void> _verifyOtp() async {
+    if (otp.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter OTP')),
+      );
+      return;
+    }
+    try {
+      final userService = UserService();
+      setState(() => isVerifyingOtp = true);
+      final success = await userService.verifyPhoneOtp(phone.text.trim(), otp.text.trim());
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Phone verified successfully')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to verify OTP')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error verifying OTP: $e')),
+      );
+    } finally {
+      setState(() => isVerifyingOtp = false);
+    }
+  }
+
 
   Future<void> _loadUserAndProvinces() async {
     try {
@@ -77,6 +143,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       print('Error loading user or provinces: $e');
     }
   }
+
+
 
   Future<void> _loadDistricts(String code) async {
     setState(() => isLoadingDistricts = true);
@@ -166,6 +234,51 @@ class _EditProfilePageState extends State<EditProfilePage> {
               _inputField("First Name", firstName),
               _inputField("Last Name", lastName),
               _inputField("Phone Number", phone),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _sendOtp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text("Send OTP"),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: isVerifyingOtp ? null : _verifyOtp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: isVerifyingOtp
+                          ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                          : const Text("Verify OTP"),
+                    ),
+                  ),
+                ],
+              ),
+              _inputField("OTP", otp),
               _dropdown("Province", selectedProvince, provinces, isLoadingDistricts, (v) async {
                 setState(() {
                   selectedProvince = v;

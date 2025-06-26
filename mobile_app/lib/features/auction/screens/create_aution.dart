@@ -62,7 +62,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
       if (oldVerifiedStatus && !_isEkycVerified) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Trạng thái eKYC đã thay đổi. Vui lòng xác minh lại.'),
+            content: Text('Your eKYC status has changed. Please verify again.'),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 3),
           ),
@@ -93,7 +93,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
         });
         _loadCategories();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không thể kiểm tra trạng thái eKYC.')),
+          const SnackBar(content: Text('Failed to check eKYC status.')),
         );
       }
     } else {
@@ -219,7 +219,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
   Future<void> _submitForm() async {
     if (!_isEkycVerified) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng hoàn tất xác minh eKYC để tạo đấu giá.')),
+        const SnackBar(content: Text('Please complete eKYC verification before creating an auction.')),
       );
       return;
     }
@@ -293,7 +293,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
         _isEkycVerified = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng đăng nhập để tạo đấu giá.')),
+        const SnackBar(content: Text('Please log in to create an auction.')),
       );
       return;
     }
