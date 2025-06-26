@@ -59,6 +59,27 @@ public class MediaServiceImpl implements MediaService {
             throw new RuntimeException("Failed to upload image", e);
         }
     }
+    @Override
+    public String getMainImageUrlByAuctionId(Long auctionId) {
+        List<Media> mediaList = mediaRepository.findByAuctionId(auctionId);
+
+        // Ưu tiên ảnh thumbnail nếu có
+        Optional<Media> thumbnail = mediaList.stream()
+                .filter(media -> Boolean.TRUE.equals(media.getIsThumbnail()))
+                .findFirst();
+
+        if (thumbnail.isPresent()) {
+            return thumbnail.get().getUrl();
+        }
+
+        // Nếu không có thumbnail, lấy ảnh đầu tiên (nếu có)
+        if (!mediaList.isEmpty()) {
+            return mediaList.get(0).getUrl();
+        }
+
+        // Nếu không có ảnh nào thì trả về null (hoặc fallback URL nếu muốn)
+        return null;
+    }
 
     @Override
     public List<MediaResponseDTO> getMediaByAuctionId(Long auctionId) {

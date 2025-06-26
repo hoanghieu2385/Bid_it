@@ -11,5 +11,7 @@ public interface MediaService {
     List<MediaResponseDTO> getMediaByAuctionId(Long auctionId);
     void deleteMedia(Long id);
     void setAsThumbnail(Long mediaId);
+    String getMainImageUrlByAuctionId(Long auctionId);
+
 
 }

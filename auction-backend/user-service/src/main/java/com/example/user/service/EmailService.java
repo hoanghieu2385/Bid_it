@@ -101,4 +101,31 @@ public class EmailService {
 
         sendEmail(email, subject, content);
     }
+
+    public void sendAuctionWinEmail(String email, String auctionTitle, String auctionSlug, String imageUrl, double finalPrice) {
+        String auctionUrl = baseUrl + "/auctions/" + auctionSlug;
+
+        String subject = "🎉 Chúc mừng! Bạn đã thắng phiên đấu giá";
+
+        String content = String.format("""
+        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 5px;">
+            <h2 style="color: #2E7D32;">Chúc mừng bạn đã chiến thắng!</h2>
+            <p>Xin chào,</p>
+            <p>Bạn đã thắng phiên đấu giá với sản phẩm:</p>
+            <div style="text-align: center; margin: 20px 0;">
+                <img src="%s" alt="Auction Image" style="max-width: 100%%; border-radius: 5px; border: 1px solid #ccc;" />
+                <h3 style="margin-top: 15px; color: #333;">%s</h3>
+                <p style="font-size: 18px;">Giá thắng: <strong>%.2f VNĐ</strong></p>
+                <a href="%s" style="background-color: #4CAF50; color: white; padding: 10px 18px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px;">
+                    Xem chi tiết phiên đấu giá
+                </a>
+            </div>
+            <p>Hãy hoàn tất thanh toán trong thời gian quy định để đảm bảo bạn nhận được sản phẩm.</p>
+            <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
+        </div>
+        """, imageUrl, auctionTitle, finalPrice, auctionUrl);
+
+        sendEmail(email, subject, content);
+    }
+
 }
