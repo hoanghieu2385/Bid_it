@@ -62,7 +62,7 @@ class _EkycVerificationPageState extends State<EkycVerificationPage> {
 
   Future<void> _loadStatus() async {
     try {
-      final data = await _userService.getCurrentUserVerificationStatus();
+      final data = await UserService().getCurrentUserVerificationStatus();
       setState(() {
         _citizenIdController.text = data['citizenId'] ?? '';
         _status = _mapStatus(data['cccdStatus']);

@@ -20,6 +20,7 @@ class UserPage extends StatefulWidget {
 class _UserPageState extends State<UserPage> {
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
+  bool _isKycVerified = false;
 
   @override
   void initState() {
@@ -28,14 +29,32 @@ class _UserPageState extends State<UserPage> {
   }
 
   Future<void> _loadUser() async {
-    final user = await UserService.getCurrentUser();
-    if (mounted) {
+    try {
+      final user = await UserService.getCurrentUser();
+      final ekyc = await UserService().getCurrentUserVerificationStatus();
+      final status = ekyc['cccdStatus']?.toString().toUpperCase() ?? '';
+
+      if (!mounted) return;
+
       setState(() {
         _userData = user;
+        _isKycVerified = status == 'APPROVED';
         _isLoading = false;
       });
+
+      print('cccdStatus: $status');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _userData = null;
+        _isKycVerified = false;
+        _isLoading = false;
+      });
+      debugPrint('Failed to load user: $e');
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -154,14 +173,34 @@ class _UserPageState extends State<UserPage> {
                     MaterialPageRoute(builder: (_) => const ProfilePage()),
                   ),
                 ),
-                _buildMenuItem(
-                  context: context,
-                  icon: Icons.how_to_vote_outlined,
-                  title: 'eKYC Verification',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const EkycVerificationPage()),
+                ListTile(
+                  leading: Icon(Icons.how_to_vote_outlined, color: Colors.orange, size: 24),
+                  title: Row(
+                    children: [
+                      Text(
+                        'eKYC Verification',
+                        style: TextStyle(fontSize: 16, color: AppColors.black.withOpacity(0.8)),
+                      ),
+                      if (!_isKycVerified)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 6.0),
+                          child: Tooltip(
+                            message: 'Please verify your eKYC',
+                            child: Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+                          ),
+                        ),
+                    ],
                   ),
+                  trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.grey.withOpacity(0.7)),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const EkycVerificationPage()),
+                    ).then((_) {
+                      _loadUser();
+                    });
+                  },
+                  contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
                 ),
                 _buildMenuItem(
                   context: context,
