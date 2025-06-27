@@ -88,6 +88,11 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
         });
         developer.log('[$timestamp] Mapped Auctions: ${jsonEncode(mappedAuctions)}', name: 'AuctionMapping');
       }
+      mappedAuctions.sort((a, b) {
+        final Auction auctionA = a['auction'];
+        final Auction auctionB = b['auction'];
+        return auctionB.startTime.compareTo(auctionA.startTime);
+      });
       setState(() {
         auctions = mappedAuctions;
         isLoading = false;
@@ -118,6 +123,12 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
           break;
         case 'UNPAID':
           matchesStatus = isWinning && !isPaid;
+          break;
+        case 'EXPIRED':
+          matchesStatus = isWinning &&
+              !isPaid &&
+              auction.winnerPaymentDeadline != null &&
+              now.isAfter(auction.winnerPaymentDeadline!);
           break;
         case 'ONGOING':
           matchesStatus = isOngoing;
@@ -236,6 +247,7 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                 _buildFilterChip('ONGOING', 'Ongoing'),
                 _buildFilterChip('WINNING', 'Won'),
                 _buildFilterChip('UNPAID', 'Unpaid'),
+                _buildFilterChip('EXPIRED', 'Expired'),
               ],
             ),
           ),
@@ -390,7 +402,6 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                       ],
                     ),
                   ),
-
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -403,11 +414,26 @@ class _ParticipatedAuctionsPageState extends State<ParticipatedAuctionsPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    a.endTime.isBefore(DateTime.now())
-                        ? (isWinning
-                        ? (isPaid ? '✅ Paid - You won!' : '🎉 You won! (Unpaid)')
-                        : 'You did not win')
-                        : 'Auction is ongoing',
+                        () {
+                      final now = DateTime.now();
+                      final hasEnded = a.endTime.isBefore(now);
+                      final isExpired = isWinning &&
+                          !isPaid &&
+                          a.winnerPaymentDeadline != null &&
+                          now.isAfter(a.winnerPaymentDeadline!);
+
+                      if (hasEnded) {
+                        if (isWinning) {
+                          if (isPaid) return '✅ Paid - You won!';
+                          if (isExpired) return '⚠ Payment deadline expired!';
+                          return '🎉 You won! (Unpaid)';
+                        } else {
+                          return 'You did not win';
+                        }
+                      } else {
+                        return 'Auction is ongoing';
+                      }
+                    }(),
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,

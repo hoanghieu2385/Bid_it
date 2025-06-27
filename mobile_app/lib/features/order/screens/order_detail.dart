@@ -28,6 +28,10 @@ class _OrderDetailPageState extends State<OrderDetailPage>
 
   String? _winnerName;
 
+  final PageController _pageController = PageController();
+  int _currentImageIndex = 0;
+
+
 
   @override
   @override
@@ -209,21 +213,54 @@ class _OrderDetailPageState extends State<OrderDetailPage>
                           : 'N/A',
                     ),
                     const SizedBox(height: 24),
-                    auction.mediaUrls.isNotEmpty
-                        ? Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          auction.mediaUrls.first,
-                          height: 180,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                          const Text('Failed to load image'),
+                  auction.mediaUrls.isNotEmpty
+                      ? Column(
+                    children: [
+                      SizedBox(
+                        height: 200,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: PageView.builder(
+                            controller: _pageController,
+                            itemCount: auction.mediaUrls.length,
+                            onPageChanged: (index) {
+                              setState(() => _currentImageIndex = index);
+                            },
+                            itemBuilder: (context, index) {
+                              final url = auction.mediaUrls[index];
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: Image.network(
+                                  url,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                  const Center(child: Text('Failed to load image')),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    )
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(auction.mediaUrls.length, (index) {
+                          return Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _currentImageIndex == index
+                                  ? Colors.orange
+                                  : Colors.grey[400],
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  )
                         : _buildInfoTile(Icons.image, 'Thumbnail', 'None'),
                     const SizedBox(height: 24),
                     FadeTransition(

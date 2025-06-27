@@ -278,6 +278,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                 ],
               ),
+              const SizedBox(width: 16),
               _inputField("OTP", otp),
               _dropdown("Province", selectedProvince, provinces, isLoadingDistricts, (v) async {
                 setState(() {

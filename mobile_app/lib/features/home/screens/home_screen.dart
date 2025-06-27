@@ -536,11 +536,135 @@ class HomeContentState extends State<HomeContent> {
     );
   }
 
+  Widget _buildEmptyResult() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            const Text(
+              'No auctions found',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Try a different keyword or check your spelling.',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  Widget _buildSearchBar() => Padding(
+    padding: const EdgeInsets.all(16),
+    child: TextField(
+      controller: _searchController,
+      onChanged: (value) {
+        setState(() => _searchKeyword = value.trim());
+      },
+      decoration: InputDecoration(
+        hintText: 'Search auctions...',
+        prefixIcon: IconButton(
+          icon: const Icon(Icons.search, color: AppColors.grey),
+          onPressed: () {
+            FocusScope.of(context).unfocus();
+            setState(() => _searchKeyword = _searchController.text.trim());
+          },
+        ),
+        suffixIcon: _searchKeyword.isNotEmpty
+            ? IconButton(
+          icon: const Icon(Icons.clear, color: Colors.grey),
+          onPressed: () {
+            _searchController.clear();
+            setState(() => _searchKeyword = '');
+          },
+        )
+            : null,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.grey),
+        ),
+      ),
+    ),
+  );
+
+  Widget _buildCategorySection() {
+    if (categories.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text('Categories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        ),
+        SizedBox(
+          height: 100,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: categories.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CategoryAuctionsPage(
+                      categoryId: category.id,
+                      categoryName: category.name,
+                    ),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.orange.withOpacity(0.2),
+                      child: const Icon(Icons.category, color: Colors.orange),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(category.name, style: const TextStyle(fontSize: 13)),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
-    final filteredAllAuctions = allAuctions
-        .where((a) => a.title.toLowerCase().contains(_searchKeyword.toLowerCase()))
-        .toList();
+    final query = _searchKeyword.toLowerCase();
+
+    final filteredOngoing = ongoingAuctions.where(
+          (a) => a.title.toLowerCase().contains(query),
+    ).toList();
+
+    final filteredUpcoming = upcomingAuctions.where(
+          (a) => a.title.toLowerCase().contains(query),
+    ).toList();
+
+    final filteredAll = allAuctions.where(
+          (a) => a.title.toLowerCase().contains(query),
+    ).toList();
+
+    final totalFilteredCount = filteredOngoing.length + filteredUpcoming.length + filteredAll.length;
+
 
     return isLoading
         ? const Center(child: CircularProgressIndicator())
@@ -555,74 +679,26 @@ class HomeContentState extends State<HomeContent> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) {
-                  setState(() => _searchKeyword = value.trim());
-                },
-                decoration: InputDecoration(
-                  hintText: 'Search auctions...',
-                  prefixIcon: const Icon(Icons.search, color: AppColors.grey),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.grey),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.grey),
-                  ),
-                ),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text('Categories',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-            SizedBox(
-              height: 100,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-                  return GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CategoryAuctionsPage(
-                          categoryId: category.id,
-                          categoryName: category.name,
-                        ),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.orange.withOpacity(0.2),
-                          child: const Icon(Icons.category, color: Colors.orange),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(category.name, style: const TextStyle(fontSize: 13)),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-            _buildSection('Ongoing Auctions', ongoingAuctions),
-            _buildSection('Upcoming Auctions', upcomingAuctions),
-            _buildSection('All Auctions (Newest First)', filteredAllAuctions),
+            _buildSearchBar(),
+            _buildCategorySection(),
+
+            if (filteredOngoing.isNotEmpty)
+              _buildSection('Ongoing Auctions', filteredOngoing),
+
+            if (filteredUpcoming.isNotEmpty)
+              _buildSection('Upcoming Auctions', filteredUpcoming),
+
+            if (filteredAll.isNotEmpty)
+              _buildSection('All Auctions (Newest First)', filteredAll),
+
+            if (_searchKeyword.isNotEmpty &&
+                filteredOngoing.isEmpty &&
+                filteredUpcoming.isEmpty &&
+                filteredAll.isEmpty)
+              _buildEmptyResult(),
           ],
         ),
       ),
-    );
+    );;
   }
 }

@@ -20,6 +20,8 @@ class Auction {
   final DateTime? disputeRequestDeadline;
   final String? thumbnailUrl;
   final List<String> mediaUrls;
+  final int? sellerScore;
+
 
   Auction({
     required this.id,
@@ -43,6 +45,7 @@ class Auction {
     required this.disputeRequestDeadline,
     this.thumbnailUrl,
     this.mediaUrls = const [],
+    this.sellerScore,
   });
 
   factory Auction.fromJson(Map<String, dynamic> json) {
@@ -70,6 +73,7 @@ class Auction {
       mediaUrls: json['media'] != null
           ? List<String>.from((json['media'] as List).map((m) => m['url'] ?? ''))
           : [],
+      sellerScore: json['sellerScore'] as int?,
     );
   }
 
@@ -96,5 +100,6 @@ class Auction {
     'disputeRequestDeadline': disputeRequestDeadline?.toIso8601String(),
     'thumbnailUrl': thumbnailUrl,
     'mediaUrls': mediaUrls,
+    'sellerScore': sellerScore,
   };
 }

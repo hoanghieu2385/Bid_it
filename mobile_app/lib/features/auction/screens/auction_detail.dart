@@ -47,6 +47,8 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
 
   final WebSocketService _webSocketService = WebSocketService();
 
+  bool isScoreTooLow = false;
+
 
 
   @override
@@ -65,6 +67,22 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
     _checkLoginStatus();
     _checkEkycStatus();
     _checkWinner();
+    _checkUserScore();
+  }
+
+  Future<void> _checkUserScore() async {
+    try {
+      final user = await UserService.getCurrentUser();
+      final score = user?['score'] ?? 100;
+      setState(() {
+        isScoreTooLow = score < 50;
+      });
+    } catch (e) {
+      debugPrint('Error checking user score: \$e');
+      setState(() {
+        isScoreTooLow = false;
+      });
+    }
   }
 
   Future<void> _checkWinner() async {
@@ -635,7 +653,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       const SizedBox(height: 12),
-                                      if (isLoggedIn && !isSeller && isEkycVerified && bidSuggestions.isNotEmpty)
+                                      if (isLoggedIn && !isSeller && isEkycVerified && bidSuggestions.isNotEmpty && !isScoreTooLow)
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
@@ -743,6 +761,21 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                             ],
                                           ),
                                         ),
+                                      if (isLoggedIn && isScoreTooLow)
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.shade50,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.red.shade100),
+                                          ),
+                                          child: const Text(
+                                            'Your reputation score is too low to bid (minimum required: 50).',
+                                            style: TextStyle(color: Colors.red, fontSize: 16),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
                                       if (isLoggedIn && isSeller)
                                         Container(
                                           width: double.infinity,
@@ -785,7 +818,6 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                               );
                                               return;
                                             }
-
                                             if (isSeller) {
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 const SnackBar(
@@ -845,7 +877,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                             BidHistoryCard(auctionId: widget.auction.id, key: _bidHistoryKey),
                             const SizedBox(height: 10),
                             const SizedBox(height: 10),
-                            if (hasEnded && !isSeller && isLoggedIn && isWinner)
+                            if (hasEnded && !isSeller && isLoggedIn && isWinner && !now.isAfter(currentAuction.winnerPaymentDeadline!))
                               Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8),
                                 child: Row(
