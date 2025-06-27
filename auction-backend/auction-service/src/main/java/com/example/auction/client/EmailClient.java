@@ -10,21 +10,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(
         name = "user-service",
         configuration = FeignClientConfig.class,
-        // fallback = EmailClientFallback.class // Optional: để handle khi service down
+        fallback = EmailClientFallback.class
 )
 public interface EmailClient {
 
     @PostMapping("/api/internal/email/auction-winner")
     void sendAuctionWinnerEmail(@RequestBody AuctionWinEmailRequest request);
 }
-
-// // Optional: Fallback class
-// @Component
-// class EmailClientFallback implements EmailClient {
-
-//     @Override
-//     public void sendAuctionWinnerEmail(AuctionWinEmailRequest request) {
-//         System.err.println("❌ EmailClient fallback: Không thể gửi email cho " + request.getEmail());
-//         // Log hoặc lưu vào queue để retry sau
-//     }
-// }
