@@ -342,25 +342,21 @@ class HomeContentState extends State<HomeContent> {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12), topRight: Radius.circular(12)),
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
                   child: displayImage != null && displayImage.isNotEmpty
-                      ? Image.network(
-                    displayImage,
-                    width: double.infinity,
-                    height: 180,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Image.asset(
-                      'assets/images/product-img.png',
-                      width: double.infinity,
-                      height: 180,
-                      fit: BoxFit.cover,
+                      ? Center(
+                    child: Image.network(
+                      displayImage,
+                      alignment: Alignment.center,
                     ),
                   )
-                      : Image.asset(
-                    'assets/images/product-img.png',
-                    width: double.infinity,
-                    height: 180,
-                    fit: BoxFit.cover,
+                      : Center(
+                    child: Image.asset(
+                      'assets/images/product-img.png',
+                      alignment: Alignment.center,
+                    ),
                   ),
                 ),
                 Positioned(
