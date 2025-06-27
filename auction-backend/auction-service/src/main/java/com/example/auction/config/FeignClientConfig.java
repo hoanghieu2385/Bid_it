@@ -1,7 +1,7 @@
 package com.example.auction.config;
 
+import feign.Logger;
 import feign.RequestInterceptor;
-import feign.RequestTemplate;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,5 +25,11 @@ public class FeignClientConfig {
                 }
             }
         };
+    }
+
+    // Thêm logging để debug
+    @Bean
+    public Logger.Level feignLoggerLevel() {
+        return Logger.Level.FULL;
     }
 }

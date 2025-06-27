@@ -1,16 +1,16 @@
-package com.example.user.dto;
+package com.example.user.Dtos;
 
 public class AuctionWinEmailRequest {
     private String email;
     private String auctionTitle;
     private String auctionIdOrSlug;
     private String imageUrl;
-    private Double finalPrice;
+    private double finalPrice;
 
     public AuctionWinEmailRequest() {
     }
 
-    public AuctionWinEmailRequest(String email, String auctionTitle, String auctionIdOrSlug, String imageUrl, Double finalPrice) {
+    public AuctionWinEmailRequest(String email, String auctionTitle, String auctionIdOrSlug, String imageUrl, double finalPrice) {
         this.email = email;
         this.auctionTitle = auctionTitle;
         this.auctionIdOrSlug = auctionIdOrSlug;
@@ -51,11 +51,11 @@ public class AuctionWinEmailRequest {
         this.imageUrl = imageUrl;
     }
 
-    public Double getFinalPrice() {
+    public double getFinalPrice() {
         return finalPrice;
     }
 
-    public void setFinalPrice(Double finalPrice) {
+    public void setFinalPrice(double finalPrice) {
         this.finalPrice = finalPrice;
     }
 }

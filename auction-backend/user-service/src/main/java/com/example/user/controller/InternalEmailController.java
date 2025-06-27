@@ -1,6 +1,6 @@
 package com.example.user.controller;
 
-import com.example.user.dto.AuctionWinEmailRequest;
+import com.example.user.Dtos.AuctionWinEmailRequest;
 import com.example.user.service.EmailService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

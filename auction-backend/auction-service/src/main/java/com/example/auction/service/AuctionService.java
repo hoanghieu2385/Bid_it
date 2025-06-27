@@ -193,6 +193,10 @@ public class AuctionService implements IAuctionService {
     }
 
     public AuctionResponseDTO updateWinner(Long auctionId, Long winnerId) {
+        System.out.println("🔥 === START updateWinner ===");
+        System.out.println("🆔 Auction ID: " + auctionId);
+        System.out.println("🏆 Winner ID: " + winnerId);
+
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + auctionId));
 
@@ -212,29 +216,65 @@ public class AuctionService implements IAuctionService {
         auction.setUpdatedAt(now);
 
         Auction saved = auctionRepository.save(auction);
+        System.out.println("💾 Auction saved successfully");
 
         // === Gửi email qua user-service ===
-        UserDTO winner = userClient.getUserById(winnerId);
-        String winnerEmail = winner.getEmail();
+        try {
+            System.out.println("📧 Bắt đầu lấy thông tin winner...");
+            UserDTO winner = userClient.getUserById(winnerId);
 
-        String imageUrl = mediaService.getMainImageUrlByAuctionId(auctionId);
-        if (imageUrl == null) {
-            imageUrl = baseUrl + "/static/images/default-auction.png";
+            if (winner == null) {
+                System.err.println("❌ Winner not found!");
+                return auctionMapper.mapToResponseDTO(saved);
+            }
+
+            String winnerEmail = winner.getEmail();
+            System.out.println("📧 Winner email: " + winnerEmail);
+
+            if (winnerEmail == null || winnerEmail.trim().isEmpty()) {
+                System.err.println("❌ Winner email is null or empty!");
+                return auctionMapper.mapToResponseDTO(saved);
+            }
+
+            String imageUrl = mediaService.getMainImageUrlByAuctionId(auctionId);
+            if (imageUrl == null) {
+                imageUrl = baseUrl + "/static/images/default-auction.png";
+            }
+            System.out.println("🖼️ Image URL: " + imageUrl);
+
+            double finalPrice = auction.getCurrentBid() != null ? auction.getCurrentBid().doubleValue() : 0.0;
+            System.out.println("💰 Final price: " + finalPrice);
+
+            AuctionWinEmailRequest emailRequest = new AuctionWinEmailRequest(
+                    winnerEmail,
+                    auction.getTitle(),
+                    String.valueOf(auction.getId()),
+                    imageUrl,
+                    finalPrice
+            );
+
+            System.out.println("🚀 Chuẩn bị gọi EmailClient...");
+            System.out.println("📧 Email request: " + emailRequest.getEmail());
+            System.out.println("🏆 Title: " + emailRequest.getAuctionTitle());
+
+            // GỌI FEIGN CLIENT
+            emailClient.sendAuctionWinnerEmail(emailRequest);
+
+            System.out.println("✅ EmailClient.sendAuctionWinnerEmail() completed");
+
+        } catch (Exception e) {
+            System.err.println("❌ LỖI khi gửi email:");
+            System.err.println("❌ Error type: " + e.getClass().getSimpleName());
+            System.err.println("❌ Error message: " + e.getMessage());
+            e.printStackTrace();
+
+            // Không throw exception để không làm gián đoạn flow chính
+            // Nhưng log lại để debug
         }
 
-        AuctionWinEmailRequest emailRequest = new AuctionWinEmailRequest(
-                winnerEmail,
-                auction.getTitle(),
-                String.valueOf(auction.getId()),
-                imageUrl,
-                auction.getCurrentBid() != null ? auction.getCurrentBid().doubleValue() : 0.0
-        );
-
-        emailClient.sendAuctionWinnerEmail(emailRequest);
-
+        System.out.println("🔥 === END updateWinner ===");
         return auctionMapper.mapToResponseDTO(saved);
     }
-
     public AuctionResponseDTO confirmPayment(Long auctionId, String paymentId) {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + auctionId));

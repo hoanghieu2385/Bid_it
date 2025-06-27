@@ -14,6 +14,9 @@ public class EmailService {
     @Value("${app.base-url}")
     private String baseUrl;
 
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
     // Constructor manually created to replace @RequiredArgsConstructor
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -103,8 +106,12 @@ public class EmailService {
     }
 
     public void sendAuctionWinEmail(String email, String auctionTitle, String auctionSlug, String imageUrl, double finalPrice) {
-        String auctionUrl = baseUrl + "/auctions/" + auctionSlug;
+        System.out.println("📬 EmailService.sendAuctionWinEmail được gọi");
+        System.out.println("📧 Email: " + email);
+        System.out.println("🏆 Title: " + auctionTitle);
+        System.out.println("💰 Price: " + finalPrice);
 
+        String auctionUrl = frontendUrl + "/auctions/" + auctionSlug;
         String subject = "🎉 Chúc mừng! Bạn đã thắng phiên đấu giá";
 
         String content = String.format("""
@@ -125,7 +132,14 @@ public class EmailService {
         </div>
         """, imageUrl, auctionTitle, finalPrice, auctionUrl);
 
-        sendEmail(email, subject, content);
+        try {
+            sendEmail(email, subject, content);
+            System.out.println("✅ Email đã được gửi thành công!");
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi khi gửi email: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
 }
