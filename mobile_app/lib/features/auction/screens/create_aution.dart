@@ -44,6 +44,9 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
 
   Timer? _statusCheckTimer;
 
+  int? _userScore;
+
+
   @override
   void initState() {
     super.initState();
@@ -73,6 +76,8 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
 
   Future<void> _checkLoginStatus() async {
     final user = await UserService.getCurrentUser();
+    final score = user?['score'] ?? 0;
+
     if (user != null && user['id'] != null) {
       try {
         final ekycStatus = await UserService().getCurrentUserVerificationStatus();
@@ -82,6 +87,8 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
         setState(() {
           _isLoggedIn = true;
           _isEkycVerified = isVerified;
+          _userScore = score;
+          print(_userScore);
           _checkingLogin = false;
         });
         _loadCategories();
@@ -223,6 +230,12 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
       );
       return;
     }
+    if (_userScore! < 70) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your reputation score must be at least 70 to create an auction.')),
+      );
+      return;
+    }
     if (!_isLoggedIn) return;
     if (!_formKey.currentState!.validate()) return;
     final now = DateTime.now();
@@ -314,23 +327,29 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
     };
     setState(() => _isUploading = true);
     final response = await AuctionService.createAuction(auctionData);
-    setState(() => _isUploading = false);
+
     if (response == null || response['success'] == false) {
+      setState(() => _isUploading = false);
       final errorMsg = response?['message'] ?? '';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
+      return;
     }
+
     final auction = response;
     for (final image in _galleryImages) {
       final bytes = await image.readAsBytes();
       await AuctionService.uploadImage(bytes, image.name, auction?['id'], false);
     }
+
     _formKey.currentState?.reset();
     _titleController.clear();
     _descriptionController.clear();
     _startingPriceController.clear();
     _incrementAmountController.clear();
     _depositAmountController.clear();
+
     setState(() {
+      _isUploading = false;
       _selectedCategory = null;
       _galleryImages = [];
       _requiresDeposit = false;
@@ -338,6 +357,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
       _startTime = now.add(const Duration(hours: 1));
       _endTime = _startTime!.add(const Duration(hours: 1, minutes: 30));
     });
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(response?["message"] ?? 'Auction created successfully.')),
     );
@@ -480,7 +500,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
       );
     }
 
-    final bool _disabled = !_isLoggedIn || !_isEkycVerified;
+    final bool _disabled = !_isLoggedIn || !_isEkycVerified || (_userScore != null && _userScore! < 70);
 
     return Scaffold(
       appBar: AppBar(
@@ -515,9 +535,15 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
                 )).toList(),
                 onChanged: !_disabled ? (value) => setState(() => _selectedCategory = value) : null,
                 validator: (value) => _disabled ? null : value == null ? 'Please select a category' : null,
-                disabledHint: Text(!_isLoggedIn
-                    ? 'Please login'
-                    : 'Please complete eKYC verification'),
+                disabledHint: Text(
+                  !_isLoggedIn
+                      ? 'Please login'
+                      : !_isEkycVerified
+                      ? 'Please complete eKYC verification'
+                      : (_userScore != null && _userScore! < 70)
+                      ? 'Your reputation score is too low'
+                      : '',
+                ),
 
               ),
               const SizedBox(height: 24),
@@ -596,7 +622,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
               const SizedBox(height: 24),
               _buildImagePicker(),
               const SizedBox(height: 32),
-              if (_isLoggedIn && _isEkycVerified)
+              if (_isLoggedIn && _isEkycVerified && (_userScore != null && _userScore! >= 70))
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -625,7 +651,11 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
                   child: Text(
                     !_isLoggedIn
                         ? 'Please login to create an auction'
-                        : 'Please complete eKYC verification to create an auction',
+                        : !_isEkycVerified
+                        ? 'Please complete eKYC verification to create an auction'
+                        : (_userScore != null && _userScore! < 70)
+                        ? 'Your reputation score is too low to create an auction'
+                        : '',
                     style: const TextStyle(
                       color: Colors.orange,
                       fontWeight: FontWeight.bold,

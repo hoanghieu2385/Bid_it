@@ -14,7 +14,6 @@ class Category {
     );
   }
 
-  // 👇 Add value equality override
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -26,7 +25,6 @@ class Category {
   @override
   int get hashCode => id.hashCode ^ name.hashCode;
 
-  // 👇 Optional: Helpful for debugging
   @override
   String toString() => 'Category(id: $id, name: $name)';
 }

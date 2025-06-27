@@ -213,15 +213,6 @@ class _UserPageState extends State<UserPage> {
                 ),
                 _buildMenuItem(
                   context: context,
-                  icon: Icons.history_outlined,
-                  title: 'Bid History',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const BidHistoryPage()),
-                  ),
-                ),
-                _buildMenuItem(
-                  context: context,
                   icon: Icons.how_to_vote_outlined,
                   title: 'Participated Auctions',
                   onTap: () => Navigator.push(
