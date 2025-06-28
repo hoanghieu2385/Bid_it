@@ -71,6 +71,15 @@
   text-transform: uppercase;
 }
 
+.auctions-table tbody tr {
+  height: 100px !important;
+  min-height: 100px !important;
+}
+
+.auctions-table tbody td {
+  vertical-align: middle !important;
+}
+
 /* Màu sắc chính xác cho các thẻ thống kê như trong ảnh */
 .stat-card.all {
   border-bottom: 3px solid #ffa000;
@@ -247,13 +256,14 @@
   border-bottom: 1px solid #e9ecef;
   font-size: 14px;
   color: #333;
-  vertical-align: top;
+  min-height: 80px;
 }
 
 /* Auction title cell styling */
 .auction-title-cell {
   display: flex;
   align-items: center;
+  min-height: 150px !important;
 }
 
 .auction-image {

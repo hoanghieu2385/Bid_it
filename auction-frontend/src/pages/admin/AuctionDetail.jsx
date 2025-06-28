@@ -590,52 +590,6 @@ const AuctionDetail = () => {
             )}
           </div>
         );
-
-      case "dispute":
-        return (
-          <div className="dispute-section">
-            <h3>Dispute Information</h3>
-            {auction.rawData && auction.rawData.status === "DISPUTED" ? (
-              <div className="dispute-card">
-                <div className="dispute-header">
-                  <div className="dispute-status">Under Review</div>
-                </div>
-                <div className="dispute-body">
-                  <div className="dispute-row">
-                    <div className="dispute-label">Status:</div>
-                    <div className="dispute-value">
-                      Currently in dispute resolution process
-                    </div>
-                  </div>
-                  {auction.rawData.disputeRequestDeadline && (
-                    <div className="dispute-row">
-                      <div className="dispute-label">Dispute Deadline:</div>
-                      <div className="dispute-value">
-                        {formatDateTime(auction.rawData.disputeRequestDeadline)}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="no-data-message">
-                No dispute information available.
-              </div>
-            )}
-          </div>
-        );
-
-      case "sellerPayment":
-        return (
-          <div className="seller-payment-section">
-            <h3>Seller Payment</h3>
-            <div className="no-data-message">
-              Seller payment information will be available when payment
-              management is implemented.
-            </div>
-          </div>
-        );
-
       default:
         return null;
     }
@@ -857,22 +811,6 @@ const AuctionDetail = () => {
               onClick={() => handleTabChange("winnerPayment")}
             >
               Winner & Payment
-            </button>
-            <button
-              className={`tab-button ${
-                activeTab === "dispute" ? "active" : ""
-              }`}
-              onClick={() => handleTabChange("dispute")}
-            >
-              Dispute
-            </button>
-            <button
-              className={`tab-button ${
-                activeTab === "sellerPayment" ? "active" : ""
-              }`}
-              onClick={() => handleTabChange("sellerPayment")}
-            >
-              Seller Payment
             </button>
           </div>
 

@@ -239,7 +239,7 @@ body {
 }
 
 .auction-table tbody td {
-  vertical-align: middle;
+  vertical-align: top !important;
   padding: 1rem 0.5rem;
   border-top: none;
   border-bottom: 1px solid #f1f3f9;
@@ -314,12 +314,6 @@ body {
   color: #363642;
 }
 
-.start-price {
-  font-size: 0.75rem;
-  color: #858796;
-  text-decoration: line-through;
-}
-
 .status-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
@@ -356,6 +350,13 @@ body {
   color: #2391ff;
 }
 
+.seller-info {
+  display: flex;
+  flex-direction: column;
+  row-gap: 2px;
+  align-items: flex-start; /* canh trái */
+}
+
 /* Pagination */
 .pagination {
   display: flex;
@@ -370,6 +371,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0px !important;
   border-radius: 0px;
   margin: 0;
 }
