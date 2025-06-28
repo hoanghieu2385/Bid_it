@@ -425,34 +425,34 @@
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .search-container {
     max-width: 100%;
   }
-  
+
   .filters-right {
     width: 100%;
     flex-wrap: wrap;
   }
-  
+
   .filter-select {
     flex: 1;
     min-width: 120px;
   }
-  
+
   .table-container {
     overflow-x: auto;
   }
-  
+
   .users-table {
     min-width: 800px;
   }
-  
+
   .pagination-container {
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .pagination {
     justify-content: center;
   }
@@ -462,21 +462,21 @@
   .user-management-container {
     padding: 15px;
   }
-  
+
   .users-table th,
   .users-table td {
     padding: 12px;
   }
-  
+
   .user-info {
     gap: 8px;
   }
-  
+
   .user-avatar {
     width: 35px;
     height: 35px;
   }
-  
+
   .pagination-btn {
     padding: 6px 10px;
     min-width: 35px;

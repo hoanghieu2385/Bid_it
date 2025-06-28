@@ -1,4 +1,3 @@
-// File: src/pages/client/profile/EKYCVerification.jsx
 
 import React, { useState, useEffect } from 'react';
 import { getCurrentUser, submitEkycRequest } from '../../../services/user-api';
@@ -17,16 +16,58 @@ const EKYCVerification = () => {
 		getCurrentUser().then((user) => {
 			setCitizenId(user.citizenId || '');
 			setStatus(
-				user.verifiedAccount === 1
+				user.citizenIdStatus === 'APPROVED'
 					? 'Verified'
 					: user.citizenId
-						? 'Pending'
+						? user.citizenIdStatus === 'PENDING'
+							? 'Pending'
+							: user.citizenIdStatus === 'DENIED'
+								? 'Rejected'
+								: 'Not Submitted'
 						: 'Not Submitted'
 			);
 			setFrontImagePreview(user.citizenIdFrontImage || null);
 			setBackImagePreview(user.citizenIdBackImage || null);
 		});
 	}, []);
+
+	// 🔥 Hàm kiểm tra file
+	const isValidFile = (file) => {
+		const validTypes = ['image/jpeg', 'image/png'];
+		const maxSize = 5 * 1024 * 1024; // 5MB
+
+		if (!validTypes.includes(file.type)) {
+			alert('Only JPG and PNG files are allowed.');
+			return false;
+		}
+
+		if (file.size > maxSize) {
+			alert('File size must be less than 5MB.');
+			return false;
+		}
+
+		return true;
+	};
+
+	const handleFrontImageChange = (e) => {
+		const file = e.target.files[0];
+		if (file && isValidFile(file)) {
+			setFrontImage(file);
+			setFrontImagePreview(URL.createObjectURL(file));
+		} else {
+			e.target.value = '';
+		}
+	};
+
+	const handleBackImageChange = (e) => {
+		const file = e.target.files[0];
+		if (file && isValidFile(file)) {
+			setBackImage(file);
+			setBackImagePreview(URL.createObjectURL(file));
+		} else {
+			e.target.value = '';
+		}
+	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -52,7 +93,7 @@ const EKYCVerification = () => {
 		}
 	};
 
-	const isEditable = status === 'Not Submitted';
+	const isEditable = status === 'Not Submitted' || status === 'Rejected';
 
 	return (
 		<div className="card p-4">
@@ -74,13 +115,13 @@ const EKYCVerification = () => {
 
 				<div className="mb-3">
 					<label className="form-label">Front of ID Card</label>
-					{status !== 'Verified' && (
+					{isEditable && (
 						<input
 							type="file"
 							className="form-control"
-							onChange={(e) => setFrontImage(e.target.files[0])}
-							disabled={!isEditable}
-							required={isEditable}
+							accept=".jpg,.jpeg,.png"
+							onChange={handleFrontImageChange}
+							required
 						/>
 					)}
 					{frontImagePreview && (
@@ -92,13 +133,13 @@ const EKYCVerification = () => {
 
 				<div className="mb-3">
 					<label className="form-label">Back of ID Card</label>
-					{status !== 'Verified' && (
+					{isEditable && (
 						<input
 							type="file"
 							className="form-control"
-							onChange={(e) => setBackImage(e.target.files[0])}
-							disabled={!isEditable}
-							required={isEditable}
+							accept=".jpg,.jpeg,.png"
+							onChange={handleBackImageChange}
+							required
 						/>
 					)}
 					{backImagePreview && (
@@ -110,8 +151,8 @@ const EKYCVerification = () => {
 
 				{message && <div className="alert alert-info">{message}</div>}
 
-				{status !== 'Verified' && (
-					<button type="submit" className="btn btn-primary" disabled={loading || !isEditable}>
+				{isEditable && (
+					<button type="submit" className="btn btn-primary" disabled={loading}>
 						{loading ? 'Submitting...' : 'Submit Verification'}
 					</button>
 				)}

@@ -43,13 +43,14 @@ public class User {
     @Column
     private String citizenIdBackImage;
 
-    @Column(nullable = false, columnDefinition = "TINYINT DEFAULT 0")
-    private Integer verifiedAccount = 0;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CitizenIdStatus citizenIdStatus = CitizenIdStatus.NONE;
 
     @Column(nullable = false)
     private boolean phoneVerified = false;
-
     // CCCD END
+
     @Column(nullable = false, columnDefinition = "INT NOT NULL DEFAULT 0")
     private Integer score = 0;
 
@@ -81,8 +82,8 @@ public class User {
 
     public User(Long id, String email, String firstName, String lastName, String password, String avatar,
                 String avatarPublicId, String phoneNumber, String address,
-                String citizenId, String citizenIdFrontImage, String citizenIdBackImage, Integer verifiedAccount,
-                Integer score, LocalDateTime createdAt,
+                String citizenId, String citizenIdFrontImage, String citizenIdBackImage,
+                CitizenIdStatus citizenIdStatus, Integer score, LocalDateTime createdAt,
                 LocalDateTime updatedAt, Boolean enable, Boolean verified,
                 String verifiedResponse, Boolean locked, Set<Role> roles) {
         this.id = id;
@@ -97,7 +98,7 @@ public class User {
         this.citizenId = citizenId;
         this.citizenIdFrontImage = citizenIdFrontImage;
         this.citizenIdBackImage = citizenIdBackImage;
-        this.verifiedAccount = verifiedAccount;
+        this.citizenIdStatus = citizenIdStatus;
         this.score = score;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -108,25 +109,7 @@ public class User {
         this.roles = roles;
     }
 
-
-    public Set<Role> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
-    }
-
-    public void addRole(Role role) {
-        if (this.roles == null) {
-            this.roles = new HashSet<>();
-        }
-        this.roles.add(role);
-    }
-
-    public boolean hasRole(Role role) {
-        return this.roles != null && this.roles.contains(role);
-    }
+    // Getter và Setter
 
     public Long getId() {
         return id;
@@ -191,14 +174,6 @@ public class User {
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
-    public boolean isPhoneVerified() {
-        return phoneVerified;
-    }
-
-    public void setPhoneVerified(boolean phoneVerified) {
-        this.phoneVerified = phoneVerified;
-    }
-
 
     public String getAddress() {
         return address;
@@ -206,6 +181,46 @@ public class User {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getCitizenId() {
+        return citizenId;
+    }
+
+    public void setCitizenId(String citizenId) {
+        this.citizenId = citizenId;
+    }
+
+    public String getCitizenIdFrontImage() {
+        return citizenIdFrontImage;
+    }
+
+    public void setCitizenIdFrontImage(String citizenIdFrontImage) {
+        this.citizenIdFrontImage = citizenIdFrontImage;
+    }
+
+    public String getCitizenIdBackImage() {
+        return citizenIdBackImage;
+    }
+
+    public void setCitizenIdBackImage(String citizenIdBackImage) {
+        this.citizenIdBackImage = citizenIdBackImage;
+    }
+
+    public CitizenIdStatus getCitizenIdStatus() {
+        return citizenIdStatus;
+    }
+
+    public void setCitizenIdStatus(CitizenIdStatus citizenIdStatus) {
+        this.citizenIdStatus = citizenIdStatus;
+    }
+
+    public boolean isPhoneVerified() {
+        return phoneVerified;
+    }
+
+    public void setPhoneVerified(boolean phoneVerified) {
+        this.phoneVerified = phoneVerified;
     }
 
     public Integer getScore() {
@@ -264,35 +279,22 @@ public class User {
         this.locked = locked;
     }
 
-    public String getCitizenId() {
-        return citizenId;
+    public Set<Role> getRoles() {
+        return roles;
     }
 
-    public void setCitizenId(String citizenId) {
-        this.citizenId = citizenId;
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
     }
 
-    public String getCitizenIdFrontImage() {
-        return citizenIdFrontImage;
+    public void addRole(Role role) {
+        if (this.roles == null) {
+            this.roles = new HashSet<>();
+        }
+        this.roles.add(role);
     }
 
-    public void setCitizenIdFrontImage(String citizenIdFrontImage) {
-        this.citizenIdFrontImage = citizenIdFrontImage;
-    }
-
-    public String getCitizenIdBackImage() {
-        return citizenIdBackImage;
-    }
-
-    public void setCitizenIdBackImage(String citizenIdBackImage) {
-        this.citizenIdBackImage = citizenIdBackImage;
-    }
-
-    public Integer getVerifiedAccount() {
-        return verifiedAccount;
-    }
-
-    public void setVerifiedAccount(Integer verifiedAccount) {
-        this.verifiedAccount = verifiedAccount;
+    public boolean hasRole(Role role) {
+        return this.roles != null && this.roles.contains(role);
     }
 }
