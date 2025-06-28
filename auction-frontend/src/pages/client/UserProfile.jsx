@@ -65,7 +65,8 @@ const UserProfile = () => {
 										<i className="fa-solid fa-id-card me-2" style={{color: '#d1d3e2'}}/>
 										eKYC Verification
 									</div>
-									{user?.verifiedAccount !== 1 && (
+									{user?.citizenIdStatus !== 'APPROVED'
+										&& (
 										<FaExclamationCircle className="text-warning ms-2" title="eKYC not verified"/>
 									)}
 								</button>

@@ -133,11 +133,28 @@ public class UserService {
         user.setCitizenId(request.getCitizenId());
         user.setCitizenIdFrontImage(request.getCitizenIdFrontImage());
         user.setCitizenIdBackImage(request.getCitizenIdBackImage());
-        user.setVerifiedAccount(0);
-        user.setUpdatedAt(LocalDateTime.now());
+        user.setCitizenIdStatus(CitizenIdStatus.PENDING);
 
+        user.setUpdatedAt(LocalDateTime.now());
         return userRepository.save(user);
     }
+
+    //Admin duyet
+    public void approveCitizenId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setCitizenIdStatus(CitizenIdStatus.APPROVED);
+        userRepository.save(user);
+    }
+    public void denyCitizenId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setCitizenIdStatus(CitizenIdStatus.DENIED);
+        userRepository.save(user);
+    }
+    //
 
     public void updateCCCDWithImages(String email, String citizenId, MultipartFile frontImage, MultipartFile backImage) {
         User user = userRepository.findByEmail(email)
@@ -149,10 +166,12 @@ public class UserService {
         user.setCitizenId(citizenId);
         user.setCitizenIdFrontImage(frontUrl);
         user.setCitizenIdBackImage(backUrl);
-        user.setVerifiedAccount(0);
+        user.setCitizenIdStatus(CitizenIdStatus.PENDING); // ⚠️ Đổi trạng thái sang PENDING
         user.setUpdatedAt(LocalDateTime.now());
+
         userRepository.save(user);
     }
+
 
     public boolean verifyUserPhoneNumberForCurrentUser(String phone, String otp, Principal principal) {
         boolean isValid = otpService.verifyOtp(phone, otp, OtpType.PHONE_VERIFICATION);
@@ -192,7 +211,7 @@ public class UserService {
     }
 
     public List<UserCCCDVerifyDto> getUsersPendingVerification() {
-        return userRepository.findByVerifiedAccount(0)
+        return userRepository.findByCitizenIdStatus(CitizenIdStatus.PENDING)
                 .stream()
                 .map(user -> new UserCCCDVerifyDto(
                         user.getId(),
@@ -204,6 +223,7 @@ public class UserService {
                 ))
                 .toList();
     }
+
 
     @Transactional
     public void deductScore(Long userId, int amount) {

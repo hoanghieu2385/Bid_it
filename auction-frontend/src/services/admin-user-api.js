@@ -72,20 +72,18 @@ export const resetUserPassword = async (userId) => {
   return response.data;
 };
 
-// ✅ Lấy danh sách user chờ xác minh CCCD
 export const getVerifyRequests = async () => {
-  const response = await api.get(`${API_CONFIG.USER_API}/verify-requests`);
+  const response = await api.get(`${API_CONFIG.USER_ADMIN_API}/verify-requests`);
   return response.data;
 };
 
-// ✅ Duyệt xác minh CCCD
 export const approveUserCCCD = async (userId) => {
-  const response = await api.post(`${API_CONFIG.USER_API}/${userId}/verify/approve`);
+  const response = await api.post(`${API_CONFIG.USER_ADMIN_API}/verify-requests/${userId}/approve`);
   return response.data;
 };
 
-// ✅ Từ chối xác minh CCCD
 export const denyUserCCCD = async (userId) => {
-  const response = await api.post(`${API_CONFIG.USER_API}/${userId}/verify/deny`);
+  const response = await api.post(`${API_CONFIG.USER_ADMIN_API}/verify-requests/${userId}/deny`);
   return response.data;
 };
+

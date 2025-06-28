@@ -98,79 +98,18 @@ public class UserController {
         }
     }
 
-    @GetMapping("/verify-requests")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserCCCDVerifyDto>> getVerifyRequests() {
-        return ResponseEntity.ok(userService.getUsersPendingVerification());
-    }
-
-    @PostMapping("/{id}/verify/approve")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> approveCCCD(@PathVariable Long id) {
-        Optional<User> userOpt = userService.getUserById(id);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        User user = userOpt.get();
-        user.setVerifiedAccount(1);
-        user.setUpdatedAt(LocalDateTime.now());
-        userService.saveUser(user);
-        return ResponseEntity.ok("User CCCD approved");
-    }
-
-    @PostMapping("/{id}/verify/deny")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> denyCCCD(@PathVariable Long id) {
-        Optional<User> userOpt = userService.getUserById(id);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        User user = userOpt.get();
-        user.setCitizenId(null);
-        user.setCitizenIdFrontImage(null);
-        user.setCitizenIdBackImage(null);
-        user.setVerifiedAccount(0);
-        user.setUpdatedAt(LocalDateTime.now());
-        userService.saveUser(user);
-        return ResponseEntity.ok("User CCCD denied and data cleared");
-    }
-
-    @GetMapping("/{id}/verify-status")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getVerificationStatus(@PathVariable Long id) {
-        Optional<User> userOpt = userService.getUserById(id);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        User user = userOpt.get();
-        var response = new Object() {
-            public final boolean phoneVerified = user.isPhoneVerified();
-            public final boolean cccdVerified = user.getVerifiedAccount() == 1;
-            public final String citizenId = user.getCitizenId();
-        };
-
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping("/me/verify-status")
     public ResponseEntity<VerificationStatusResponse> getMyVerificationStatus() {
         User user = userService.getCurrentUserProfile();
 
         String phoneStatus = user.isPhoneVerified() ? "VERIFIED" : "UNVERIFIED";
 
-        String cccdStatus;
-        if (user.getCitizenId() == null) {
-            cccdStatus = "NOT_SUBMITTED";
-        } else if (user.getVerifiedAccount() == 0) {
-            cccdStatus = "PENDING";
-        } else if (user.getVerifiedAccount() == 1) {
-            cccdStatus = "APPROVED";
-        } else {
-            cccdStatus = "REJECTED";
-        }
+        String cccdStatus = switch (user.getCitizenIdStatus()) {
+            case NONE -> "NOT_SUBMITTED";
+            case PENDING -> "PENDING";
+            case APPROVED -> "APPROVED";
+            case DENIED -> "REJECTED";
+        };
 
         VerificationStatusResponse response = new VerificationStatusResponse(
                 user.isPhoneVerified(),
