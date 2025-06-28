@@ -49,6 +49,7 @@ dependencies:
   shimmer: ^3.0.0
   flutter_paypal: ^0.2.0
   auto_size_text: ^3.0.0
+  bootstrap_icons: ^1.11.3
 
 
 # Development and testing dependencies
