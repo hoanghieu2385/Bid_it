@@ -58,7 +58,6 @@ class _CategoryAuctionsPageState extends State<CategoryAuctionsPage> {
     final String startingPrice = _vndFormat.format(auction.startingPrice);
     final String currentBid = _vndFormat.format(auction.currentBid ?? auction.startingPrice);
 
-    // Xử lý ảnh: Ưu tiên mediaUrls[0], sau đó đến thumbnailUrl, fallback local asset
     String imageUrl = '';
     if (auction.mediaUrls.isNotEmpty && auction.mediaUrls[0].isNotEmpty) {
       imageUrl = auction.mediaUrls[0];
@@ -93,19 +92,19 @@ class _CategoryAuctionsPageState extends State<CategoryAuctionsPage> {
                 imageUrl,
                 width: double.infinity,
                 height: 180,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => Image.asset(
                   'assets/images/product-img.png',
                   width: double.infinity,
                   height: 180,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                 ),
               )
                   : Image.asset(
                 'assets/images/product-img.png',
                 width: double.infinity,
                 height: 180,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
               ),
             ),
             Container(

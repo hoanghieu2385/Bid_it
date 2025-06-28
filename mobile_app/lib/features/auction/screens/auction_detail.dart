@@ -49,8 +49,6 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
 
   bool isScoreTooLow = false;
 
-
-
   @override
   void initState() {
     super.initState();
@@ -926,6 +924,60 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                   ],
                                 ),
                               ),
+                            if (hasEnded && isSeller && isLoggedIn /* && currentAuction.deliveryStatus == 'PENDING' */)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8),
+                                child: ElevatedButton.icon(
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (_) => AlertDialog(
+                                        title: const Text("Confirm Cancel"),
+                                        content: const Text("Are you sure you want to cancel this order?"),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, false),
+                                            child: const Text("No"),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, true),
+                                            child: const Text("Yes"),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (confirm == true) {
+                                      try {
+                                        await AuctionService.cancelOrder(currentAuction.id);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text("Order has been cancelled successfully."),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                        await _loadAuctionDetails();
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text("Cancel failed: $e"),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.cancel),
+                                  label: const Text("Cancel Order"),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+
                             if (!hasStarted)
                               Container(
                                 width: double.infinity,

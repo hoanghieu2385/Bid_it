@@ -19,6 +19,7 @@ import 'package:mobile_app/features/auction/screens/auction_detail.dart';
 import 'package:mobile_app/core/services/websocket_service.dart';
 
 import '../../../core/services/user_service.dart';
+import '../../../core/utils/bootstrap_icon_resolver.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -129,6 +130,7 @@ class HomeContentState extends State<HomeContent> {
       final fetchedCategories = await CategoryService.fetchCategories();
       final fetchedAuctions = await AuctionService.fetchAuctions();
       final now = DateTime.now();
+
 
       final validAuctions = fetchedAuctions.where((a) => a.endTime.isAfter(now) && a.status != 'CANCELLED').toList();
 
@@ -627,7 +629,10 @@ class HomeContentState extends State<HomeContent> {
                     CircleAvatar(
                       radius: 30,
                       backgroundColor: Colors.orange.withOpacity(0.2),
-                      child: const Icon(Icons.category, color: Colors.orange),
+                      child: Icon(
+                        BootstrapIconResolver.resolve(category.icon),
+                        color: Colors.orange,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(category.name, style: const TextStyle(fontSize: 13)),
