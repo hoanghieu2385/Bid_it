@@ -69,10 +69,6 @@ nav ul li button {
   transition: background-color 0.2s;
 }
 
-nav ul li button:hover {
-  background-color: #f8f9fc;
-}
-
 /* Badge thông báo - Sửa lại cách hiển thị số */
 nav ul li button span.absolute {
   width: 18px; /* Đặt chiều rộng cố định */

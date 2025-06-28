@@ -440,15 +440,15 @@ const Payment = () => {
 
             {/* Payment Details Modal */}
             {showDetails && selectedPayment && (
-              <div className="modal-overlay">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h3 className="modal-title">
+              <div className="payment-modal-overlay">
+                <div className="payment-modal-content">
+                  <div className="payment-modal-header">
+                    <h3 className="payment-modal-title">
                       Payment Details #{selectedPayment.id}
                     </h3>
                   </div>
 
-                  <div className="modal-body">
+                  <div className="payment-modal-body">
                     <div className="detail-item">
                       <span className="detail-label">User:</span>
                       <p className="detail-value">
@@ -510,7 +510,7 @@ const Payment = () => {
 
                     {/* Action buttons for admin */}
                     {selectedPayment.status === "PENDING" && (
-                      <div className="modal-actions">
+                      <div className="payment-modal-actions">
                         <button
                           onClick={() =>
                             updatePaymentStatus(selectedPayment.id, "COMPLETED")
@@ -531,7 +531,7 @@ const Payment = () => {
                     )}
                   </div>
 
-                  <div className="modal-footer">
+                  <div className="payment-modal-footer">
                     <button
                       onClick={() => setShowDetails(false)}
                       className="btn btn-secondary"

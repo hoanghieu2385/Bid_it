@@ -474,7 +474,6 @@ const User = () => {
               {filteredUsers.length > 0 && (
                 <div className="pagination-container">
                   <div className="rows-per-page">
-                    <span>Show:</span>
                     <select 
                       className="rows-select"
                       value={rowsPerPage}

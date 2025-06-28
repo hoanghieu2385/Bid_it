@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Container, Row, Col, Card, Badge, Table, 
-  Pagination, ButtonGroup, Button 
-} from "react-bootstrap";
-import { 
-  FaUsers, FaGavel, FaBoxOpen, FaExclamationTriangle, 
-  FaSearch, FaEye 
-} from "react-icons/fa";
+import { Container, Row, Col, Spinner, Alert, Button } from "react-bootstrap";
 import "../../assets/styles/admin/Dashboard.css";
 import Sidebar from "../../components/admin/Sidebar";
 import Topbar from "../../components/admin/Topbar";
+import WelcomeCard from "../../components/admin/Dashboard/WelcomeCard";
+import RevenueCard from "../../components/admin/Dashboard/RevenueCard";
+import AuctionTableCard from "../../components/admin/Dashboard/AuctionTableCard";
+import CategoryCard from "../../components/admin/Dashboard/CategoryCard";
+
+// Import API services
+import { getAllUsers, getVerifyRequests } from "../../services/admin-user-api";
+import adminAuctionAPI from "../../services/admin-auction-api";
+import paymentAPI from "../../services/admin-payment-api";
 
 const Dashboard = () => {
   // State for active tabs
-  const [revenueTimeFrame, setRevenueTimeFrame] = useState("Month");
   const [categoryTimeFrame, setCategoryTimeFrame] = useState("All");
   const [auctionFilter, setAuctionFilter] = useState("Opening");
   const [currentPage, setCurrentPage] = useState(1);
@@ -25,189 +26,161 @@ const Dashboard = () => {
   const [displayedAuctions, setDisplayedAuctions] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage] = useState(5);
-
-  // Mock data
-  const dashboardData = {
-    username: "John",
-    tasks: 4,
+  
+  // State for dashboard data
+  const [dashboardData, setDashboardData] = useState({
+    username: "Admin",
+    tasks: 0,
     stats: {
-      users: { count: 5, status: "Waiting to be verified" },
-      auctions: { count: 11, status: "Currently happening" },
+      users: { count: 0, status: "Waiting to be verified" },
+      auctions: { count: 0, status: "Currently happening" },
       sold: { count: 0, status: "And ready to be shipped" },
-      disputes: { count: 1, status: "Waiting to be resolved" }
+      disputes: { count: 0, status: "Waiting to be resolved" }
     },
     revenue: {
-      current: "1,530,000",
-      percentage: 100,
-      successfulPayments: { count: 1, percentage: 100 }
+      current: "0",
+      percentage: 0,
+      successfulPayments: { count: 0, percentage: 0 }
     },
-    categories: [
-      { name: "Watches", revenue: 1530000 },
-      { name: "Electronics", revenue: 980000 },
-      { name: "Clothing", revenue: 720000 },
-      { name: "Jewelry", revenue: 540000 },
-      { name: "Art", revenue: 350000 }
-    ],
-    auctions: [
-      {
-        id: 812,
-        name: "BMW A100D A Class Hatch Premium",
-        category: "Motorcycles",
-        seller: {
-          name: "Christopher Anderson",
-          email: "christopher.anderson@example.com",
-          verified: true
-        },
-        startDate: "23 Jul, 2024 - 02:01",
-        endDate: "26 Jul, 2024 - 02:01",
-        currentPrice: "80,000,000",
-        startPrice: "80,500,000",
-        status: "Opened"
-      },
-      {
-        id: 811,
-        name: "Watercolor Special Lighter Collection",
-        category: "Jewelry",
-        seller: {
-          name: "Christopher Anderson",
-          email: "christopher.anderson@example.com",
-          verified: true
-        },
-        startDate: "23 Jul, 2024 - 02:01",
-        endDate: "24 Jul, 2024 - 02:01",
-        currentPrice: "50,000",
-        startPrice: "0",
-        status: "Opened"
-      },
-      {
-        id: 810,
-        name: "Michael Korian Gold Special Edition",
-        category: "Watches",
-        seller: {
-          name: "Christopher Anderson",
-          email: "christopher.anderson@example.com",
-          verified: true
-        },
-        startDate: "23 Jul, 2024 - 02:01",
-        endDate: "29 Jul, 2024 - 02:01",
-        currentPrice: "2,500,000",
-        startPrice: "0",
-        status: "Opened"
-      },
-      {
-        id: 809,
-        name: "Water resist All Variants Available",
-        category: "Watches",
-        seller: {
-          name: "Christopher Anderson",
-          email: "christopher.anderson@example.com",
-          verified: true
-        },
-        startDate: "23 Jul, 2024 - 02:01",
-        endDate: "27 Jul, 2024 - 02:01",
-        currentPrice: "4,500,000",
-        startPrice: "0",
-        status: "Opened"
-      },
-      {
-        id: 808,
-        name: "Pure leather All Variants Available",
-        category: "Clothes",
-        seller: {
-          name: "Christopher Anderson",
-          email: "christopher.anderson@example.com",
-          verified: true
-        },
-        startDate: "23 Jul, 2024 - 02:01",
-        endDate: "30 Jul, 2024 - 02:01",
-        currentPrice: "700,000",
-        startPrice: "0",
-        status: "Opened"
-      },
-      {
-        id: 813,
-        name: "BMW A100D A Class Hatch Premium",
-        category: "Motorcycles",
-        seller: {
-          name: "Christopher Anderson",
-          email: "christopher.anderson@example.com",
-          verified: true
-        },
-        startDate: "23 Jul, 2024 - 02:01",
-        endDate: "26 Jul, 2024 - 02:01",
-        currentPrice: "80,000,000",
-        startPrice: "80,500,000",
-        status: "Opened"
-      },
-      {
-        id: 814,
-        name: "Watercolor Special Lighter Collection",
-        category: "Jewelry",
-        seller: {
-          name: "Christopher Anderson",
-          email: "christopher.anderson@example.com",
-          verified: true
-        },
-        startDate: "23 Jul, 2024 - 02:01",
-        endDate: "24 Jul, 2024 - 02:01",
-        currentPrice: "50,000",
-        startPrice: "0",
-        status: "Opened"
-      },
-      {
-        id: 815,
-        name: "Michael Korian Gold Special Edition",
-        category: "Watches",
-        seller: {
-          name: "Christopher Anderson",
-          email: "christopher.anderson@example.com",
-          verified: true
-        },
-        startDate: "23 Jul, 2024 - 02:01",
-        endDate: "29 Jul, 2024 - 02:01",
-        currentPrice: "2,500,000",
-        startPrice: "0",
-        status: "Opened"
-      },
-      {
-        id: 816,
-        name: "Water resist All Variants Available",
-        category: "Watches",
-        seller: {
-          name: "Christopher Anderson",
-          email: "christopher.anderson@example.com",
-          verified: true
-        },
-        startDate: "23 Jul, 2024 - 02:01",
-        endDate: "27 Jul, 2024 - 02:01",
-        currentPrice: "4,500,000",
-        startPrice: "0",
-        status: "Sold"
-      },
-      {
-        id: 817,
-        name: "Pure leather All Variants Available",
-        category: "Clothes",
-        seller: {
-          name: "Christopher Anderson",
-          email: "christopher.anderson@example.com",
-          verified: true
-        },
-        startDate: "23 Jul, 2024 - 02:01",
-        endDate: "30 Jul, 2024 - 02:01",
-        currentPrice: "700,000",
-        startPrice: "0",
-        status: "Disputed"
+    categories: [],
+    auctions: []
+  });
+
+  // Loading states
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const results = await Promise.allSettled([
+          getAllUsers().catch([]),
+          getVerifyRequests().catch([]),
+          adminAuctionAPI.getAllAuctions().catch([]),
+          paymentAPI.getAllPayments().catch([]),
+          adminAuctionAPI.getAuctionStats().catch(({ all:0, active:0, draft:0, delivered:0, pending:0, completed:0 }))
+        ]);
+
+        const users = results[0].status === 'fulfilled' ? results[0].value : [];
+        const verifyRequests = results[1].status === 'fulfilled' ? results[1].value : [];
+        const auctions = results[2].status === 'fulfilled' ? results[2].value : [];
+        const payments = results[3].status === 'fulfilled' ? results[3].value : [];
+
+        const usersMap = new Map(users.map(u => [u.id, u]));
+
+        // Stats
+        const totalUsers = users.length;
+        const pendingVerifications = verifyRequests.length;
+        const activeAuctions = auctions.filter(a => a.status === 'OPENED' || a.status === 'ACTIVE').length;
+        const soldAuctions = auctions.filter(a => 
+          a.status === 'COMPLETED' || a.status === 'DELIVERED' || a.status === 'SOLD'
+        ).length;
+        const disputedAuctions = auctions.filter(a => a.status === 'DISPUTED').length;
+
+        // Revenue
+        const successfulPayments = payments.filter(p => p.status === 'COMPLETED' || p.status === 'SUCCESS');
+        const totalRevenue = successfulPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+        // Category revenue
+        const categoryRevenue = {};
+        auctions.forEach(a => {
+          if (a.category && (a.status === 'COMPLETED' || a.status === 'SOLD')) {
+            const name = a.category.name || a.category;
+            const revenue = payments
+              .filter(p => p.auctionId === a.id && (p.status === 'COMPLETED' || p.status === 'SUCCESS'))
+              .reduce((sum, p) => sum + (p.amount || 0), 0);
+            categoryRevenue[name] = (categoryRevenue[name] || 0) + revenue;
+          }
+        });
+
+        const topCategories = Object.entries(categoryRevenue)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0,5)
+          .map(([name, revenue]) => ({ name, revenue }));
+
+        if (topCategories.length === 0) {
+          topCategories.push(
+            { name: "Luxury Watches", revenue: 0 },
+            { name: "Jewelry", revenue: 0 },
+            { name: "Electronics", revenue: 0 },
+            { name: "Fashion", revenue: 0 },
+            { name: "Automobiles", revenue: 0 }
+          );
+        }
+
+        // Update
+        setDashboardData({
+          username: "Admin",
+          tasks: pendingVerifications + disputedAuctions,
+          stats: {
+            users: { count: totalUsers, status: `${pendingVerifications} waiting to be verified` },
+            auctions: { count: activeAuctions, status: "Currently happening" },
+            sold: { count: soldAuctions, status: "Completed auctions" },
+            disputes: { count: disputedAuctions, status: "Waiting to be resolved" }
+          },
+          revenue: {
+            current: totalRevenue.toLocaleString(),
+            percentage: 100,
+            successfulPayments: { count: successfulPayments.length, percentage: 100 }
+          },
+          categories: topCategories,
+          auctions: auctions.map(a => {
+            const sellerUser = usersMap.get(a.sellerId);  // hoặc a.seller_id, tuỳ API trả về
+            return {
+              id: a.id,
+              name: a.title || a.name || `Auction #${a.id}`,
+              category: a.category?.name || a.category || "Unknown",
+              seller: {
+                name: sellerUser
+                  ? `${sellerUser.firstName} ${sellerUser.lastName}`
+                  : "Unknown Seller",
+                email: sellerUser
+                  ? sellerUser.email
+                  : "No email",
+                verified: sellerUser?.verified || false
+              },
+              startDate: a.startTime ? new Date(a.startTime).toLocaleString() : "Not set",
+              endDate:   a.endTime   ? new Date(a.endTime).toLocaleString()   : "Not set",
+              currentPrice: a.currentPrice?.toLocaleString() || a.startingPrice?.toLocaleString() || "0",
+              startPrice:   a.startingPrice?.toLocaleString() || "0",
+              status: mapAuctionStatus(a.status)
+            };
+          })
+        });
+
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+        setError('Unable to load dashboard data. Some services may be unavailable.');
+      } finally {
+        setLoading(false);
       }
-    ],
-    chartData: {
-      months: ['2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06', '2024-07'],
-      values: [0, 0, 0, 0, 0, 300000, 1530000]
-    }
+    };
+
+    loadDashboardData();
+  }, []);
+
+  // Map backend auction status to frontend display
+  const mapAuctionStatus = (status) => {
+    const statusMap = {
+      'OPENED': 'Opened',
+      'ACTIVE': 'Opened',
+      'COMPLETED': 'Sold',
+      'DELIVERED': 'Sold',
+      'SOLD': 'Sold',
+      'DISPUTED': 'Disputed',
+      'PENDING': 'Pending',
+      'DRAFT': 'Draft'
+    };
+    return statusMap[status] || status;
   };
 
   // Filter auctions by status
   useEffect(() => {
+    if (!dashboardData.auctions) return;
+
     const filteredByStatus = dashboardData.auctions.filter(auction => {
       if (auctionFilter === "Opening") return auction.status === "Opened";
       if (auctionFilter === "Sold") return auction.status === "Sold";
@@ -216,13 +189,12 @@ const Dashboard = () => {
     });
     
     setFilteredAuctions(filteredByStatus);
-    setCurrentPage(1); // Reset to first page on filter change
-  }, [auctionFilter]);
+    setCurrentPage(1);
+  }, [auctionFilter, dashboardData.auctions]);
 
   // Apply search filter on filteredAuctions
   useEffect(() => {
     if (!searchTerm.trim()) {
-      // No search term, keep current filter
       return;
     }
     
@@ -235,46 +207,29 @@ const Dashboard = () => {
     );
     
     setFilteredAuctions(searchFiltered);
-    setCurrentPage(1); // Reset to first page on search
+    setCurrentPage(1);
   }, [searchTerm]);
 
   // Update displayed auctions and total pages when filteredAuctions or page changes
   useEffect(() => {
-    // Calculate total pages
     const newTotalPages = Math.max(1, Math.ceil(filteredAuctions.length / itemsPerPage));
     setTotalPages(newTotalPages);
     
-    // Adjust current page if it exceeds new total pages
     if (currentPage > newTotalPages) {
       setCurrentPage(newTotalPages);
     }
     
-    // Calculate start and end indices
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = Math.min(startIndex + itemsPerPage, filteredAuctions.length);
     
-    // Update displayed auctions
     setDisplayedAuctions(filteredAuctions.slice(startIndex, endIndex));
   }, [filteredAuctions, currentPage, itemsPerPage]);
-
-  // Initialize filteredAuctions with dashboardData.auctions
-  useEffect(() => {
-    const initialFilteredAuctions = dashboardData.auctions.filter(auction => {
-      if (auctionFilter === "Opening") return auction.status === "Opened";
-      if (auctionFilter === "Sold") return auction.status === "Sold";
-      if (auctionFilter === "Disputing") return auction.status === "Disputed";
-      return true;
-    });
-    
-    setFilteredAuctions(initialFilteredAuctions);
-  }, []);
 
   // Search handler
   const handleSearch = (term) => {
     setSearchTerm(term);
     
     if (!term.trim()) {
-      // Reset to filtered by status only
       const resetFiltered = dashboardData.auctions.filter(auction => {
         if (auctionFilter === "Opening") return auction.status === "Opened";
         if (auctionFilter === "Sold") return auction.status === "Sold";
@@ -290,9 +245,7 @@ const Dashboard = () => {
   const toggleSearchInput = () => {
     setShowSearchInput(!showSearchInput);
     if (showSearchInput) {
-      // If closing search, clear search term
       setSearchTerm("");
-      // Reset to filtered by status only
       const resetFiltered = dashboardData.auctions.filter(auction => {
         if (auctionFilter === "Opening") return auction.status === "Opened";
         if (auctionFilter === "Sold") return auction.status === "Sold";
@@ -313,453 +266,102 @@ const Dashboard = () => {
 
   // Get pagination range
   const getPaginationRange = () => {
-    // If less than or equal to 3 pages, show all
     if (totalPages <= 3) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
     
-    // If at start or near start
     if (currentPage <= 2) {
       return [1, 2, 3];
     }
     
-    // If at end or near end
     if (currentPage >= totalPages - 1) {
       return [totalPages - 2, totalPages - 1, totalPages];
     }
     
-    // If in middle
     return [currentPage - 1, currentPage, currentPage + 1];
   };
 
-  // Render search section
-  const renderSearchSection = () => {
+  if (loading) {
     return (
-      <div className="showing-entries d-flex align-items-center">
-        <span>{filteredAuctions.length}</span>
-        <FaSearch 
-          className="ml-2" 
-          style={{ cursor: 'pointer', marginLeft: '5px' }} 
-          onClick={toggleSearchInput} 
-        />
-        {showSearchInput && (
-          <input
-            type="text"
-            className="form-control form-control-sm ml-2"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            style={{ width: '150px', display: 'inline-block', marginLeft: '5px' }}
-            autoFocus
-          />
-        )}
+      <div id="wrapper">
+        <Sidebar />
+        <div id="content-wrapper" className="d-flex flex-column">
+          <Topbar />
+          <div className="dashboard-content">
+            <Container fluid className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
+              <div className="text-center">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-3">Loading dashboard data...</p>
+              </div>
+            </Container>
+          </div>
+        </div>
       </div>
     );
-  };
+  }
 
-  // Render pagination
-  const renderPagination = () => {
-    const pageNumbers = getPaginationRange();
-    
+  if (error) {
     return (
-      <Pagination size="sm">
-        <Pagination.Prev 
-          onClick={() => goToPage(currentPage - 1)}
-          disabled={currentPage === 1}
-        />
-        
-        {pageNumbers.map(number => (
-          <Pagination.Item
-            key={number}
-            active={currentPage === number}
-            onClick={() => goToPage(number)}
-          >
-            {number}
-          </Pagination.Item>
-        ))}
-        
-        <Pagination.Next 
-          onClick={() => goToPage(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        />
-      </Pagination>
+      <div id="wrapper">
+        <Sidebar />
+        <div id="content-wrapper" className="d-flex flex-column">
+          <Topbar />
+          <div className="dashboard-content">
+            <Container fluid>
+              <Alert variant="danger">
+                <Alert.Heading>Error Loading Dashboard</Alert.Heading>
+                <p>{error}</p>
+                <Button variant="outline-danger" onClick={() => window.location.reload()}>
+                  Retry
+                </Button>
+              </Alert>
+            </Container>
+          </div>
+        </div>
+      </div>
     );
-  };
+  }
 
   return (
     <div id="wrapper">
-      {/* Sidebar */}
       <Sidebar />
-      
-      {/* Main Content */}
       <div id="content-wrapper" className="d-flex flex-column">
         <Topbar />
-        
-        {/* Dashboard Content */}
         <div className="dashboard-content">
           <Container fluid>
-            {/* Page Heading */}
-            <div className="page-heading mb-4">
-              <h2>Dashboard</h2>
-            </div>
-
-            {/* Welcome Card & Stats */}
             <Row>
-              {/* Welcome Card */}
-              <Col lg={6} className="mb-4">
-                <Card className="welcome-card">
-                  <Card.Body>
-                    <h3>Hello, {dashboardData.username}</h3>
-                    <p>You have {dashboardData.tasks} tasks to pay attention to</p>
-                    
-                    <Row className="mt-4">
-                      <Col md={6} className="mb-3">
-                        <Card className="stats-card">
-                          <Card.Body>
-                            <div className="stats-icon user-icon">
-                              <FaUsers />
-                            </div>
-                            <h2>{dashboardData.stats.users.count} users</h2>
-                            <p>{dashboardData.stats.users.status}</p>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      <Col md={6} className="mb-3">
-                        <Card className="stats-card">
-                          <Card.Body>
-                            <div className="stats-icon auction-icon">
-                              <FaGavel />
-                            </div>
-                            <h2>{dashboardData.stats.auctions.count} auctions</h2>
-                            <p>{dashboardData.stats.auctions.status}</p>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      <Col md={6} className="mb-3">
-                        <Card className="stats-card">
-                          <Card.Body>
-                            <div className="stats-icon sold-icon">
-                              <FaBoxOpen />
-                            </div>
-                            <h2>{dashboardData.stats.sold.count} sold</h2>
-                            <p>{dashboardData.stats.sold.status}</p>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      <Col md={6} className="mb-3">
-                        <Card className="stats-card">
-                          <Card.Body>
-                            <div className="stats-icon dispute-icon">
-                              <FaExclamationTriangle />
-                            </div>
-                            <h2>{dashboardData.stats.disputes.count} disputes</h2>
-                            <p>{dashboardData.stats.disputes.status}</p>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
-                  </Card.Body>
-                </Card>
+              <Col xl={7}>
+                {/* Welcome Card with Stats */}
+                <WelcomeCard dashboardData={dashboardData} />
               </Col>
-              
-              {/* Revenue Chart */}
-              <Col lg={6} className="mb-4">
-                <Card className="revenue-card">
-                  <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <div>
-                        <h5 className="mb-0">Revenue</h5>
-                        <small className="text-muted">Collected fee from successful seller payments</small>
-                      </div>
-                      <div className="time-selector">
-                        <ButtonGroup size="sm">
-                          <Button 
-                            variant={revenueTimeFrame === "Day" ? "primary" : "outline-secondary"}
-                            onClick={() => setRevenueTimeFrame("Day")}
-                          >
-                            Day
-                          </Button>
-                          <Button 
-                            variant={revenueTimeFrame === "Month" ? "primary" : "outline-secondary"}
-                            onClick={() => setRevenueTimeFrame("Month")}
-                          >
-                            Month
-                          </Button>
-                          <Button 
-                            variant={revenueTimeFrame === "Quarter" ? "primary" : "outline-secondary"}
-                            onClick={() => setRevenueTimeFrame("Quarter")}
-                          >
-                            Quarter
-                          </Button>
-                          <Button 
-                            variant={revenueTimeFrame === "Year" ? "primary" : "outline-secondary"}
-                            onClick={() => setRevenueTimeFrame("Year")}
-                          >
-                            Year
-                          </Button>
-                        </ButtonGroup>
-                      </div>
-                    </div>
-                    
-                    <Row className="mt-4">
-                      <Col md={6}>
-                        <div className="revenue-stats">
-                          <h2 className="revenue-amount">${dashboardData.revenue.current}</h2>
-                          <Badge bg="success" className="revenue-badge">
-                            +{dashboardData.revenue.percentage}%
-                          </Badge>
-                          <p className="text-muted">Collected this month</p>
-                        </div>
-                      </Col>
-                      <Col md={6}>
-                        <div className="revenue-stats">
-                          <h2 className="revenue-amount">{dashboardData.revenue.successfulPayments.count}</h2>
-                          <Badge bg="success" className="revenue-badge">
-                            +{dashboardData.revenue.successfulPayments.percentage}%
-                          </Badge>
-                          <p className="text-muted">Successful seller payments</p>
-                        </div>
-                      </Col>
-                    </Row>
-                    
-                    {/* Simple Revenue Chart */}
-                    <div className="revenue-chart mt-3">
-                      <svg className="w-100" height="200" viewBox="0 0 800 200">
-                        {/* X-axis */}
-                        <line x1="40" y1="170" x2="780" y2="170" stroke="#e0e0e0" strokeWidth="1" />
-                        
-                        {/* Y-axis */}
-                        <line x1="40" y1="10" x2="40" y2="170" stroke="#e0e0e0" strokeWidth="1" />
-                        
-                        {/* X-axis labels */}
-                        {dashboardData.chartData.months.map((month, index) => (
-                          <text 
-                            key={`month-${index}`} 
-                            x={40 + (index * (740/6))} 
-                            y="190" 
-                            textAnchor="middle" 
-                            fontSize="10"
-                            fill="#9aa0ac"
-                          >
-                            {month}
-                          </text>
-                        ))}
-                        
-                        {/* Y-axis labels */}
-                        <text x="35" y="170" textAnchor="end" fontSize="10" fill="#9aa0ac">0</text>
-                        <text x="35" y="130" textAnchor="end" fontSize="10" fill="#9aa0ac">400K</text>
-                        <text x="35" y="90" textAnchor="end" fontSize="10" fill="#9aa0ac">800K</text>
-                        <text x="35" y="50" textAnchor="end" fontSize="10" fill="#9aa0ac">1.2M</text>
-                        <text x="35" y="10" textAnchor="end" fontSize="10" fill="#9aa0ac">1.6M</text>
-                        
-                        {/* Revenue line */}
-                        <path 
-                          d={`M40,${170 - (dashboardData.chartData.values[0] / 10000)} 
-                             L${40 + (740/6)},${170 - (dashboardData.chartData.values[1] / 10000)} 
-                             L${40 + (740/6) * 2},${170 - (dashboardData.chartData.values[2] / 10000)} 
-                             L${40 + (740/6) * 3},${170 - (dashboardData.chartData.values[3] / 10000)} 
-                             L${40 + (740/6) * 4},${170 - (dashboardData.chartData.values[4] / 10000)} 
-                             L${40 + (740/6) * 5},${170 - (dashboardData.chartData.values[5] / 10000)} 
-                             L${40 + (740/6) * 6},${170 - (dashboardData.chartData.values[6] / 10000)}`} 
-                          fill="none" 
-                          stroke="#7c4dff" 
-                          strokeWidth="3" 
-                        />
-                      </svg>
-                    </div>
-                  </Card.Body>
-                </Card>
+              <Col xl={5}>
+                {/* Category Card */}
+                <CategoryCard 
+                  dashboardData={dashboardData}
+                  categoryTimeFrame={categoryTimeFrame}
+                  setCategoryTimeFrame={setCategoryTimeFrame}
+                />
               </Col>
+
             </Row>
-
-            <Row>
-              {/* Current Auctions */}
-              <Col lg={8} className="mb-4">
-                <Card className="table-card">
-                  <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <div>
-                        <h5 className="mb-0">Current Auctions</h5>
-                        <small className="text-muted">Go to auctions page for more</small>
-                      </div>
-                      <div className="auction-filters">
-                        <ButtonGroup size="sm">
-                          <Button 
-                            variant={auctionFilter === "Opening" ? "primary" : "outline-secondary"}
-                            onClick={() => setAuctionFilter("Opening")}
-                          >
-                            Opening
-                          </Button>
-                          <Button 
-                            variant={auctionFilter === "Sold" ? "primary" : "outline-secondary"}
-                            onClick={() => setAuctionFilter("Sold")}
-                          >
-                            Sold
-                          </Button>
-                          <Button 
-                            variant={auctionFilter === "Disputing" ? "primary" : "outline-secondary"}
-                            onClick={() => setAuctionFilter("Disputing")}
-                          >
-                            Disputing
-                          </Button>
-                        </ButtonGroup>
-                      </div>
-                    </div>
-                    
-                    <div className="auction-table-container">
-                      <Table responsive hover className="auction-table">
-                        <thead>
-                          <tr>
-                            <th>Auction</th>
-                            <th>Seller</th>
-                            <th>Start-End</th>
-                            <th>Price</th>
-                            <th>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {displayedAuctions.map((auction, index) => (
-                            <tr key={auction.id}>
-                              <td>
-                                <div className="d-flex align-items-center">
-                                  <div className="auction-image mr-3">
-                                    <img 
-                                      src={`/assets/images/placeholders/item${index + 1}.jpg`} 
-                                      alt={auction.name}
-                                      onError={(e) => {
-                                        e.target.src = "";
-                                      }}
-                                    />
-                                  </div>
-                                  <div className="auction-details">
-                                    <div className="auction-name">{auction.name}</div>
-                                    <div className="auction-meta">
-                                      ID: #{auction.id} | Category: {auction.category}
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td>
-                                <div className="seller-info">
-                                  <div className="seller-name">{auction.seller.name}<div className="seller-email">{auction.seller.email}</div></div>
-                                  <div className="seller-meta">
-                                    {auction.seller.verified && (
-                                      <span className="verified-badge">Verified</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </td>
-                              <td>
-                                <div className="auction-dates">
-                                  <div className="date-from">
-                                    <span>From:</span> {auction.startDate}
-                                  </div>
-                                  <div className="date-to">
-                                    <span>To:</span> {auction.endDate}
-                                  </div>
-                                </div>
-                              </td>
-                              <td>
-                                <div className="auction-price">
-                                  <div className="current-price">${auction.currentPrice}</div>
-                                  {auction.startPrice !== "0" && (
-                                    <div className="start-price">${auction.startPrice}</div>
-                                  )}
-                                </div>
-                              </td>
-                              <td>
-                                <div className="auction-status">
-                                  <span className={`status-badge status-${auction.status.toLowerCase()}`}>
-                                    {auction.status}
-                                  </span>
-                                  <button className="view-btn">
-                                    <FaEye />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                    </div>
-                    
-                    <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
-                      {renderSearchSection()}
-                      {renderPagination()}
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-              
-              {/* Top Categories */}
-              <Col lg={4} className="mb-4">
-                <Card className="category-card">
-                  <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <div>
-                        <h5 className="mb-0">Top Categories</h5>
-                        <small className="text-muted">Categories which bring in the most revenue</small>
-                      </div>
-                    </div>
-                    
-                    <div className="category-filter mt-3 mb-4">
-                      <ButtonGroup size="sm" className="w-100">
-                        <Button 
-                          variant={categoryTimeFrame === "All" ? "danger" : "light"}
-                          className="flex-fill"
-                          onClick={() => setCategoryTimeFrame("All")}
-                        >
-                          All
-                        </Button>
-                        <Button 
-                          variant={categoryTimeFrame === "Year" ? "danger" : "light"}
-                          className="flex-fill"
-                          onClick={() => setCategoryTimeFrame("Year")}
-                        >
-                          Year
-                        </Button>
-                        <Button 
-                          variant={categoryTimeFrame === "Quarter" ? "danger" : "light"}
-                          className="flex-fill"
-                          onClick={() => setCategoryTimeFrame("Quarter")}
-                        >
-                          Quarter
-                        </Button>
-                        <Button 
-                          variant={categoryTimeFrame === "Month" ? "danger" : "light"}
-                          className="flex-fill"
-                          onClick={() => setCategoryTimeFrame("Month")}
-                        >
-                          Month
-                        </Button>
-                      </ButtonGroup>
-                    </div>
-                    
-                    <div className="categories-chart">
-                      {dashboardData.categories.map((category, index) => (
-                        <div key={index} className="category-item mb-4">
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <div className="category-name">{category.name}</div>
-                            <div className="category-revenue">${category.revenue.toLocaleString()}</div>
-                          </div>
-                          <div className="progress" style={{ height: "8px" }}>
-                            <div 
-                              className="progress-bar" 
-                              role="progressbar" 
-                              style={{ 
-                                width: `${(category.revenue / dashboardData.categories[0].revenue) * 100}%`,
-                                backgroundColor: ['#ff6b8a', '#36b9cc', '#1cc88a', '#f6c23e', '#e74a3b'][index % 5]
-                              }}
-                              aria-valuenow={(category.revenue / dashboardData.categories[0].revenue) * 100} 
-                              aria-valuemin="0" 
-                              aria-valuemax="100"
-                            ></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </Card.Body>
-                </Card>
+            
+            <Row className="mt-4">
+              <Col xl={12}>
+                {/* Auction Table Card */}
+                <AuctionTableCard 
+                  displayedAuctions={displayedAuctions}
+                  auctionFilter={auctionFilter}
+                  setAuctionFilter={setAuctionFilter}
+                  searchTerm={searchTerm}
+                  showSearchInput={showSearchInput}
+                  filteredAuctions={filteredAuctions}
+                  handleSearch={handleSearch}
+                  toggleSearchInput={toggleSearchInput}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  goToPage={goToPage}
+                  getPaginationRange={getPaginationRange}
+                />
               </Col>
             </Row>
           </Container>
