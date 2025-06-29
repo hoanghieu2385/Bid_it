@@ -319,19 +319,19 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                             imgUrl,
                             width: 60,
                             height: 60,
-                            fit: BoxFit.cover,
+                            fit: BoxFit.contain,
                             errorBuilder: (_, __, ___) => Image.asset(
                               'assets/images/product-img.png',
                               width: 60,
                               height: 60,
-                              fit: BoxFit.cover,
+                              fit: BoxFit.contain,
                             ),
                           )
                               : Image.asset(
                             'assets/images/product-img.png',
                             width: 60,
                             height: 60,
-                            fit: BoxFit.cover,
+                            fit: BoxFit.contain,
                           ),
                         ),
                         title: Text(
