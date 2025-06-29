@@ -272,13 +272,13 @@ class _SearchResultsState extends State<SearchResults> {
                       child: imgUrl != null && imgUrl.isNotEmpty
                           ? Image.network(
                         imgUrl,
-                        height: 96, // Giảm chiều cao hình ảnh xuống
-                        fit: BoxFit.cover,
+                        height: 96,
+                        fit: BoxFit.contain,
                       )
                           : Image.asset(
                         'assets/images/product-img.png',
                         height: 96,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                       ),
                     ),
                     Padding(
