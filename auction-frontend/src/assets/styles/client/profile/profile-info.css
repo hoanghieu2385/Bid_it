@@ -1,4 +1,5 @@
 /* src/assets/styles/client/profile/profile-info.css */
+
 .profile-score-label {
 	font-weight: 600;
 	color: #333;
@@ -15,3 +16,13 @@
 	font-weight: 600;
 	font-size: 0.95rem;
 }
+
+.btn-verify-fix {
+  height: 38px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  padding: 0 12px;
+}
+

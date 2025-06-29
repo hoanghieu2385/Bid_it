@@ -70,8 +70,8 @@ const Header = () => {
 								</Link>
 							</li>
 							<li className="nav-item">
-								<Link to="/contact" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
-									Contact
+								<Link to="/how-it-works" className="client-nav-link nav-link" onClick={() => setExpanded(false)}>
+									How It Works
 								</Link>
 							</li>
 						</ul>

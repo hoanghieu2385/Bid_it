@@ -168,7 +168,7 @@ const MyAuctions = () => {
 										<b>End:</b> {new Date(auction.endTime).toLocaleString('vi-VN')}
 									</p>
 									<p className="mb-1">
-										<b>Price:</b> {Number(auction.startingPrice).toLocaleString('vi-VN')}₫
+										<b>Price:</b> ${Number(auction.currentBid)}
 									</p>
 									<p className="mb-1">
 										<b>Bids:</b> {auction.bidCount ?? 0}

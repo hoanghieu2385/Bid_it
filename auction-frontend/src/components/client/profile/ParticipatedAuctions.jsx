@@ -1,4 +1,3 @@
-// src/components/client/profile/ParticipatedAuctions.jsx
 import React, { useEffect, useState } from "react";
 import { getCurrentUser } from "../../../services/user-api";
 import { Link } from "react-router-dom";

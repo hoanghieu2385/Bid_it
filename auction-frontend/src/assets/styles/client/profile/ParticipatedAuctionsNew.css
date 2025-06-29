@@ -1,0 +1,595 @@
+/* ParticipatedAuctionsNew.css - Unique Classes */
+
+.participated-auctions-new {
+  padding: 0;
+  min-height: 100vh;
+  background: white;
+}
+
+/* =============== PAGE HEADER =============== */
+.participated-page-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem 0;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.participated-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.5rem;
+}
+
+.participated-header-text h2 {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+.participated-header-description {
+  margin: 0.3rem 0 0 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
+}
+
+.participated-refresh-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.participated-refresh-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.participated-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =============== FILTERS =============== */
+.participated-auction-filters {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.participated-filter-header h6 {
+  color: #495057;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.participated-filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.participated-filter-btn {
+  border: 2px solid transparent;
+  border-radius: 25px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  color: #6c757d;
+  text-decoration: none;
+}
+
+.participated-filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.participated-filter-btn.participated-btn-primary {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.participated-filter-btn.participated-btn-primary.participated-active {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  color: white;
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+}
+
+.participated-filter-btn.participated-btn-success {
+  border-color: #28a745;
+  color: #28a745;
+}
+
+.participated-filter-btn.participated-btn-success.participated-active {
+  background: linear-gradient(45deg, #28a745, #1e7e34);
+  color: white;
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+}
+
+.participated-filter-btn.participated-btn-warning {
+  border-color: #ffc107;
+  color: #856404;
+}
+
+.participated-filter-btn.participated-btn-warning.participated-active {
+  background: linear-gradient(45deg, #ffc107, #e0a800);
+  color: #212529;
+  box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
+}
+
+.participated-filter-btn.participated-btn-secondary {
+  border-color: #6c757d;
+  color: #6c757d;
+}
+
+.participated-filter-btn.participated-btn-secondary.participated-active {
+  background: linear-gradient(45deg, #6c757d, #495057);
+  color: white;
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
+}
+
+.participated-filter-count {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  margin-left: 0.5rem;
+}
+
+/* =============== RESULTS INFO =============== */
+.participated-results-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+.participated-results-count {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* =============== AUCTION LIST =============== */
+.participated-auction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* =============== AUCTION CARD =============== */
+.participated-auction-card-horizontal {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: stretch;
+  min-height: 120px;
+  position: relative;
+}
+
+.participated-auction-card-horizontal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* =============== IMAGE SECTION =============== */
+.participated-auction-image-section {
+  position: relative;
+  width: 150px;
+  min-width: 150px;
+  /* height: 120px; */
+  overflow: hidden;
+  background: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.participated-status-badges-overlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: flex-end;
+}
+
+.participated-status-badge {
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.participated-status-info {
+  background: linear-gradient(45deg, #17a2b8, #007bff);
+  color: white;
+}
+
+.participated-status-success {
+  background: linear-gradient(45deg, #28a745, #20c997);
+  color: white;
+}
+
+.participated-status-warning {
+  background: linear-gradient(45deg, #ffc107, #fd7e14);
+  color: #212529;
+}
+
+.participated-status-secondary {
+  background: linear-gradient(45deg, #6c757d, #495057);
+  color: white;
+}
+
+.participated-status-primary {
+  background: linear-gradient(45deg, #007bff, #6610f2);
+  color: white;
+}
+
+.participated-status-danger {
+  background: linear-gradient(45deg, #dc3545, #e83e8c);
+  color: white;
+}
+
+.participated-winner-badge {
+  background: linear-gradient(45deg, #ffd700, #ffb347);
+  color: #212529;
+  padding: 0.2rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* =============== CONTENT SECTION =============== */
+.participated-auction-content {
+  flex: 1;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  overflow: hidden;
+}
+
+.participated-auction-top-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.participated-auction-bottom-section {
+  flex: 0 0 auto;
+}
+
+.participated-auction-header {
+  margin-bottom: 0.5rem;
+}
+
+.participated-auction-title-horizontal {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #212529;
+  margin: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =============== DESCRIPTION =============== */
+.participated-auction-description {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+}
+
+.participated-description-text {
+  font-size: 0.85rem;
+  color: #6c757d;
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+/* =============== PRICE SECTION =============== */
+.participated-price-section-horizontal {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.participated-price-item-horizontal {
+  text-align: center;
+}
+
+.participated-price-label-horizontal {
+  display: block;
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.participated-price-value-horizontal {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.participated-current-price {
+  color: #28a745;
+}
+
+.participated-user-bid {
+  color: #007bff;
+}
+
+/* =============== TIMING =============== */
+.participated-auction-timing-horizontal {
+  display: flex;
+  align-items: center;
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.participated-time-remaining {
+  font-weight: 600;
+  color: #ffc107;
+}
+
+.participated-end-time {
+  color: #6c757d;
+}
+
+.participated-auction-end-time {
+  display: flex;
+  align-items: center;
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+/* =============== ALERTS =============== */
+.participated-winner-alert-horizontal {
+  background: linear-gradient(45deg, #d4edda, #c3e6cb);
+  border: 1px solid #b8dacc;
+  color: #155724;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+}
+
+.participated-payment-alert-horizontal {
+  background: linear-gradient(45deg, #f8d7da, #f5c6cb);
+  border: 1px solid #f1aeb5;
+  color: #721c24;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+/* =============== ACTIONS SECTION =============== */
+.participated-auction-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-left: 1px solid #e9ecef;
+  min-width: 160px;
+  justify-content: center;
+}
+
+.participated-action-btn-horizontal {
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 36px;
+}
+
+.participated-action-btn-horizontal:hover {
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.participated-btn-secondary {
+  background: linear-gradient(45deg, #6c757d, #495057);
+  color: white;
+}
+
+.participated-btn-primary {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  color: white;
+}
+
+.participated-btn-info {
+  background: linear-gradient(45deg, #17a2b8, #138496);
+  color: white;
+}
+
+.participated-btn-success {
+  background: linear-gradient(45deg, #28a745, #1e7e34);
+  color: white;
+}
+
+.participated-btn-warning {
+  background: linear-gradient(45deg, #ffc107, #e0a800);
+  color: #212529;
+}
+
+.participated-action-link-horizontal {
+  text-decoration: none;
+}
+
+/* =============== STATISTICS =============== */
+.participated-auction-statistics {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.participated-statistics-header h6 {
+  color: #495057;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.participated-statistics-grid {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.participated-statistics-item {
+  text-align: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+  flex: 1;
+  min-width: 120px;
+}
+
+.participated-statistics-item:hover {
+  transform: translateY(-2px);
+}
+
+.participated-statistics-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  line-height: 1;
+}
+
+.participated-statistics-label {
+  color: #6c757d;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* =============== RESPONSIVE DESIGN =============== */
+@media (max-width: 768px) {
+  .participated-auction-card-horizontal {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .participated-auction-image-section {
+    width: 100%;
+    min-width: auto;
+    height: 200px;
+  }
+
+  .participated-auction-content {
+    padding: 1rem;
+  }
+
+  .participated-price-section-horizontal {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .participated-auction-actions {
+    flex-direction: row;
+    border-left: none;
+    border-top: 1px solid #e9ecef;
+    min-width: auto;
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  .participated-action-btn-horizontal {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8rem;
+    padding: 0.6rem 0.5rem;
+  }
+
+  .participated-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .participated-auction-title-horizontal {
+    font-size: 1.2rem;
+  }
+
+  .participated-price-value-horizontal {
+    font-size: 1.1rem;
+  }
+
+  .participated-auction-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .participated-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
