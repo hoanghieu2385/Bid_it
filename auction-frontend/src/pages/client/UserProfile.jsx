@@ -7,7 +7,7 @@ import ProfileInfo from '../../components/client/profile/ProfileInfo';
 import EKYCVerification from '../../components/client/profile/EKYCVerification';
 import ChangePassword from '../../components/client/profile/ChangePassword';
 import MyAuctions from '../../components/client/profile/MyAuctions';
-import ParticipatedAuctions from '../../components/client/profile/ParticipatedAuctions';
+import ParticipatedAuctionsNew from '../../components/client/profile/ParticipatedAuctionsNew';
 import {FaUser, FaHistory, FaLock, FaGavel, FaClipboardList, FaExclamationCircle} from 'react-icons/fa';
 import '../../assets/styles/client/user-profile.css';
 import defaultAvatar from '../../assets/images/default-avatar.png';
@@ -62,8 +62,7 @@ const UserProfile = () => {
 									onClick={() => changeTab('ekyc')}
 								>
 									<div>
-										<i className="fa-solid fa-id-card me-2" style={{color: '#d1d3e2'}}/>
-										eKYC Verification
+										<i className="fa-solid fa-id-card me-2" style={{color: '#d1d3e2'}}/> eKYC Verification
 									</div>
 									{user?.citizenIdStatus !== 'APPROVED'
 										&& (
@@ -95,7 +94,7 @@ const UserProfile = () => {
 							{currentTab === 'info' && <ProfileInfo/>}
 							{currentTab === 'ekyc' && <EKYCVerification/>}
 							{currentTab === 'my-auctions' && <MyAuctions/>}
-							{currentTab === 'participated' && <ParticipatedAuctions/>}
+							{currentTab === 'participated' && <ParticipatedAuctionsNew/>}
 							{currentTab === 'password' && <ChangePassword/>}
 						</div>
 					</div>

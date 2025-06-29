@@ -44,7 +44,6 @@ public class AuctionService implements IAuctionService {
         this.mediaService = mediaService;
         this.emailClient = emailClient;
     }
-
     public AuctionResponseDTO createAuction(AuctionRequestDTO request, Long requesterId) {
         if (requesterId == null) {
             throw new IllegalArgumentException("Seller (requester) ID is required");
