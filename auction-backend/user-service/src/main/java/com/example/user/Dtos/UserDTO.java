@@ -1,21 +1,31 @@
 package com.example.user.Dtos;
 
 public class UserDTO {
+    private Long id;
     private String firstName;
     private String lastName;
     private String email;
-    private String password;
-    private Integer score = 100; // Giá trị mặc định
+    private Integer score;
 
     public UserDTO() {
     }
 
-    public UserDTO(String firstName, String lastName, String email, String password, Integer score) {
+    public UserDTO(Long id, String firstName, String lastName, String email, Integer score) {
+        this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
-        this.password = password;
         this.score = score;
+    }
+
+    // Getter Setter đầy đủ
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getFirstName() {
@@ -40,14 +50,6 @@ public class UserDTO {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public Integer getScore() {

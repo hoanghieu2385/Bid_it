@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(name = "user-service", configuration = FeignClientConfig.class)
 public interface UserClient {
-    @GetMapping("/api/users/{id}")
+    @GetMapping("/internal/users/{id}")
     UserDTO getUserById(@PathVariable("id") Long id);
 
     @GetMapping("/internal/users/{id}/score")

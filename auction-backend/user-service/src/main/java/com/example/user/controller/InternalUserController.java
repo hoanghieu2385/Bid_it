@@ -1,6 +1,8 @@
 package com.example.user.controller;
 
 import com.example.user.Dtos.ScoreHistoryDTO;
+import com.example.user.Dtos.UserDTO;
+import com.example.user.mapper.UserMapper;
 import com.example.user.model.User;
 import com.example.user.service.UserService;
 import org.slf4j.Logger;
@@ -27,16 +29,29 @@ public class InternalUserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        logger.info("Fetching user with id={}", id);
-        Optional<User> user = userService.getUserById(id);
-        return user.map(u -> {
-            logger.info("User found: {}", u.getEmail());
-            return ResponseEntity.ok(u);
-        }).orElseGet(() -> {
-            logger.warn("User not found with id={}", id);
-            return ResponseEntity.notFound().build();
-        });
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        logger.info("🔍 [getUserById] Start - id={}", id);
+        try {
+            Optional<User> userOpt = userService.getUserByIdInternal(id);
+
+            if (userOpt.isEmpty()) {
+                logger.warn("⚠️ [getUserById] User not found: id={}", id);
+                return ResponseEntity.notFound().build();
+            }
+
+            User user = userOpt.get();
+            logger.info("✅ [getUserById] Found user: id={}, email={}", user.getId(), user.getEmail());
+
+            UserDTO dto = UserMapper.toDTO(user);
+            logger.info("✅ [getUserById] Mapped DTO: id={}, email={}, score={}",
+                    dto.getId(), dto.getEmail(), dto.getScore());
+
+            return ResponseEntity.ok(dto);
+
+        } catch (Exception e) {
+            logger.error("💥 [getUserById] Exception: ", e);
+            return ResponseEntity.internalServerError().body("Server Error: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}/score")

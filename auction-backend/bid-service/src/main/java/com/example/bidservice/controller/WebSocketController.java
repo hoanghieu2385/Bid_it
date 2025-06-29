@@ -1,3 +1,4 @@
+// ============= WebSocketController.java =============
 package com.example.bidservice.controller;
 
 import com.example.bidservice.context.TokenContextHolder;
@@ -5,6 +6,8 @@ import com.example.bidservice.dto.BidRequest;
 import com.example.bidservice.entity.Bid;
 import com.example.bidservice.service.IBidService;
 import com.example.bidservice.service.IWebSocketService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -12,10 +15,14 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.stereotype.Controller;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Controller
 public class WebSocketController {
+
+    private static final Logger logger = LoggerFactory.getLogger(WebSocketController.class);
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     @Autowired
     private IBidService bidService;
@@ -29,37 +36,82 @@ public class WebSocketController {
             @Payload BidRequest bidRequest,
             SimpMessageHeaderAccessor headerAccessor
     ) {
+        String sessionId = headerAccessor.getSessionId();
+        String timestamp = LocalDateTime.now().format(formatter);
+
+        logger.info("🎯 ===== NEW BID REQUEST START =====");
+        logger.info("⏰ Timestamp: {}", timestamp);
+        logger.info("🔗 Session ID: {}", sessionId);
+        logger.info("🏛️ Auction ID: {}", auctionId);
+        logger.info("👤 User ID: {}", bidRequest.getUserId());
+        logger.info("💰 Bid Amount: {}", bidRequest.getBidAmount());
+
         try {
-            // Đảm bảo token được set từ session
+            // Token setup
             String authToken = (String) headerAccessor.getSessionAttributes().get("authToken");
             if (authToken != null) {
                 TokenContextHolder.setToken(authToken);
-//                System.out.println("Token set in handleNewBid: " + authToken);
+                logger.debug("🔐 Auth token set for session: {}", sessionId);
             } else {
-                System.out.println("No auth token found in session");
+                logger.warn("⚠️ No auth token found in session: {}", sessionId);
             }
 
-            System.out.println("Received bid via WebSocket: auction=" + auctionId +
-                    ", user=" + bidRequest.getUserId() +
-                    ", amount=" + bidRequest.getBidAmount());
+            logger.info("🔄 Starting bid processing...");
+            long startTime = System.currentTimeMillis();
 
-            // Tạo bid
+            // Create bid - sẽ gọi validate và tất cả logic
             Bid newBid = bidService.createBid(auctionId, bidRequest.getUserId(), bidRequest.getBidAmount());
 
-//            System.out.println("Bid created successfully: " + newBid.getId());
+            long processingTime = System.currentTimeMillis() - startTime;
+
+            logger.info("✅ ===== BID CREATED SUCCESSFULLY =====");
+            logger.info("🆔 New Bid ID: {}", newBid.getId());
+            logger.info("⚡ Processing time: {}ms", processingTime);
+            logger.info("📊 Final bid status: {}", newBid.getStatus());
+            logger.info("🏆 Is winning: {}", newBid.getIsWinning());
+            logger.info("⏰ Bid time: {}", newBid.getBidTime());
+            logger.info("🎯 ===== BID REQUEST END =====");
 
         } catch (Exception e) {
-            System.err.println("Failed to create bid via WebSocket: " + e.getMessage());
-            e.printStackTrace();
+            long processingTime = System.currentTimeMillis() - System.currentTimeMillis();
 
-            // Gửi error message về client
+            logger.error("❌ ===== BID FAILED =====");
+            logger.error("🔗 Session ID: {}", sessionId);
+            logger.error("🏛️ Auction ID: {}", auctionId);
+            logger.error("👤 User ID: {}", bidRequest.getUserId());
+            logger.error("💰 Attempted Bid Amount: {}", bidRequest.getBidAmount());
+            logger.error("💥 Error Type: {}", e.getClass().getSimpleName());
+            logger.error("📝 Error Message: {}", e.getMessage());
+            logger.error("⚡ Processing time before error: {}ms", processingTime);
+
+            // Categorize error for better logging
+            if (e.getMessage().contains("already have the highest bid")) {
+                logger.error("🔄 DUPLICATE BID: User {} already has highest bid on auction {}",
+                        bidRequest.getUserId(), auctionId);
+            } else if (e.getMessage().contains("need at least 50 points")) {
+                logger.error("🎯 INSUFFICIENT POINTS: User {} has less than 50 points",
+                        bidRequest.getUserId());
+            } else if (e.getMessage().contains("must be higher than current highest bid")) {
+                logger.error("📉 BID TOO LOW: Bid {} is not higher than current highest",
+                        bidRequest.getBidAmount());
+            } else if (e.getMessage().contains("Auction has ended")) {
+                logger.error("⏰ AUCTION ENDED: Auction {} is no longer active", auctionId);
+            } else if (e.getMessage().contains("cannot bid on your own auction")) {
+                logger.error("🚫 SELF BID: User {} tried to bid on own auction {}",
+                        bidRequest.getUserId(), auctionId);
+            }
+
+            // Send error notification
             try {
                 webSocketService.sendBidFailed(bidRequest.getUserId(), auctionId, e.getMessage());
+                logger.info("📤 Error notification sent to user: {}", bidRequest.getUserId());
             } catch (Exception notifyError) {
-                System.err.println("Failed to send error notification: " + notifyError.getMessage());
+                logger.error("💥 Failed to send error notification: {}", notifyError.getMessage());
             }
+
+            logger.error("🎯 ===== BID REQUEST END (FAILED) =====");
+
         } finally {
-            // Đảm bảo clear ThreadLocal
             TokenContextHolder.clear();
         }
     }
@@ -70,19 +122,21 @@ public class WebSocketController {
             @Payload Object joinData,
             SimpMessageHeaderAccessor headerAccessor
     ) {
+        String sessionId = headerAccessor.getSessionId();
+        logger.info("🚪 User joined auction {} - Session: {}", auctionId, sessionId);
+
         try {
-            // Set token từ session
             String authToken = (String) headerAccessor.getSessionAttributes().get("authToken");
             if (authToken != null) {
                 TokenContextHolder.setToken(authToken);
+                logger.debug("🔐 Token set for join auction");
             }
 
-            System.out.println("User joined auction " + auctionId + ": " + joinData);
-
-            // Có thể thêm logic gửi thông tin phiên đấu giá hiện tại cho user mới join
+            logger.info("📊 Join data: {}", joinData);
+            logger.info("✅ Successfully joined auction {}", auctionId);
 
         } catch (Exception e) {
-            System.err.println("Failed to handle join auction: " + e.getMessage());
+            logger.error("❌ Failed to handle join auction {}: {}", auctionId, e.getMessage());
         } finally {
             TokenContextHolder.clear();
         }

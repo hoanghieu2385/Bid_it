@@ -123,6 +123,18 @@ public class BidController {
         }
     }
 
+    @PostMapping("/auction/{auctionId}/process-end")
+    public ResponseEntity<ApiResponse<String>> processAuctionEnd(@PathVariable Long auctionId) {
+        try {
+            bidService.processAuctionEnd(auctionId);
+            return ResponseEntity.ok(new ApiResponse<>("Auction end processed successfully", "OK"));
+        } catch (Exception e) {
+//            logger.error("Failed to process auction end for auction {}: {}", auctionId, e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>("Failed to process auction end: " + e.getMessage(), null));
+        }
+    }
+
     // Health check
     @GetMapping("/health")
     public ResponseEntity<ApiResponse<String>> healthCheck() {

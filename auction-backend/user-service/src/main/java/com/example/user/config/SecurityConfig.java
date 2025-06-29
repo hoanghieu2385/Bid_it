@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // Auth endpoints - không cần authentication
                         .requestMatchers(
                                 "/auth/ping",
                                 "/auth/register",
@@ -54,15 +55,26 @@ public class SecurityConfig {
                                 "/auth/login-with-otp",
                                 "/auth/forgot-password",
                                 "/auth/reset-password",
-                                "/auth/change-password",
-                                "/api/users/verify-phone-otp",
-                                "/api/users/send-phone-otp",
-                                "/api/internal/**",
-                                "/internal/**"
+                                "/auth/change-password"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/users/seller/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
-                        .requestMatchers("/api/users/{id}").permitAll()
+
+                        // Internal APIs - không cần authentication
+                        .requestMatchers("/api/internal/**", "/internal/**").permitAll()
+
+                        // User endpoints cụ thể - không cần authentication
+                        .requestMatchers("/api/users/verify-phone-otp", "/api/users/send-phone-otp").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/seller/**").permitAll()
+
+                        // ✅ QUAN TRỌNG: Đặt rule cụ thể TRƯỚC rule chung
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN") // GET all users (phải có trước /api/users/**)
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll() // GET user by ID - không cần authentication
+
+                        // Admin-only endpoints khác
+                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN") // Create user
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN") // Delete user
+                        .requestMatchers(HttpMethod.PUT, "/api/users/*/roles").hasRole("ADMIN") // Update roles
+
+                        // Tất cả request khác cần authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
