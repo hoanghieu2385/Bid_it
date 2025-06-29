@@ -52,6 +52,10 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    public Optional<User> getUserByIdInternal(Long id) {
+        return userRepository.findById(id);
+    }
+
     public Optional<User> getUserById(Long id) {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> requestedUser = userRepository.findById(id);
