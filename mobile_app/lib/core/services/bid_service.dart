@@ -79,7 +79,7 @@ class BidService {
     return auctions.values.toList();
   }
   static Future<List<Map<String, dynamic>>> fetchAllAuctionBids(int auctionId, {required String token}) async {
-    final url = Uri.parse('$bidbaseUrl//bids/auction/$auctionId/history');
+    final url = Uri.parse('$bidbaseUrl/bids/auction/$auctionId/history');
     final response = await http.get(
       url,
       headers: {
@@ -103,4 +103,34 @@ class BidService {
     }
   }
 
+  static Future<Map<String, dynamic>?> fetchLatestBid(int auctionId, {required String token}) async {
+    final url = Uri.parse('$bidbaseUrl/bids/auction/$auctionId/highest');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['success'] == true && decoded['data'] != null) {
+          return {
+            'auctionId': decoded['data']['auctionId'],
+            'bidAmount': decoded['data']['highestBid'],
+            'userId': decoded['data']['userId'],
+            'bidTime': decoded['data']['timestamp'],
+          };
+        }
+        return null;
+      } else {
+        throw Exception('Failed to load latest bid: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching latest bid: $e');
+      return null;
+    }
+  }
 }

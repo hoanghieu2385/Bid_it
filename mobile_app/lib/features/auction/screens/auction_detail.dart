@@ -49,6 +49,9 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
 
   bool isScoreTooLow = false;
 
+  int? latestBidUserId;
+
+
   @override
   void initState() {
     super.initState();
@@ -122,9 +125,11 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
   Future<void> _loadAuctionDetails() async {
     try {
       final updated = await AuctionService.fetchAuctionById(currentAuction.id);
+      final latestBid = await BidService.fetchLatestBid(currentAuction.id, token: await UserService.getToken() ?? '');
       if (updated != null) {
         setState(() {
           currentAuction = updated;
+          latestBidUserId = latestBid?['userId'] as int?;
           _generateBidSuggestions();
           updateRemaining();
         });
@@ -178,9 +183,12 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
   Future<void> fetchAuctionDetail() async {
     try {
       final updatedAuction = await AuctionService.fetchAuctionById(widget.auction.id);
+      final latestBid = await BidService.fetchLatestBid(widget.auction.id, token: await UserService.getToken() ?? '');
+      print(latestBid);
       if (updatedAuction != null) {
         setState(() {
           currentAuction = updatedAuction;
+          latestBidUserId = latestBid?['userId'] as int?;
         });
       }
     } catch (e) {
@@ -269,40 +277,41 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
         onActivity: (data) {
           print('[WebSocket] Activity: $data');
 
-          // Handle NEW_BID
           if (data['type'] == 'NEW_BID' && data['bidInfo'] != null) {
             final bidInfo = data['bidInfo'] as Map<String, dynamic>;
             final bidAmount = (bidInfo['bidAmount'] as num?)?.toDouble();
 
             setState(() {
-              // Always use bidAmount if possible
               if (bidAmount != null) {
                 currentAuction.currentBid = bidAmount;
               } else {
                 currentAuction.currentBid = (data['currentHighestBid'] as num?)?.toDouble() ?? currentAuction.currentBid;
               }
-
-              // Fallback increment bid count manually
               currentAuction.bidCount = (currentAuction.bidCount ?? 0) + 1;
+              latestBidUserId = bidInfo['userId'] as int?; // Update latestBidUserId
               _generateBidSuggestions();
             });
 
             _bidHistoryKey.currentState?.addNewBid(bidInfo);
-          }
-
-          // Handle STATS fallback update
-          else if (data.containsKey('highestBid')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Bid sent successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else if (data.containsKey('highestBid')) {
             print('[WebSocket] STATS received in AuctionDetailPage');
             setState(() {
               currentAuction.currentBid = (data['highestBid'] as num?)?.toDouble() ?? currentAuction.currentBid;
               currentAuction.bidCount = (data['totalBids'] as int?) ?? currentAuction.bidCount;
+              latestBidUserId = data['userId'] as int?;
               _generateBidSuggestions();
             });
           }
         },
         onError: (errMsg) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi WebSocket: $errMsg')),
+            SnackBar(content: Text('Error in WebSocket: $errMsg')),
           );
         },
       );
@@ -685,9 +694,9 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                                             : () {
                                                           setState(() {
                                                             selectedBidAmount = price;
-                                                            fetchAuctionDetail().then((_) => _generateBidSuggestions());
                                                           });
                                                         },
+
                                                         child: AnimatedContainer(
                                                           duration: const Duration(milliseconds: 200),
                                                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -829,20 +838,47 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                               final user = await UserService.getCurrentUser();
                                               if (user == null) throw 'User not found';
                                               final userId = user['id'] as int;
+                                              final topBidderId = _bidHistoryKey.currentState?.getTopBidderId();
+
+                                              if (currentAuction.status == 'CANCELLED') {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text('This auction has been cancelled.'),
+                                                      backgroundColor: Colors.red,
+                                                    ),
+                                                );
+                                                return;
+                                              }
+
+
+                                              if (topBidderId != null && topBidderId == userId) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('You are already the highest bidder.'),
+                                                    backgroundColor: Colors.orange,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+                                              final current = (currentAuction.currentBid ?? currentAuction.startingPrice).toInt();
+                                              final increment = currentAuction.incrementAmount.toInt();
+                                              final minValidBid = current + increment;
+
+                                              if (selectedBidAmount! < minValidBid) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('Bid must be at least ${NumberFormat("#,##0", "vi_VN").format(minValidBid)} đ'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
                                               WebSocketService().sendBid(
                                                 auctionId: widget.auction.id,
                                                 userId: userId,
                                                 bidAmount: selectedBidAmount!.toInt(),
-                                              );
-                                              await Future.delayed(Duration(milliseconds: 500));
-                                              await fetchAuctionDetail();
-                                              _generateBidSuggestions();
-
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('Bid sent successfully'),
-                                                  backgroundColor: Colors.green,
-                                                ),
                                               );
 
                                               setState(() {
@@ -949,7 +985,6 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
 
                                     if (confirm == true) {
                                       try {
-                                        await AuctionService.cancelOrder(currentAuction.id);
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           const SnackBar(
                                             content: Text("Order has been cancelled successfully."),
@@ -1105,12 +1140,24 @@ class _BidHistoryCardState extends State<BidHistoryCard> {
     super.dispose();
   }
 
+  int? getTopBidderId() {
+    if (allBids.isEmpty) return null;
+    return allBids.first['userId'] as int?;
+  }
+
   Future<void> _loadBidHistory() async {
     final isAtBottom = _scrollController.hasClients && _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 20;
     try {
       final token = await UserService.getToken() ?? '';
       final user = await UserService.getCurrentUser();
-      if (token.isEmpty || user == null) throw 'User not logged in';
+      if (token.isEmpty || user == null) {
+        setState(() {
+          error = 'LOGIN_REQUIRED';
+          loading = false;
+        });
+        return;
+      }
+
       currentUserId = user['id'];
       final all = await BidService.fetchAllAuctionBids(widget.auctionId, token: token);
       setState(() {
@@ -1185,13 +1232,10 @@ class _BidHistoryCardState extends State<BidHistoryCard> {
           addNewBid(newBid);
         }
 
-        // 👇 Xử lý thống kê từ REST API (qua /stats topic)
         else if (data.containsKey('highestBid')) {
           print('[WebSocket] Stats received in BidHistoryCard: $data');
-          // Không cần addNewBid vì không có bidInfo (chỉ cập nhật nếu muốn hiển thị bidCount realtime)
           setState(() {
-            // Optional: update bid count nếu bạn muốn hiển thị con số
-            // Hoặc xử lý gì thêm tùy vào logic
+
           });
         }
       },
@@ -1230,7 +1274,12 @@ class _BidHistoryCardState extends State<BidHistoryCard> {
       child: loading
           ? const Center(child: CircularProgressIndicator())
           : error != null
-          ? Text('Error: $error', style: const TextStyle(color: Colors.red))
+          ? (error == 'LOGIN_REQUIRED'
+          ? const Text(
+                'Please log in to see bid history.',
+                style: TextStyle(color: Colors.red, fontSize: 15),
+                )
+          : Text('Error: $error', style: const TextStyle(color: Colors.red)))
           : Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
