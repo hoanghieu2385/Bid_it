@@ -687,21 +687,21 @@ const AuctionDetailPage = () => {
 								<strong>Current Bid:</strong>
 							</span>
 							<span className="text-success fw-bold">
-								{auction.currentBid ? Number(auction.currentBid).toLocaleString('vi-VN') : '0'} ₫
+								${auction.currentBid ? Number(auction.currentBid) : '0'} 
 							</span>
 						</div>
 						<hr className="my-2" />
 						<div className="d-flex justify-content-between mb-1">
 							<span>Starting Price:</span>
-							<span>{Number(auction.startingPrice).toLocaleString('vi-VN')} ₫</span>
+							<span>${Number(auction.startingPrice)}</span>
 						</div>
 						<div className="d-flex justify-content-between mb-1">
 							<span>Increment Amount:</span>
-							<span>{Number(auction.incrementAmount).toLocaleString('vi-VN')} ₫</span>
+							<span>${Number(auction.incrementAmount)}</span>
 						</div>
 						<div className="d-flex justify-content-between mb-3">
 							<span>Security Deposit:</span>
-							<span>{Number(auction.securityDeposit).toLocaleString('vi-VN')} ₫</span>
+							<span>${Number(auction.securityDeposit)}</span>
 						</div>
 
 						{/* Bid form */}
@@ -717,7 +717,7 @@ const AuctionDetailPage = () => {
 							<form onSubmit={handlePlaceBid}>
 								<div className="mb-3">
 									<label className="form-label fw-semibold mb-2">
-										Your bid amount (minimum: {getMinimumBid().toLocaleString('vi-VN')} ₫)
+										Your bid amount (minimum: ${getMinimumBid()})
 									</label>
 									<div className="input-group">
 										<input
@@ -729,7 +729,7 @@ const AuctionDetailPage = () => {
 											step={auction.incrementAmount}
 											required
 										/>
-										<span className="input-group-text rounded-end bg-light fw-bold">₫</span>
+										<span className="input-group-text rounded-end bg-light fw-bold">$</span>
 									</div>
 									<div className="mt-2">
 										<button type="submit" className="btn btn-success fw-semibold py-2 w-100" disabled={!user}>
@@ -749,21 +749,21 @@ const AuctionDetailPage = () => {
 										className="btn btn-outline-primary btn-sm"
 										onClick={() => setBidAmount(getMinimumBid().toString())}
 									>
-										Min: {getMinimumBid().toLocaleString('vi-VN')} ₫
+										Min: ${getMinimumBid()}
 									</button>
 									<button
 										type="button"
 										className="btn btn-outline-primary btn-sm"
 										onClick={() => setBidAmount((getMinimumBid() + auction.incrementAmount).toString())}
 									>
-										+{auction.incrementAmount.toLocaleString('vi-VN')} ₫
+										+${auction.incrementAmount}
 									</button>
 									<button
 										type="button"
 										className="btn btn-outline-primary btn-sm"
 										onClick={() => setBidAmount((getMinimumBid() + auction.incrementAmount * 2).toString())}
 									>
-										+{(auction.incrementAmount * 2).toLocaleString('vi-VN')} ₫
+										+${auction.incrementAmount * 2}
 									</button>
 								</div>
 							</form>

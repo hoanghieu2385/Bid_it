@@ -317,8 +317,8 @@ const Auctions = () => {
 										<br />
 										Ends at: {formatDateToDisplay(auction.endTime)}
 										<br />
-										Starting Price: {auction.startingPrice?.toLocaleString('vi-VN')} đ<br />
-										Current Bid: {(auction.currentBid || auction.startingPrice)?.toLocaleString('vi-VN')} đ<br />
+										Starting Price: ${auction.startingPrice}<br />
+										Current Bid: ${(auction.currentBid || auction.startingPrice)}<br />
 										Bids: {auction.bidCount || 0}
 										<br />
 										{timeLeft[auction.id] && (

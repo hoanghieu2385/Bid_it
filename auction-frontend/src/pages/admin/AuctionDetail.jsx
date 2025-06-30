@@ -254,18 +254,18 @@ const AuctionDetail = () => {
   };
 
   const formatCurrency = (amount) => {
-    if (!amount) return "0 đ";
-    return new Intl.NumberFormat("vi-VN", {
+    if (!amount) return "$0";
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "VND",
+      currency: "USD",
     }).format(amount);
   };
 
   const formatCurrencyFromNumber = (amount) => {
-    if (!amount && amount !== 0) return "0 đ";
-    return new Intl.NumberFormat("vi-VN", {
+    if (!amount && amount !== 0) return "$0";
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "VND",
+      currency: "USD",
     }).format(amount);
   };
 
