@@ -461,12 +461,11 @@ const AuctionDetailPage = () => {
 		}
 
 		// ✅ Check if account is verified
-		if (user.verifiedAccount === 0) {
+		if (user?.citizenIdStatus !== 'APPROVED') {
 			setShowVerifyPopup(true);
 			return;
 		}
 
-		// (các phần xử lý khác giữ nguyên...)
 
 		// Validate bid amount
 		const minimumBid = getMinimumBid();
