@@ -273,12 +273,7 @@ class _OrderDetailPageState extends State<OrderDetailPage>
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => AuctionWinnerPage(auctionId: widget.auctionId),
-                                    ),
-                                  );
+                                  Navigator.pop(context);
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.grey[400],

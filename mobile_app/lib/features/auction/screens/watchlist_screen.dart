@@ -198,19 +198,19 @@ class WatchlistPageState extends State<WatchlistPage> with AutomaticKeepAliveCli
                     displayImage,
                     width: double.infinity,
                     height: 180,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => Image.asset(
                       'assets/images/product-img.png',
                       width: double.infinity,
                       height: 180,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
                     ),
                   )
                       : Image.asset(
                     'assets/images/product-img.png',
                     width: double.infinity,
                     height: 180,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.contain,
                   ),
                 ),
                 Positioned(
