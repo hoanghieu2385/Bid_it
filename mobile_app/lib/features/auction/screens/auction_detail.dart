@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile_app/core/services/payment_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app/core/models/auction_model.dart';
 import '../../../core/services/auction_service.dart';
@@ -51,6 +52,8 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
 
   int? latestBidUserId;
 
+  bool hasPaid = false;
+
 
   @override
   void initState() {
@@ -69,6 +72,20 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
     _checkEkycStatus();
     _checkWinner();
     _checkUserScore();
+    _checkIfPaid();
+  }
+
+  Future<void> _checkIfPaid() async {
+    try {
+      final token = await UserService.getToken() ?? '';
+      final response = await PaymentService.checkPaymentStatus(widget.auction.id, token);
+      print(response);
+      setState(() {
+        hasPaid = response == true;
+      });
+    } catch (e) {
+      print('Error checking payment status: $e');
+    }
   }
 
   Future<void> _checkUserScore() async {
@@ -842,10 +859,10 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
 
                                               if (currentAuction.status == 'CANCELLED') {
                                                 ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text('This auction has been cancelled.'),
-                                                      backgroundColor: Colors.red,
-                                                    ),
+                                                  const SnackBar(
+                                                    content: Text('This auction has been cancelled.'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
                                                 );
                                                 return;
                                               }
@@ -911,10 +928,46 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                             BidHistoryCard(auctionId: widget.auction.id, key: _bidHistoryKey),
                             const SizedBox(height: 10),
                             const SizedBox(height: 10),
-                            if (hasEnded && !isSeller && isLoggedIn && isWinner && !now.isAfter(currentAuction.winnerPaymentDeadline!))
+                            if (
+                            hasEnded &&
+                                !isSeller &&
+                                isLoggedIn &&
+                                isWinner &&
+                                currentAuction.winnerPaymentDeadline != null &&
+                                !now.isAfter(currentAuction.winnerPaymentDeadline!)
+                            )
                               Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8),
-                                child: Row(
+                                child: hasPaid
+                                    ? SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => OrderDetailPage(auctionId: widget.auction.id),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.receipt_long, size: 22),
+                                    label: const Text(
+                                      "View Order Detail",
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.deepOrangeAccent,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      elevation: 3,
+                                      shadowColor: Colors.orangeAccent,
+                                    ),
+                                  ),
+                                )
+                                    : Row(
                                   children: [
                                     Expanded(
                                       child: ElevatedButton.icon(
@@ -1276,9 +1329,9 @@ class _BidHistoryCardState extends State<BidHistoryCard> {
           : error != null
           ? (error == 'LOGIN_REQUIRED'
           ? const Text(
-                'Please log in to see bid history.',
-                style: TextStyle(color: Colors.red, fontSize: 15),
-                )
+        'Please log in to see bid history.',
+        style: TextStyle(color: Colors.red, fontSize: 15),
+      )
           : Text('Error: $error', style: const TextStyle(color: Colors.red)))
           : Column(
         crossAxisAlignment: CrossAxisAlignment.start,

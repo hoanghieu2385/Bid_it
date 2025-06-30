@@ -204,4 +204,24 @@ class PaymentService {
       throw Exception('Webhook failed: ${res.statusCode}');
     }
   }
+  static Future<bool> checkPaymentStatus(int auctionId, String token) async {
+    final url = Uri.parse('$_paymentBaseUrl/check/auction/$auctionId');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return response.body.trim().toLowerCase() == 'true';
+      } else {
+        throw Exception('Failed to check payment status: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error checking payment status: $e');
+    }
+  }
 }
