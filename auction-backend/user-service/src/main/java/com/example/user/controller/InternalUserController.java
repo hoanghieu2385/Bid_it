@@ -57,7 +57,7 @@ public class InternalUserController {
     @GetMapping("/{id}/score")
     public ResponseEntity<Integer> getUserScore(@PathVariable Long id) {
         logger.info("Fetching score for user id={}", id);
-        Optional<User> user = userService.getUserById(id);
+        Optional<User> user = userService.getUserByIdInternal(id); // ✅ fix đây
         return user.map(u -> {
             logger.info("User score: {}", u.getScore());
             return ResponseEntity.ok(u.getScore());

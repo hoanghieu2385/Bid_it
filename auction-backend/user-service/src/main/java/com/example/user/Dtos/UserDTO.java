@@ -1,24 +1,33 @@
 package com.example.user.Dtos;
 
+import java.util.Set;
+
 public class UserDTO {
     private Long id;
     private String firstName;
     private String lastName;
     private String email;
     private Integer score;
+    private String citizenIdStatus;
+    private Boolean verified;
+    private Set<String> roles;
 
     public UserDTO() {
     }
 
-    public UserDTO(Long id, String firstName, String lastName, String email, Integer score) {
+    public UserDTO(Long id, String firstName, String lastName, String email, Integer score,
+                   String citizenIdStatus, Boolean verified, Set<String> roles) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.score = score;
+        this.citizenIdStatus = citizenIdStatus;
+        this.verified = verified;
+        this.roles = roles;
     }
 
-    // Getter Setter đầy đủ
+    // Getter và Setter đầy đủ
 
     public Long getId() {
         return id;
@@ -58,5 +67,29 @@ public class UserDTO {
 
     public void setScore(Integer score) {
         this.score = score;
+    }
+
+    public String getCitizenIdStatus() {
+        return citizenIdStatus;
+    }
+
+    public void setCitizenIdStatus(String citizenIdStatus) {
+        this.citizenIdStatus = citizenIdStatus;
+    }
+
+    public Boolean getVerified() {
+        return verified;
+    }
+
+    public void setVerified(Boolean verified) {
+        this.verified = verified;
+    }
+
+    public Set<String> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<String> roles) {
+        this.roles = roles;
     }
 }

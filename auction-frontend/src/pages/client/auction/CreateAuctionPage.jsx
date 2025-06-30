@@ -4,9 +4,11 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Tooltip } from 'bootstrap';
 import Swal from 'sweetalert2';
+
 import { UserContext } from '../../../contexts/UserContext';
 import { getAllCategories } from '../../../services/category-api';
 import { createAuctionWithMedia } from '../../../services/auction-api';
+
 import AuctionTimeAndPrice from '../../../components/client/auction/AuctionTimeAndPrice';
 import AuctionImageUpload from '../../../components/client/auction/AuctionImageUpload';
 import useToastMessage from '../../../hooks/useToastMessage';
@@ -21,8 +23,23 @@ const CreateAuctionPage = () => {
 	const [previews, setPreviews] = useState([]);
 	const [imageError, setImageError] = useState('');
 
+	// ✅ Verification and Score popup
+	const [showVerificationPopup, setShowVerificationPopup] = useState(false);
+	const [showLowScorePopup, setShowLowScorePopup] = useState(false);
+
+	// 🔥 Check verify and score on load
 	useEffect(() => {
-		if (!user) navigate('/login');
+		if (!user) {
+			navigate('/login');
+			return;
+		}
+
+		if (user.citizenIdStatus !== 'APPROVED') {
+			setShowVerificationPopup(true);
+		} else if (user.score < 70) {
+			setShowLowScorePopup(true);
+		}
+
 		document.title = 'Create Auction | Bid it';
 		getAllCategories().then(setCategories);
 
@@ -36,24 +53,20 @@ const CreateAuctionPage = () => {
 		}
 	}, [images]);
 
+	// ✅ Formik initial values
 	const initialValues = {
 		title: '',
 		description: '',
 		categoryId: '',
-		startTime: new Date(Date.now() + 60 * 60000)
-			.toLocaleString('sv-SE', { hour12: false })
-			.replace(' ', 'T')
-			.slice(0, 16),
-		endTime: new Date(Date.now() + 130 * 60000)
-			.toLocaleString('sv-SE', { hour12: false })
-			.replace(' ', 'T')
-			.slice(0, 16),
+		startTime: new Date(Date.now() + 60 * 60000).toISOString().slice(0, 16),
+		endTime: new Date(Date.now() + 130 * 60000).toISOString().slice(0, 16),
 		startingPrice: '',
 		incrementAmount: '',
 		requiresDeposit: false,
 		securityDeposit: '',
 	};
 
+	// ✅ Form validation
 	const validationSchema = Yup.object({
 		title: Yup.string().max(100).required('Required'),
 		description: Yup.string().min(30).required('Required'),
@@ -73,6 +86,7 @@ const CreateAuctionPage = () => {
 		}),
 	});
 
+	// ✅ Validate images
 	const validateImages = () => {
 		if (images.length === 0) {
 			setImageError('At least one image is required');
@@ -85,7 +99,20 @@ const CreateAuctionPage = () => {
 		return true;
 	};
 
+	// ✅ Handle Submit
 	const handleSubmit = async (values, { setSubmitting }) => {
+		// 🔥 Final check (security)
+		if (user.citizenIdStatus !== 'APPROVED') {
+			setShowVerificationPopup(true);
+			setSubmitting(false);
+			return;
+		}
+		if (user.score < 70) {
+			setShowLowScorePopup(true);
+			setSubmitting(false);
+			return;
+		}
+
 		if (!validateImages()) {
 			setSubmitting(false);
 			document.querySelector('.image-upload-section')?.scrollIntoView({
@@ -187,17 +214,15 @@ const CreateAuctionPage = () => {
 								<Form>
 									<div className="row g-3">
 										<div className="col-12">
-											<label htmlFor="title" className="form-label">
+											<label className="form-label">
 												Title <span className="text-danger">*</span>
 											</label>
 											<Field
-												id="title"
-												type="text"
 												name="title"
+												type="text"
 												className="form-control border"
-												placeholder="E.g.: Samsung Galaxy S24 Ultra"
+												placeholder="E.g.: iPhone 15 Pro Max"
 											/>
-
 											<ErrorMessage name="title" component="div" className="text-danger small" />
 										</div>
 
@@ -232,49 +257,7 @@ const CreateAuctionPage = () => {
 									</div>
 
 									<hr className="my-4" />
-
 									<AuctionTimeAndPrice formik={{ values, setFieldValue }} />
-
-									<div className="form-check form-switch mt-3">
-										<Field
-											type="checkbox"
-											name="requiresDeposit"
-											className="form-check-input"
-											id="requiresDeposit"
-											disabled
-										/>
-										<label htmlFor="requiresDeposit" className="form-check-label text-muted">
-											Require Deposit? <span className="badge bg-secondary ms-2">Disabled</span>
-										</label>
-										<div className="form-text text-muted">This feature is temporarily disabled for maintenance.</div>
-									</div>
-
-									{values.requiresDeposit && (
-										<div className="mt-2">
-											<label className="form-label">Security Deposit</label>
-											<Field
-												name="securityDeposit"
-												component={({ field, form }) => {
-													const handleChange = (e) => {
-														const raw = e.target.value.replace(/\./g, '');
-														if (!/^\d*$/.test(raw)) return;
-														form.setFieldValue(field.name, raw);
-													};
-													return (
-														<input
-															{...field}
-															type="text"
-															value={field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
-															onChange={handleChange}
-															className="form-control border"
-															placeholder="E.g.: 1,000,000"
-														/>
-													);
-												}}
-											/>
-											<ErrorMessage name="securityDeposit" component="div" className="text-danger small" />
-										</div>
-									)}
 
 									<hr className="my-4" />
 
@@ -323,6 +306,54 @@ const CreateAuctionPage = () => {
 					</div>
 				</div>
 			</div>
+
+			{/* Popup: Not Verified */}
+			{showVerificationPopup && (
+				<div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
+					<div className="modal-dialog modal-dialog-centered">
+						<div className="modal-content">
+							<div className="modal-header">
+								<h5 className="modal-title">Account Not Verified</h5>
+							</div>
+							<div className="modal-body">
+								<p>You must verify your identity (CCCD) before creating an auction.</p>
+							</div>
+							<div className="modal-footer">
+								<button className="btn btn-secondary" onClick={() => navigate('/')}>
+									Go to Homepage
+								</button>
+								<button className="btn btn-primary" onClick={() => navigate('/profile?tab=ekyc')}>
+									Go to Verification
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Popup: Low Score */}
+			{showLowScorePopup && (
+				<div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
+					<div className="modal-dialog modal-dialog-centered">
+						<div className="modal-content">
+							<div className="modal-header">
+								<h5 className="modal-title">Insufficient Score</h5>
+							</div>
+							<div className="modal-body">
+								<p>
+									Your account score is too low ({user?.score}/100). A minimum score of 70 is required to create
+									auctions.
+								</p>
+							</div>
+							<div className="modal-footer">
+								<button className="btn btn-secondary" onClick={() => navigate('/')}>
+									Go to Homepage
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };
