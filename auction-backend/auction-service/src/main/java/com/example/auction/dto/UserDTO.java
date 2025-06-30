@@ -13,7 +13,7 @@ public class UserDTO {
     private String phoneNumber;
     private String address;
 
-    // Need to change this to PayPal number
+    // Bank or PayPal
     private String bankAccountNumber;
 
     private Integer score;
@@ -21,7 +21,11 @@ public class UserDTO {
     private String verifiedResponse;
     private Boolean locked;
 
+    private String citizenIdStatus; // ✅ Add this (APPROVED, PENDING, REJECTED, NONE)
+
     private List<String> roles;
+
+    // Getters and Setters
 
     public Long getId() {
         return id;
@@ -125,6 +129,14 @@ public class UserDTO {
 
     public void setLocked(Boolean locked) {
         this.locked = locked;
+    }
+
+    public String getCitizenIdStatus() {
+        return citizenIdStatus;
+    }
+
+    public void setCitizenIdStatus(String citizenIdStatus) {
+        this.citizenIdStatus = citizenIdStatus;
     }
 
     public List<String> getRoles() {

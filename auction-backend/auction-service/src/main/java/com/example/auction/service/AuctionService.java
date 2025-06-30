@@ -44,63 +44,129 @@ public class AuctionService implements IAuctionService {
         this.mediaService = mediaService;
         this.emailClient = emailClient;
     }
+
+    /**
+     * Helper method to check if user is verified based on citizenIdStatus
+     */
+    private boolean isUserVerified(UserDTO user) {
+        if (user == null) {
+            System.out.println("🚨 User is null");
+            return false;
+        }
+
+        System.out.println("👤 User ID: " + user.getId());
+        System.out.println("📧 User Email: " + user.getEmail());
+        System.out.println("🆔 Citizen ID Status: " + user.getCitizenIdStatus());
+        System.out.println("✅ Old Verified field: " + user.getVerified());
+
+        // Check if citizenIdStatus is APPROVED
+        String citizenIdStatus = user.getCitizenIdStatus();
+        boolean isApproved = "APPROVED".equals(citizenIdStatus);
+
+        System.out.println("🔍 Is APPROVED: " + isApproved);
+
+        return isApproved;
+    }
+
     public AuctionResponseDTO createAuction(AuctionRequestDTO request, Long requesterId) {
+        System.out.println("🔥 === START createAuction ===");
+        System.out.println("👤 Requester ID: " + requesterId);
+
         if (requesterId == null) {
+            System.out.println("❌ Requester ID is null");
             throw new IllegalArgumentException("Seller (requester) ID is required");
         }
 
         UserDTO seller;
         try {
+            System.out.println("🔍 Fetching seller from user-service...");
             seller = userClient.getUserById(requesterId);
+            System.out.println("✅ Seller fetched successfully");
         } catch (Exception ex) {
+            System.out.println("❌ Failed to fetch seller: " + ex.getMessage());
+            ex.printStackTrace();
             throw new IllegalStateException("Failed to fetch seller from user-service", ex);
         }
 
-        if (seller == null || !Boolean.TRUE.equals(seller.getVerified())) {
-            throw new IllegalArgumentException("Seller not verified or does not exist");
+        // Updated verification logic using citizenIdStatus
+        System.out.println("🔍 Checking user verification...");
+        if (!isUserVerified(seller)) {
+            System.out.println("❌ User verification failed");
+            throw new IllegalArgumentException("Seller not verified or does not exist. Citizen ID must be approved to create auctions.");
         }
+        System.out.println("✅ User verification passed");
 
         Integer sellerScore;
         try {
+            System.out.println("🔍 Fetching seller score...");
             sellerScore = userClient.getUserScore(requesterId);
+            System.out.println("📊 Seller score: " + sellerScore);
         } catch (Exception ex) {
+            System.out.println("❌ Failed to fetch score: " + ex.getMessage());
+            ex.printStackTrace();
             throw new IllegalStateException("Failed to fetch score from user-service", ex);
         }
 
+        if (sellerScore == null) {
+            System.out.println("❌ Seller score is null, setting to 0");
+            sellerScore = 0;
+        }
+
         if (sellerScore < 70) {
+            System.out.println("❌ Seller score too low: " + sellerScore);
             throw new IllegalArgumentException("At least 70 points are required to create an auction");
         }
+        System.out.println("✅ Score check passed");
 
-        Auction auction = new Auction();
-        auction.setTitle(request.getTitle());
-        auction.setDescription(request.getDescription());
-        auction.setSellerId(requesterId);
-        auction.setCategoryId(request.getCategoryId());
-        auction.setStartTime(request.getStartTime());
-        auction.setEndTime(request.getEndTime());
-        auction.setStartingPrice(request.getStartingPrice());
-        auction.setIncrementAmount(request.getIncrementAmount());
-        auction.setCurrentBid(request.getCurrentBid());
-        auction.setRequiresDeposit(request.getRequiresDeposit());
-        auction.setSecurityDeposit(request.getSecurityDeposit());
+        try {
+            System.out.println("🔍 Creating auction entity...");
+            Auction auction = new Auction();
+            auction.setTitle(request.getTitle());
+            auction.setDescription(request.getDescription());
+            auction.setSellerId(requesterId);
+            auction.setCategoryId(request.getCategoryId());
+            auction.setStartTime(request.getStartTime());
+            auction.setEndTime(request.getEndTime());
+            auction.setStartingPrice(request.getStartingPrice());
+            auction.setIncrementAmount(request.getIncrementAmount());
+            auction.setCurrentBid(request.getCurrentBid());
+            auction.setRequiresDeposit(request.getRequiresDeposit());
+            auction.setSecurityDeposit(request.getSecurityDeposit());
 
-        if (request.getStatus() != null) {
-            try {
-                auction.setStatus(AuctionStatus.valueOf(request.getStatus().toUpperCase()));
-            } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("Invalid auction status");
+            if (request.getStatus() != null) {
+                try {
+                    auction.setStatus(AuctionStatus.valueOf(request.getStatus().toUpperCase()));
+                } catch (IllegalArgumentException ex) {
+                    System.out.println("❌ Invalid auction status: " + request.getStatus());
+                    throw new IllegalArgumentException("Invalid auction status");
+                }
             }
-        }
 
-        if (request.getBidCount() != null) {
-            auction.setBidCount(request.getBidCount());
-        }
+            if (request.getBidCount() != null) {
+                auction.setBidCount(request.getBidCount());
+            }
 
-        Auction saved = auctionRepository.save(auction);
-        return auctionMapper.mapToResponseDTO(saved);
+            System.out.println("💾 Saving auction...");
+            Auction saved = auctionRepository.save(auction);
+            System.out.println("✅ Auction saved with ID: " + saved.getId());
+
+            System.out.println("🔄 Mapping to response DTO...");
+            AuctionResponseDTO response = auctionMapper.mapToResponseDTO(saved);
+            System.out.println("✅ Response DTO created");
+
+            System.out.println("🔥 === END createAuction SUCCESS ===");
+            return response;
+
+        } catch (Exception ex) {
+            System.out.println("❌ Error in auction creation: " + ex.getMessage());
+            ex.printStackTrace();
+            throw ex;
+        }
     }
 
     public AuctionResponseDTO updateAuction(Long id, AuctionRequestDTO request, Long requesterId) {
+        System.out.println("🔥 === START updateAuction ===");
+
         Auction auction = auctionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + id));
 
@@ -114,8 +180,9 @@ public class AuctionService implements IAuctionService {
 
         try {
             UserDTO seller = userClient.getUserById(requesterId);
-            if (seller == null || !Boolean.TRUE.equals(seller.getVerified())) {
-                throw new IllegalArgumentException("Seller not verified or does not exist");
+            // Updated verification logic using citizenIdStatus
+            if (!isUserVerified(seller)) {
+                throw new IllegalArgumentException("Seller not verified or does not exist. Citizen ID must be approved to update auctions.");
             }
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to fetch seller from user-service", ex);
@@ -274,6 +341,7 @@ public class AuctionService implements IAuctionService {
         System.out.println("🔥 === END updateWinner ===");
         return auctionMapper.mapToResponseDTO(saved);
     }
+
     public AuctionResponseDTO confirmPayment(Long auctionId, String paymentId) {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found with id: " + auctionId));
