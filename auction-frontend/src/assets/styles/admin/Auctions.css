@@ -410,6 +410,12 @@
   border: 1px solid #00695c;
 }
 
+.status-cell.expired-payment .status-badge {
+  background-color: #e0f2f1;
+  color: #6240b9;
+  border: 1px solid #6240b9;
+}
+
 .status-cell.failed .status-badge {
   background-color: #fce4ec;
   color: #ad1457;

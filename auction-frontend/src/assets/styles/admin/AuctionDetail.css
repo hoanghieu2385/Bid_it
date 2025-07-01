@@ -371,3 +371,298 @@
   .dispute-value {
     flex: 1;
   }
+
+  /* Enhanced Payment Section Styles */
+  .payment-calculation-section {
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f7ff 100%);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 1px solid #e3f2fd;
+  }
+
+  .payment-calculation-section h4 {
+    display: flex;
+    align-items: center;
+    color: #1976d2;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+
+  .calculation-card {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e8f4f8;
+  }
+
+  .calculation-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f5f5f5;
+  }
+
+  .calculation-row:last-child {
+    border-bottom: none;
+  }
+
+  .calculation-row.final-amount {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+    margin: 16px -20px -20px -20px;
+    padding: 20px;
+    border-radius: 0 0 10px 10px;
+    border: none;
+    border-top: 2px solid #4caf50;
+  }
+
+  .calculation-label {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    color: #555;
+    font-size: 14px;
+  }
+
+  .calculation-label svg {
+    margin-right: 8px;
+    color: #666;
+  }
+
+  .final-amount .calculation-label {
+    color: #2e7d32;
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  .final-amount .calculation-label svg {
+    color: #4caf50;
+  }
+
+  .calculation-value {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .winning-amount {
+    color: #1976d2;
+    font-size: 16px;
+  }
+
+  .commission-rate {
+    color: #ff9800;
+    font-size: 14px;
+  }
+
+  .commission-amount {
+    color: #f44336;
+    font-size: 14px;
+  }
+
+  .seller-amount {
+    color: #4caf50;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .calculation-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, #ddd 50%, transparent 100%);
+    margin: 16px 0;
+  }
+
+  .payment-note {
+    display: flex;
+    align-items: flex-start;
+    background: #fff3e0;
+    border: 1px solid #ffcc02;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+
+  .note-icon {
+    font-size: 20px;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+
+  .note-text {
+    color: #e65100;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 500;
+  }
+
+  /* Winner Information Styles */
+  .winner-info {
+    margin: 20px 0;
+  }
+
+  .winner-info h4 {
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .winner-card {
+    display: flex;
+    border-radius: 12px;
+    padding: 20px;
+    align-items: flex-start;
+  }
+
+  .winner-icon {
+    color: #fff;
+    padding: 12px;
+    border-radius: 50%;
+    margin-right: 16px;
+    flex-shrink: 0;
+  }
+
+  .winner-details {
+    flex: 1;
+  }
+
+  .winner-details .detail-row {
+    border-bottom: 1px solid #fff3c4;
+    padding: 8px 0;
+  }
+
+  .winner-details .detail-row:last-child {
+    border-bottom: none;
+  }
+
+  .winner-details .detail-label {
+    width: 140px;
+    font-weight: 600;
+    color: #e65100;
+  }
+
+  .winner-details .detail-value {
+    color: #333;
+    font-weight: 500;
+  }
+
+  .winner-details .winning-amount {
+    color: #4caf50;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  /* No Winner State */
+  .no-winner-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 2px dashed #ddd;
+  }
+
+  .no-winner-icon {
+    color: #999;
+    margin-bottom: 16px;
+  }
+
+  .no-winner-text {
+    color: #666;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  /* Commission Display in Overview */
+  .commission-info {
+    background: #f0f8ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+  }
+
+  .commission-info .detail-label {
+    color: #1976d2;
+    font-weight: 600;
+  }
+
+  .commission-info .detail-value {
+    color: #1976d2;
+    font-weight: 600;
+  }
+
+  /* Bid Statistics Enhancement */
+  .bid-statistics-section {
+    background: #f8fffe;
+    border: 1px solid #b2dfdb;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+  }
+
+  .bid-statistics-section h4 {
+    color: #00695c;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .stat-item {
+    background: #ffffff;
+    border: 1px solid #e0f2f1;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-item .stat-label {
+    color: #00695c;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-item .stat-value {
+    color: #004d40;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .auction-header-card {
+      flex-direction: column;
+    }
+    
+    .auction-header-left {
+      width: 100%;
+      height: 200px;
+    }
+    
+    .auction-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .calculation-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }

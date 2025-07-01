@@ -21,6 +21,8 @@ import {
   Tag,
   Crown,
   Activity,
+  Calculator,
+  ArrowRight,
 } from "lucide-react";
 
 const AuctionDetail = () => {
@@ -30,16 +32,56 @@ const AuctionDetail = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [categoryName, setCategoryName] = useState("");
+  const [categoryCommissionRate, setCategoryCommissionRate] = useState(0);
+  const [paymentStatus, setPaymentStatus] = useState(null);
 
-  // Bid data states
   const [bidHistory, setBidHistory] = useState([]);
   const [bidStatistics, setBidStatistics] = useState(null);
   const [highestBid, setHighestBid] = useState(null);
   const [bidLoading, setBidLoading] = useState(false);
   const [bidError, setBidError] = useState(null);
 
-  // User cache for bidders
   const [userCache, setUserCache] = useState({});
+
+  const fetchCategoryCommissionRate = async (categoryId) => {
+    try {
+      const categoryData = await getCategoryById(categoryId);
+      console.log("Category API response:", categoryData); // ← Thêm dòng này
+      return categoryData.commissionRate || categoryData.commission_rate || 0;
+    } catch (error) {
+      console.error("Error fetching category commission rate:", error);
+      return 0;
+    }
+  };
+
+  // Helper function to calculate payment details
+  const calculatePaymentDetails = () => {
+    const winningAmount = bidStatistics?.highestBid || auction?.rawData?.currentBid || 0;
+    const commissionRate = categoryCommissionRate || 0;
+    
+    const commissionFee = winningAmount * (commissionRate / 100);
+    const sellerAmount = winningAmount - commissionFee;
+    
+    return {
+      winningAmount,
+      commissionRate,
+      commissionFee,
+      sellerAmount,
+    };
+  };
+
+  // Check if payment calculation should be shown
+  const shouldShowPaymentCalculation = () => {
+    const hasWinner = auction?.rawData?.winnerId;
+    const isPaid = paymentStatus === 'SOLD' || 
+                  paymentStatus === 'COMPLETED' ||
+                  paymentStatus === 'SHIPPING' ||
+                  paymentStatus === 'DELIVERED' ||
+                  auction?.rawData?.isPaid === true;
+    
+    return hasWinner && isPaid;
+  };
+
 
   useEffect(() => {
     const fetchAuctionDetail = async () => {
@@ -47,12 +89,14 @@ const AuctionDetail = () => {
         setLoading(true);
         setError(null);
 
-        // Call API to get auction information
         const auctionData = await adminAuctionAPI.getAuctionById(id);
 
-        // Fetch category name if categoryId exists
         let categoryNameResult = "";
         if (auctionData.categoryId) {
+          const commission = await fetchCategoryCommissionRate(
+            auctionData.categoryId
+          );
+          setCategoryCommissionRate(commission);
           try {
             const categoryData = await getCategoryById(auctionData.categoryId);
             categoryNameResult =
@@ -63,23 +107,20 @@ const AuctionDetail = () => {
           }
         }
         setCategoryName(categoryNameResult);
+        setPaymentStatus(auctionData.paymentStatus || auctionData.status);
 
-        // Format data to fit the component
         const formattedAuction = {
           ...auctionData,
-          // Format time if needed
           startTime: formatDateTime(auctionData.startTime),
           endTime: formatDateTime(auctionData.endTime),
           createdAt: formatDate(auctionData.createdAt),
           updatedAt: formatDate(auctionData.updatedAt),
 
-          // Format currency
           startingPrice: formatCurrency(auctionData.startingPrice),
           incrementAmount: formatCurrency(auctionData.incrementAmount),
           currentBid: formatCurrency(auctionData.currentBid),
           securityDeposit: formatCurrency(auctionData.securityDeposit),
 
-          // Get seller information from user object - UPDATED
           seller: auctionData.user
             ? {
                 name:
@@ -94,16 +135,13 @@ const AuctionDetail = () => {
               }
             : null,
 
-          // Handle media list
           media: auctionData.media || [],
 
-          // Keep raw data for bid APIs
           rawData: auctionData,
         };
 
         setAuction(formattedAuction);
 
-        // Fetch bid data
         await fetchBidData(id);
       } catch (error) {
         console.error("Error fetching auction detail:", error);
@@ -118,7 +156,6 @@ const AuctionDetail = () => {
     }
   }, [id]);
 
-  // Fetch user information by ID
   const fetchUserInfo = async (userId) => {
     if (userCache[userId]) {
       return userCache[userId];
@@ -127,9 +164,8 @@ const AuctionDetail = () => {
     try {
       const userData = await getUserById(userId);
 
-      // Kết hợp firstName và lastName thành fullName
       const fullName = [userData.firstName, userData.lastName]
-        .filter((name) => name && name.trim()) // Loại bỏ giá trị null/undefined/empty
+        .filter((name) => name && name.trim())
         .join(" ")
         .trim();
 
@@ -138,7 +174,6 @@ const AuctionDetail = () => {
         email: userData.email || "N/A",
       };
 
-      // Cache the user info
       setUserCache((prev) => ({
         ...prev,
         [userId]: userInfo,
@@ -152,7 +187,6 @@ const AuctionDetail = () => {
         email: "N/A",
       };
 
-      // Cache the fallback info to avoid repeated requests
       setUserCache((prev) => ({
         ...prev,
         [userId]: fallbackInfo,
@@ -162,13 +196,11 @@ const AuctionDetail = () => {
     }
   };
 
-  // Fetch bid-related data
   const fetchBidData = async (auctionId) => {
     try {
       setBidLoading(true);
       setBidError(null);
 
-      // Fetch bid history, statistics, and highest bid in parallel
       const [historyData, statisticsData, highestBidData] =
         await Promise.allSettled([
           bidAPI.getBidHistory(auctionId),
@@ -176,11 +208,9 @@ const AuctionDetail = () => {
           bidAPI.getHighestBid(auctionId),
         ]);
 
-      // Handle bid history
       if (historyData.status === "fulfilled") {
         const bids = historyData.value || [];
 
-        // Fetch user info for all bidders
         const bidsWithUserInfo = await Promise.all(
           bids.map(async (bid) => {
             const userInfo = await fetchUserInfo(bid.userId);
@@ -197,11 +227,9 @@ const AuctionDetail = () => {
         console.error("Error fetching bid history:", historyData.reason);
       }
 
-      // Handle bid statistics
       if (statisticsData.status === "fulfilled") {
         const stats = statisticsData.value;
 
-        // If statistics has highest bidder info, fetch user details
         if (stats && stats.highestBidderId) {
           const userInfo = await fetchUserInfo(stats.highestBidderId);
           setBidStatistics({
@@ -216,7 +244,6 @@ const AuctionDetail = () => {
         console.error("Error fetching bid statistics:", statisticsData.reason);
       }
 
-      // Handle highest bid
       if (highestBidData.status === "fulfilled") {
         setHighestBid(highestBidData.value);
       } else {
@@ -230,7 +257,6 @@ const AuctionDetail = () => {
     }
   };
 
-  // Helper functions to format data
   const formatDateTime = (dateTime) => {
     if (!dateTime) return "N/A";
     const date = new Date(dateTime);
@@ -254,18 +280,18 @@ const AuctionDetail = () => {
   };
 
   const formatCurrency = (amount) => {
-    if (!amount) return "$0";
-    return new Intl.NumberFormat("en-US", {
+    if (!amount) return "0 đ";
+    return new Intl.NumberFormat("vi-VN", {
       style: "currency",
-      currency: "USD",
+      currency: "VND",
     }).format(amount);
   };
 
   const formatCurrencyFromNumber = (amount) => {
-    if (!amount && amount !== 0) return "$0";
-    return new Intl.NumberFormat("en-US", {
+    if (!amount && amount !== 0) return "0 đ";
+    return new Intl.NumberFormat("vi-VN", {
       style: "currency",
-      currency: "USD",
+      currency: "VND",
     }).format(amount);
   };
 
@@ -290,12 +316,90 @@ const AuctionDetail = () => {
     return statusMap[status] || status;
   };
 
-  // Handle tab switching
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
 
-  // Component to display tab content
+  const renderPaymentCalculationSection = () => {
+    if (!shouldShowPaymentCalculation()) {
+      return null;
+    }
+
+    const paymentDetails = calculatePaymentDetails();
+
+    return (
+      <div className="payment-calculation-section">
+        <div className="section-header">
+          <Calculator size={20} />
+          <h4>Payment Calculation</h4>
+        </div>
+        
+        <div className="payment-calculation-card">
+          <div className="calculation-details">
+            <div className="calculation-row main-amount">
+              <div className="calculation-label">
+                <DollarSign size={16} />
+                Winning Bid Amount:
+              </div>
+              <div className="calculation-value primary">
+                {formatCurrencyFromNumber(paymentDetails.winningAmount)}
+              </div>
+            </div>
+
+            <div className="calculation-separator">
+              <ArrowRight size={16} />
+            </div>
+
+            <div className="calculation-row commission-row">
+              <div className="calculation-label">
+                <Tag size={16} />
+                Commission Fee ({categoryName} - {paymentDetails.commissionRate}%):
+              </div>
+              <div className="calculation-value negative">
+                -{formatCurrencyFromNumber(paymentDetails.commissionFee)}
+              </div>
+            </div>
+
+            <div className="calculation-divider"></div>
+
+            <div className="calculation-row total-row">
+              <div className="calculation-label">
+                <Crown size={16} />
+                Amount to Transfer to Seller:
+              </div>
+              <div className="calculation-value total-amount">
+                {formatCurrencyFromNumber(paymentDetails.sellerAmount)}
+              </div>
+            </div>
+
+            <div className="payment-summary">
+              <div className="summary-item">
+                <span className="summary-label">Commission Rate:</span>
+                <span className="summary-value">{paymentDetails.commissionRate}%</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">Platform Fee:</span>
+                <span className="summary-value">{formatCurrencyFromNumber(paymentDetails.commissionFee)}</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">Seller Receives:</span>
+                <span className="summary-value highlight">{formatCurrencyFromNumber(paymentDetails.sellerAmount)}</span>
+              </div>
+            </div>
+
+            <div className="payment-note">
+              <div className="note-icon">ℹ️</div>
+              <div className="note-text">
+                This amount will be transferred to the seller after successful delivery confirmation.
+                Commission fee is automatically deducted based on the category rate.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderTabContent = () => {
     if (!auction) return null;
 
@@ -393,7 +497,6 @@ const AuctionDetail = () => {
               <div className="detail-value">{auction.bidCount || 0}</div>
             </div>
 
-            {/* Bid Statistics Section */}
             {bidStatistics && (
               <div className="bid-statistics-section">
                 <h4>Bid Statistics</h4>
@@ -504,14 +607,13 @@ const AuctionDetail = () => {
           <div className="winner-payment-section">
             <h3>Winner & Payment</h3>
 
-            {/* Current Highest Bid Info */}
             {highestBid && (
               <div className="highest-bid-info">
-                <h4>Current Highest Bid</h4>
+                <h4>
+                  Current Highest Bid :{" "}
+                  {formatCurrencyFromNumber(highestBid.highestBid)}
+                </h4>
                 <div className="highest-bid-card">
-                  <div className="highest-bid-amount">
-                    {formatCurrencyFromNumber(highestBid.highestBid)}
-                  </div>
                   <div className="highest-bid-time">
                     Last updated: {formatDateTime(highestBid.timestamp)}
                   </div>
@@ -519,7 +621,6 @@ const AuctionDetail = () => {
               </div>
             )}
 
-            {/* Winner Information */}
             {auction.rawData && auction.rawData.winnerId ? (
               <div className="winner-info">
                 <h4>Winner Information</h4>
@@ -535,7 +636,6 @@ const AuctionDetail = () => {
                       </div>
                     </div>
 
-                    {/* Display winner name and email from bid statistics */}
                     {bidStatistics && bidStatistics.highestBidderName && (
                       <div className="detail-row">
                         <div className="detail-label">Winner Name:</div>
@@ -588,6 +688,9 @@ const AuctionDetail = () => {
                 </div>
               </div>
             )}
+
+            {/* Always show payment calculation if there's bid data */}
+            {renderPaymentCalculationSection()}
           </div>
         );
       default:
@@ -667,10 +770,8 @@ const AuctionDetail = () => {
 
   return (
     <div id="wrapper">
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
       <div
         id="content-wrapper"
         className="d-flex flex-column"
@@ -678,9 +779,7 @@ const AuctionDetail = () => {
       >
         <Topbar />
 
-        {/* Content Container */}
         <div className="container-fluid auction-detail-container">
-          {/* Breadcrumb */}
           <div className="detail-header">
             <div className="breadcrumb">
               <Link to="/admin/auctions">Auctions</Link>
@@ -689,7 +788,6 @@ const AuctionDetail = () => {
             </div>
           </div>
 
-          {/* Auction Header Card */}
           <div className="auction-header-card">
             <div className="auction-header-left">
               {auction.media && auction.media.length > 0 ? (
@@ -741,7 +839,6 @@ const AuctionDetail = () => {
                 )}
               </div>
 
-              {/* Stats Cards */}
               <div className="auction-stats">
                 <div className="stat-card">
                   <div className="stat-value price-value">
@@ -778,7 +875,6 @@ const AuctionDetail = () => {
             </div>
           </div>
 
-          {/* Tab Navigation */}
           <div className="auction-tabs">
             <button
               className={`tab-button ${
@@ -814,7 +910,6 @@ const AuctionDetail = () => {
             </button>
           </div>
 
-          {/* Tab Content */}
           <div className="tab-content">{renderTabContent()}</div>
         </div>
       </div>

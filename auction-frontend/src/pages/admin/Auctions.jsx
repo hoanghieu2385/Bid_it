@@ -373,6 +373,9 @@ const Auctions = () => {
       case "Sold":
         statusFilter = "SOLD";
         break;
+      case "Expired Payment":
+        statusFilter = "EXPIRED_PAYMENT";
+        break;
       case "Failed":
         statusFilter = "FAILED";
         break;
@@ -463,6 +466,7 @@ const Auctions = () => {
       CANCELLED: "Cancelled",
       CLOSED: "Closed",
       SOLD: "Sold",
+      EXPIRED_PAYMENT: "Expired Payment",
       FAILED: "Failed",
       SHIPPING: "Shipping",
       DELIVERED: "Delivered",
@@ -482,6 +486,7 @@ const Auctions = () => {
       CANCELLED: "cancelled",
       CLOSED: "closed",
       SOLD: "sold",
+      EXPIRED_PAYMENT: "expired-payment",
       FAILED: "failed",
       SHIPPING: "shipping",
       DELIVERED: "delivered",
@@ -801,11 +806,6 @@ const Auctions = () => {
                           <div className="time-detail">
                             Updated: {formatDate(auction.updatedAt)}
                           </div>
-                        </td>
-                        <td className="action-cell">
-                          <button className="action-button">
-                            <MoreVertical size={18} />
-                          </button>
                         </td>
                       </tr>
                     );
