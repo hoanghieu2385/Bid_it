@@ -439,9 +439,9 @@ const Auctions = () => {
   // Format currency
   const formatCurrency = (amount) => {
     if (!amount) return "₫0";
-    return new Intl.NumberFormat("vi-VN", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "VND",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -449,7 +449,7 @@ const Auctions = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat("vi-VN", {
       day: "2-digit",
       month: "short",
       year: "numeric",

@@ -50,7 +50,7 @@ const CategoryCard = ({ dashboardData, categoryTimeFrame, setCategoryTimeFrame }
             <div key={index} className="category-item mb-4">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <div className="category-name">{category.name}</div>
-                <div className="category-revenue">{category.revenue.toLocaleString()} VND</div>
+                <div className="category-revenue">{category.revenue.toLocaleString()} USD</div>
               </div>
               <div className="progress" style={{ height: "8px" }}>
                 <div 
