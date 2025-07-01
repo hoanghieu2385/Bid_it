@@ -43,7 +43,7 @@ const RevenueCard = ({ dashboardData, revenueTimeFrame, setRevenueTimeFrame }) =
         <Row className="mt-4">
           <Col md={6}>
             <div className="revenue-stats">
-              <h2 className="revenue-amount">{dashboardData.revenue.current} VND</h2>
+              <h2 className="revenue-amount">{dashboardData.revenue.current} USD</h2>
               <Badge bg="success" className="revenue-badge">
                 +{dashboardData.revenue.percentage}%
               </Badge>

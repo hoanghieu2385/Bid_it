@@ -167,7 +167,7 @@ const AuctionTableCard = ({
                     </td>
                     <td>
                       <div className="auction-price">
-                        <div className="current-price">{auction.currentPrice} VND</div>
+                        <div className="current-price">{auction.currentPrice} USD</div>
                       </div>
                     </td>
                     <td>
