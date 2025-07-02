@@ -10,15 +10,22 @@ bid-service/
 │       │               │   └── UserServiceClient.java
 │       │               ├── config/
 │       │               │   ├── FeignClient.java
+│       │               │   ├── RabbitMQConfig.java
 │       │               │   ├── SecurityConfig.java
+│       │               │   ├── WebSocketAuthInterceptor.java
 │       │               │   └── WebSocketConfig.java
+│       │               ├── context/
+│       │               │   └── TokenContextHolder.java
 │       │               ├── controller/
 │       │               │   ├── BidController.java
 │       │               │   └── WebSocketController.java
 │       │               ├── dto/
+│       │               │   ├── AuctionEndMessage.java
+│       │               │   ├── BidCreatedMessage.java
 │       │               │   ├── BidNotification.java
 │       │               │   ├── BidRequest.java
-│       │               │   └── BidResponse.java
+│       │               │   ├── BidResponse.java
+│       │               │   └── WinnerUpdateDTO.java
 │       │               ├── entity/
 │       │               │   └── Bid.java
 │       │               │   └── BidStatus.java
@@ -27,6 +34,8 @@ bid-service/
 │       │               ├── scheduler/
 │       │               │   └── AuctionEndScheduler.java
 │       │               ├── service/
+│       │               │   ├── BidMessageConsumer.java
+│       │               │   ├── BidMessagePublisher.java
 │       │               │   ├── BidService.java          (class)
 │       │               │   ├── IBidService.java         (interface)
 │       │               │   ├── WebSocketService.java    (class)

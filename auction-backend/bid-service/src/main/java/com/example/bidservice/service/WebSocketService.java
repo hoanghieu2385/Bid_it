@@ -62,7 +62,7 @@ public class WebSocketService implements IWebSocketService {
     @Override
     public void sendOutbidNotification(Long userId, Long auctionId, BigDecimal newHighestBid) {
         String destination = "/user/" + userId + "/queue/auction/" + auctionId + "/outbid";
-        BidNotification notification = BidNotification.outbid(auctionId, newHighestBid);
+        BidNotification notification = BidNotification.outbid(auctionId, newHighestBid, userId);
 
         logger.info("📤 SENDING OUTBID NOTIFICATION");
         logger.info("🎯 Destination: {}", destination);
@@ -81,7 +81,7 @@ public class WebSocketService implements IWebSocketService {
     @Override
     public void sendAuctionEndNotification(BidResponse winningBid) {
         String destination = "/topic/auction/" + winningBid.getAuctionId() + "/winner";
-        BidNotification notification = BidNotification.auctionEnd(winningBid.getAuctionId(), winningBid);
+        BidNotification notification = BidNotification.winner(winningBid.getAuctionId(), winningBid);
 
         logger.info("📤 SENDING AUCTION END NOTIFICATION");
         logger.info("🎯 Destination: {}", destination);
