@@ -23,11 +23,32 @@ const CreateAuctionPage = () => {
 	const [previews, setPreviews] = useState([]);
 	const [imageError, setImageError] = useState('');
 
-	// ✅ Verification and Score popup
 	const [showVerificationPopup, setShowVerificationPopup] = useState(false);
 	const [showLowScorePopup, setShowLowScorePopup] = useState(false);
 
-	// 🔥 Check verify and score on load
+	// ✅ Handle timezone correction
+	const toLocalISOString = (date) => {
+		const tzOffset = date.getTimezoneOffset() * 60000;
+		return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+	};
+
+	const now = new Date();
+	const start = new Date(now.getTime() + 90 * 60000); //  +1 tiếng 30 phút
+	const end = new Date(start.getTime() + 180 * 60000); // +3 tiếng
+
+	// ✅ Formik initial values
+	const initialValues = {
+		title: '',
+		description: '',
+		categoryId: '',
+		startTime: toLocalISOString(start),
+		endTime: toLocalISOString(end),
+		startingPrice: '',
+		incrementAmount: '',
+		requiresDeposit: false,
+		securityDeposit: '',
+	};
+
 	useEffect(() => {
 		if (!user) {
 			navigate('/login');
@@ -52,19 +73,6 @@ const CreateAuctionPage = () => {
 			setImageError('');
 		}
 	}, [images]);
-
-	// ✅ Formik initial values
-	const initialValues = {
-		title: '',
-		description: '',
-		categoryId: '',
-		startTime: new Date(Date.now() + 60 * 60000).toISOString().slice(0, 16),
-		endTime: new Date(Date.now() + 130 * 60000).toISOString().slice(0, 16),
-		startingPrice: '',
-		incrementAmount: '',
-		requiresDeposit: false,
-		securityDeposit: '',
-	};
 
 	// ✅ Form validation
 	const validationSchema = Yup.object({
@@ -101,7 +109,6 @@ const CreateAuctionPage = () => {
 
 	// ✅ Handle Submit
 	const handleSubmit = async (values, { setSubmitting }) => {
-		// 🔥 Final check (security)
 		if (user.citizenIdStatus !== 'APPROVED') {
 			setShowVerificationPopup(true);
 			setSubmitting(false);
@@ -223,7 +230,7 @@ const CreateAuctionPage = () => {
 												className="form-control border"
 												placeholder="E.g.: iPhone 15 Pro Max"
 											/>
-											<ErrorMessage name="title" component="div" className="text-danger small" />
+											<ErrorMessage name="title" component="div" className="text-danger small"/>
 										</div>
 
 										<div className="col-12">
@@ -237,7 +244,8 @@ const CreateAuctionPage = () => {
 												rows={6}
 												placeholder="Detailed product description (at least 30 characters)..."
 											/>
-											<ErrorMessage name="description" component="div" className="text-danger small" />
+											<ErrorMessage name="description" component="div"
+														  className="text-danger small"/>
 										</div>
 
 										<div className="col-12">
@@ -252,14 +260,19 @@ const CreateAuctionPage = () => {
 													</option>
 												))}
 											</Field>
-											<ErrorMessage name="categoryId" component="div" className="text-danger small" />
+											<ErrorMessage name="categoryId" component="div"
+														  className="text-danger small"/>
 										</div>
 									</div>
 
-									<hr className="my-4" />
-									<AuctionTimeAndPrice formik={{ values, setFieldValue }} />
+									<hr className="my-4"/>
+									<AuctionTimeAndPrice formik={{values, setFieldValue}}/>
+									<small className="text-muted d-block mt-1">
+										⚠️ Auctions can only be edited or deleted if the start time is more than 1 hour
+										from starting time.
+									</small>
 
-									<hr className="my-4" />
+									<hr className="my-4"/>
 
 									<div className="image-upload-section">
 										<h5 className="mb-3">
@@ -278,14 +291,15 @@ const CreateAuctionPage = () => {
 										)}
 										<small className="text-muted d-block mt-1">
 											• At least 1 image is required
-											<br />
+											<br/>
 											• Up to 10 images, each no larger than 5MB
-											<br />• Supported formats: JPG, JPEG, PNG, WebP
+											<br/>• Supported formats: JPG, JPEG, PNG, WebP
 										</small>
 									</div>
 
 									<div className="text-center mt-4">
-										<button type="submit" className="btn btn-dark px-5 py-2 rounded-pill" disabled={isSubmitting}>
+										<button type="submit" className="btn btn-dark px-5 py-2 rounded-pill"
+												disabled={isSubmitting}>
 											{isSubmitting ? (
 												<>
 													<span

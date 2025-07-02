@@ -1,4 +1,3 @@
-// File: src/pages/client/Home.jsx
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
@@ -24,23 +23,26 @@ const Home = () => {
 				const data = await getAllAuctions();
 				const now = new Date();
 
-				// Filter out ended auctions
-				const activeAuctions = data.filter(auction => new Date(auction.endTime) > now);
+				// 👉 Filter out CANCELLED auctions
+				const validAuctions = data.filter((auction) => auction.status !== 'CANCELLED');
 
-				// Upcoming: startTime in future
-				const upcoming = activeAuctions
-					.filter((a) => new Date(a.startTime) > now)
+				// 👉 Upcoming: startTime > now && not CANCELLED
+				const upcoming = validAuctions
+					.filter((a) => {
+						const start = new Date(a.startTime);
+						return start > now;
+					})
 					.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
-				// Ongoing: started but not ended
-				const ongoing = activeAuctions.filter((a) => {
+				// 👉 Ongoing: start <= now && end >= now && status === OPENED
+				const ongoing = validAuctions.filter((a) => {
 					const start = new Date(a.startTime);
 					const end = new Date(a.endTime);
-					return start <= now && end >= now;
+					return start <= now && end >= now && a.status === 'OPENED';
 				});
 
-				// Latest: most recent active auctions
-				const latest = activeAuctions
+				// 👉 Latest: Show all except CANCELLED
+				const latest = validAuctions
 					.sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
 					.slice(0, 6);
 
@@ -66,7 +68,7 @@ const Home = () => {
 	const calculateTimeLeft = () => {
 		const now = new Date();
 		const newTimeLeft = {};
-		
+
 		const allAuctions = [...ongoingAuctions, ...upcomingAuctions, ...latestAuctions];
 		allAuctions.forEach((auction) => {
 			const endTime = new Date(auction.endTime);
@@ -93,6 +95,25 @@ const Home = () => {
 	const formatDateToDisplay = (dateString) => {
 		const date = new Date(dateString);
 		return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+	};
+
+	// Badge logic
+	const renderStatusBadge = (auction) => {
+		const now = new Date();
+		const start = new Date(auction.startTime);
+		const end = new Date(auction.endTime);
+
+		if (auction.status === 'CANCELLED') {
+			return <span className="badge bg-danger mb-2">Auction Cancelled</span>;
+		} else if (start > now) {
+			return <span className="badge bg-warning text-dark mb-2">Auction Upcoming</span>;
+		} else if (start <= now && end >= now && auction.status === 'OPENED') {
+			return <span className="badge bg-success mb-2">Auction is Live</span>;
+		} else if (end < now) {
+			return <span className="badge bg-secondary mb-2">Auction Ended</span>;
+		} else {
+			return <span className="badge bg-secondary mb-2">Auction {auction.status}</span>;
+		}
 	};
 
 	const renderAuctionCard = (auction) => (
@@ -124,16 +145,12 @@ const Home = () => {
 					<div className="card-body">
 						<h5 className="card-title">{auction.title}</h5>
 						<p className="card-text">
-							{auction.status === 'OPENED' ? (
-								<span className="badge bg-success mb-2">Auction is live</span>
-							) : (
-								<span className="badge bg-warning text-dark mb-2">Auction upcoming</span>
-							)}
+							{renderStatusBadge(auction)}
 							<br />
 							Ends at: {formatDateToDisplay(auction.endTime)}
 							<br />
-							Starting Price: ${auction.startingPrice}<br />
-							Current Bid: ${(auction.currentBid || auction.startingPrice)} <br />
+							Starting Price: {auction.startingPrice.toLocaleString('vi-VN')} ₫<br />
+							Current Bid: {(auction.currentBid || auction.startingPrice).toLocaleString('vi-VN')} ₫<br />
 							Bids: {auction.bidCount || 0}
 							<br />
 							{timeLeft[auction.id] && (
@@ -144,8 +161,8 @@ const Home = () => {
 							)}
 						</p>
 						<div className="d-flex justify-content-end">
-							<button 
-								className="btn btn-light" 
+							<button
+								className="btn btn-light"
 								onClick={(e) => handleLikeClick(auction.id, e)}
 							>
 								{likedItems[auction.id] ? <FaHeart className="text-danger" /> : <FaRegHeart />}
@@ -159,13 +176,10 @@ const Home = () => {
 
 	return (
 		<div className="home-container">
-			{/* Banner Section */}
 			<Banner />
-
-			{/* Categories Section */}
 			<Categories />
 
-			{/* Ongoing Auctions Section */}
+			{/* Ongoing Auctions */}
 			<section className="py-5 bg-light">
 				<div className="container">
 					<h2 className="text-center mb-4">Ongoing Auctions</h2>
@@ -178,10 +192,7 @@ const Home = () => {
 					</div>
 					{ongoingAuctions.length > 0 && (
 						<div className="text-center mt-4">
-							<Link 
-								to="/auctions?status=OPENED" 
-								className="btn btn-primary"
-							>
+							<Link to="/auctions?status=OPENED" className="btn btn-primary">
 								View All Ongoing Auctions
 							</Link>
 						</div>
@@ -189,7 +200,7 @@ const Home = () => {
 				</div>
 			</section>
 
-			{/* Upcoming Auctions Section */}
+			{/* Upcoming Auctions */}
 			<section className="py-5">
 				<div className="container">
 					<h2 className="text-center mb-4">Upcoming Auctions</h2>
@@ -202,10 +213,7 @@ const Home = () => {
 					</div>
 					{upcomingAuctions.length > 0 && (
 						<div className="text-center mt-4">
-							<Link 
-								to="/auctions?status=UPCOMING" 
-								className="btn btn-primary"
-							>
+							<Link to="/auctions?status=UPCOMING" className="btn btn-primary">
 								View All Upcoming Auctions
 							</Link>
 						</div>
@@ -213,7 +221,7 @@ const Home = () => {
 				</div>
 			</section>
 
-			{/* Latest Auctions Section */}
+			{/* Latest Auctions */}
 			<section className="py-5 bg-light">
 				<div className="container">
 					<h2 className="text-center mb-4">Latest Auctions</h2>
