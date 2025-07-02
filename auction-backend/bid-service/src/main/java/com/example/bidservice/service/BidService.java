@@ -46,6 +46,9 @@ public class BidService implements IBidService {
     @Autowired
     private IWebSocketService webSocketService;
 
+    @Autowired
+    private BidMessagePublisher bidMessagePublisher;
+
     // Tạo bid mới (dùng trong WebSocket)
     @Override
     public Bid createBid(Long auctionId, Long userId, BigDecimal bidAmount) {
@@ -54,46 +57,42 @@ public class BidService implements IBidService {
 
         // 2. Cập nhật tất cả các bid cũ thành OUTBID và isWinning = false
         List<Bid> oldBids = bidRepository.findByAuctionId(auctionId);
-
         for (Bid oldBid : oldBids) {
             if (!oldBid.getUserId().equals(userId)) {
-                // Gửi notification đến user bị outbid
                 try {
                     webSocketService.sendOutbidNotification(oldBid.getUserId(), auctionId, bidAmount);
+                    bidMessagePublisher.publishOutbidNotification(auctionId, oldBid.getUserId(), bidAmount);
                 } catch (Exception e) {
-                    System.err.println("Failed to send outbid notification: " + e.getMessage());
+                    logger.warn("Failed to send outbid notification: {}", e.getMessage());
                 }
             }
-
-            // Cập nhật trạng thái bid cũ
             oldBid.setStatus(BidStatus.OUTBID);
             oldBid.setIsWinning(false);
         }
+        bidRepository.saveAll(oldBids);
 
-        bidRepository.saveAll(oldBids); // Lúc này đã có dữ liệu mới nên sẽ có hiệu lực
-
-        // 3. Tạo bid mới với trạng thái ACTIVE và là người đang dẫn đầu
+        // Tạo bid mới với trạng thái ACTIVE và là người đang dẫn đầu
         Bid newBid = new Bid(auctionId, userId, bidAmount);
         newBid.setStatus(BidStatus.ACTIVE);
-        newBid.setIsWinning(true); // Đặt là người thắng tạm thời
-
+        newBid.setIsWinning(true);
         Bid savedBid = bidRepository.save(newBid);
 
-        // 4. Cập nhật currentBid và bidCount trong auction-service
+        // Update auction-service
         try {
             long totalBids = bidRepository.countByAuctionId(auctionId);
-
             auctionServiceClient.updateCurrentBid(auctionId, bidAmount, (int) totalBids);
-
-            System.out.println("Updated auction " + auctionId + " with currentBid: " + bidAmount + ", bidCount: " + totalBids);
-
         } catch (Exception e) {
-            System.err.println("Failed to update current bid in auction service: " + e.getMessage());
-            // Không throw exception để không làm fail toàn bộ bid process
+            logger.warn("Failed to update current bid in auction service: {}", e.getMessage());
         }
 
-        // 5. Enrich data và gửi notification
-        enrichBidWithExternalData(savedBid);
+        // Publish BID CREATED để xử lý async (analytics, log, external)
+        bidMessagePublisher.publishBidCreated(auctionId, userId, bidAmount, savedBid.getId());
+
+        // Gửi realtime notification qua Rabbit
+        BidResponse bidResponse = mapToBidResponse(savedBid);
+        bidMessagePublisher.publishBidNotification(auctionId, bidResponse, "NEW_BID");
+
+        // Gửi realtime WebSocket trực tiếp
         sendRealtimeBidUpdate(savedBid);
 
         return savedBid;
@@ -332,60 +331,42 @@ public class BidService implements IBidService {
         try {
             // Kiểm tra auction đã thực sự kết thúc chưa
             AuctionServiceClient.AuctionResponse auction = auctionServiceClient.getAuctionById(auctionId);
-            if (auction == null) {
-                throw new RuntimeException("Auction not found: " + auctionId);
-            }
+            if (auction == null) throw new RuntimeException("Auction not found: " + auctionId);
 
-            LocalDateTime now = LocalDateTime.now();
+            boolean endedByTime = auction.getEndTime() != null && auction.getEndTime().isBefore(LocalDateTime.now());
+            boolean endedByStatus = "CLOSED".equals(auction.getStatus()) || "ENDED".equals(auction.getStatus());
 
-            // Kiểm tra auction đã kết thúc chưa (cả về thời gian và status)
-            boolean isEndedByTime = auction.getEndTime() != null && auction.getEndTime().isBefore(now);
-            boolean isEndedByStatus = "CLOSED".equals(auction.getStatus()) || "ENDED".equals(auction.getStatus());
-
-            if (!isEndedByTime && !isEndedByStatus) {
-                System.out.println("Auction " + auctionId + " has not ended yet. Status: " +
-                        auction.getStatus() + ", End time: " + auction.getEndTime());
+            if (!endedByTime && !endedByStatus) {
+                logger.info("Auction {} not ended yet. Skipping.", auctionId);
                 return;
             }
 
-            // Tìm bid cao nhất
             Optional<Bid> highestBidOpt = bidRepository.findHighestBidByAuctionId(auctionId);
-
             if (highestBidOpt.isPresent()) {
                 Bid winningBid = highestBidOpt.get();
 
-                System.out.println("Processing auction end for auction " + auctionId +
-                        ", winning bid: " + winningBid.getBidAmount() +
-                        " by user " + winningBid.getUserId());
-
-                // Cập nhật bid thắng cuộc
                 winningBid.setStatus(BidStatus.WINNING);
                 winningBid.setIsWinning(true);
                 bidRepository.save(winningBid);
-
-                // Cập nhật tất cả bid khác thành OUTBID
                 updateAllOtherBidsToOutbid(auctionId, winningBid.getId());
 
-                // Bây giờ mới cập nhật winner vào auction-service
-                WinnerUpdateDTO dto = new WinnerUpdateDTO(winningBid.getUserId());
                 try {
-                    auctionServiceClient.updateWinner(auctionId, dto);
-                    System.out.println("Successfully updated winner for auction " + auctionId);
+                    auctionServiceClient.updateWinner(auctionId, new WinnerUpdateDTO(winningBid.getUserId()));
+                    logger.info("Updated winner for auction {}", auctionId);
                 } catch (Exception e) {
-                    System.err.println("Failed to update winner in auction-service: " + e.getMessage());
+                    logger.warn("Failed to update winner in auction-service: {}", e.getMessage());
                 }
 
-                // Gửi notification về winner
+                // Publish Auction End message để các service khác biết
+                bidMessagePublisher.publishAuctionEnd(auctionId, "TIME_EXPIRED");
+
                 sendWinnerNotification(winningBid);
-
             } else {
-                System.out.println("No bids found for auction " + auctionId);
-                // Có thể cập nhật auction status thành NO_BIDS hoặc EXPIRED
+                logger.info("No bids found for auction {}", auctionId);
             }
-
         } catch (Exception e) {
-            System.err.println("Failed to process auction end for auction " + auctionId + ": " + e.getMessage());
-            throw new RuntimeException("Failed to process auction end", e);
+            logger.error("Error while processing auction end: {}", e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 

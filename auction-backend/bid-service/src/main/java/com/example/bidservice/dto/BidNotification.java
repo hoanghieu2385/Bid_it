@@ -1,91 +1,118 @@
 package com.example.bidservice.dto;
 
-import java.math.BigDecimal;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+/**
+ * DTO duy nhất cho cả RabbitMQ và WebSocket.
+ */
 public class BidNotification {
-    private String type; // "NEW_BID", "AUCTION_END", "OUTBID"
+
+    @JsonProperty("auctionId")
     private Long auctionId;
+
+    @JsonProperty("type")
+    private String type; // NEW_BID, OUTBID, WINNER, BID_FAILED
+
+    @JsonProperty("bidInfo")
     private BidResponse bidInfo;
+
+    @JsonProperty("currentHighestBid")
     private BigDecimal currentHighestBid;
+
+    @JsonProperty("message")
     private String message;
+
+    @JsonProperty("timestamp")
+    private LocalDateTime timestamp;
 
     public BidNotification() {}
 
+    public BidNotification(Long auctionId, String type, BidResponse bidInfo,
+                           BigDecimal currentHighestBid, String message) {
+        this.auctionId = auctionId;
+        this.type = type;
+        this.bidInfo = bidInfo;
+        this.currentHighestBid = currentHighestBid;
+        this.message = message;
+        this.timestamp = LocalDateTime.now();
+    }
+
+    // Factory methods
     public static BidNotification newBid(Long auctionId, BidResponse bidInfo) {
-        BidNotification notification = new BidNotification();
-        notification.setType("NEW_BID");
-        notification.setAuctionId(auctionId);
-        notification.setBidInfo(bidInfo);
-        notification.setCurrentHighestBid(bidInfo.getBidAmount());
-        notification.setMessage("New bid placed!");
-        return notification;
+        return new BidNotification(
+                auctionId,
+                "NEW_BID",
+                bidInfo,
+                bidInfo.getBidAmount(),
+                "New bid placed!"
+        );
+    }
+
+    public static BidNotification outbid(Long auctionId, BigDecimal newHighestBid, Long outbidUserId) {
+        BidResponse dummy = new BidResponse();
+        dummy.setAuctionId(auctionId);
+        dummy.setUserId(outbidUserId);
+        return new BidNotification(
+                auctionId,
+                "OUTBID",
+                dummy,
+                newHighestBid,
+                "You have been outbid!"
+        );
+    }
+
+    public static BidNotification winner(Long auctionId, BidResponse winningBid) {
+        return new BidNotification(
+                auctionId,
+                "WINNER",
+                winningBid,
+                winningBid.getBidAmount(),
+                "You are the winner!"
+        );
     }
 
     public static BidNotification bidFailed(Long auctionId, String errorMessage) {
-        BidNotification notification = new BidNotification();
-        notification.setType("BID_FAILED");
-        notification.setAuctionId(auctionId);
-        notification.setMessage(errorMessage);
-        return notification;
+        return new BidNotification(
+                auctionId,
+                "BID_FAILED",
+                null,
+                null,
+                errorMessage
+        );
     }
 
-    public static BidNotification outbid(Long auctionId, BigDecimal newHighestBid) {
-        BidNotification notification = new BidNotification();
-        notification.setType("OUTBID");
-        notification.setAuctionId(auctionId);
-        notification.setCurrentHighestBid(newHighestBid);
-        notification.setMessage("You have been outbid!");
-        return notification;
-    }
+    // Getters & setters
 
-    public static BidNotification auctionEnd(Long auctionId, BidResponse winningBid) {
-        BidNotification notification = new BidNotification();
-        notification.setType("AUCTION_END");
-        notification.setAuctionId(auctionId);
-        notification.setBidInfo(winningBid);
-        notification.setCurrentHighestBid(winningBid != null ? winningBid.getBidAmount() : null);
-        notification.setMessage("Auction has ended!");
-        return notification;
-    }
+    public Long getAuctionId() { return auctionId; }
+    public void setAuctionId(Long auctionId) { this.auctionId = auctionId; }
 
-    // Getters and Setters
-    public String getType() {
-        return type;
-    }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
-    public void setType(String type) {
-        this.type = type;
-    }
+    public BidResponse getBidInfo() { return bidInfo; }
+    public void setBidInfo(BidResponse bidInfo) { this.bidInfo = bidInfo; }
 
-    public Long getAuctionId() {
-        return auctionId;
-    }
+    public BigDecimal getCurrentHighestBid() { return currentHighestBid; }
+    public void setCurrentHighestBid(BigDecimal currentHighestBid) { this.currentHighestBid = currentHighestBid; }
 
-    public void setAuctionId(Long auctionId) {
-        this.auctionId = auctionId;
-    }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
 
-    public BidResponse getBidInfo() {
-        return bidInfo;
-    }
+    public LocalDateTime getTimestamp() { return timestamp; }
+    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 
-    public void setBidInfo(BidResponse bidInfo) {
-        this.bidInfo = bidInfo;
-    }
-
-    public BigDecimal getCurrentHighestBid() {
-        return currentHighestBid;
-    }
-
-    public void setCurrentHighestBid(BigDecimal currentHighestBid) {
-        this.currentHighestBid = currentHighestBid;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
+    @Override
+    public String toString() {
+        return "BidNotification{" +
+                "auctionId=" + auctionId +
+                ", type='" + type + '\'' +
+                ", bidInfo=" + bidInfo +
+                ", currentHighestBid=" + currentHighestBid +
+                ", message='" + message + '\'' +
+                ", timestamp=" + timestamp +
+                '}';
     }
 }
