@@ -425,9 +425,15 @@ const AuctionDetailPage = () => {
 		}
 	};
 
-	// Countdown logic
+// Countdown logic fix
 	const startCountdown = (endTime) => {
 		const interval = setInterval(() => {
+			if (auction?.status === 'CANCELLED') {
+				setRemainingTime('Auction has been cancelled');
+				clearInterval(interval);
+				return;
+			}
+
 			const now = new Date();
 			const end = new Date(endTime);
 			const diff = end - now;
@@ -444,6 +450,7 @@ const AuctionDetailPage = () => {
 			}
 		}, 1000);
 	};
+
 
 	// Handle bid input change
 	const handleBidAmountChange = (e) => {
@@ -601,13 +608,15 @@ const AuctionDetailPage = () => {
 					{/* Countdown */}
 					<div className="bg-light text-center mt-4 p-3 rounded">
 						<strong className="text-muted">Time remaining:</strong>
-						<div className="fs-4 fw-bold">{remainingTime}</div>
+						<div className="fs-4 fw-bold">
+							{auction.status === 'CANCELLED' ? 'Auction Cancelled' : remainingTime}
+						</div>
 					</div>
 
 					{/* Description */}
 					<div className="mt-3">
 						<label className="form-label fw-bold">Description:</label>
-						<p style={{ whiteSpace: 'pre-wrap' }} className="border rounded p-3 bg-white">
+						<p style={{whiteSpace: 'pre-wrap'}} className="border rounded p-3 bg-white">
 							{truncatedDesc}
 						</p>
 						{auction.description?.length > 1000 && (
@@ -622,7 +631,8 @@ const AuctionDetailPage = () => {
 						<div className="bg-white mt-3 p-2 rounded shadow-sm border">
 							<h6 className="fw-bold mb-2 d-flex align-items-center">
 								Bid History ({bidHistory.length} bids)
-								{connectionStatus === 'connected' && <span className="badge bg-success ms-2">Live</span>}
+								{connectionStatus === 'connected' &&
+									<span className="badge bg-success ms-2">Live</span>}
 							</h6>
 							<ul className="list-group list-group-flush small">
 								{bidHistory.map((bid, index) => {
@@ -637,7 +647,7 @@ const AuctionDetailPage = () => {
 										>
 											<div>
 												<strong>{bidderName}</strong>
-												<br />
+												<br/>
 												<small className="text-muted">
 													{bidTime ? new Date(bidTime).toLocaleString('vi-VN') : 'Unknown time'}
 												</small>
@@ -656,6 +666,12 @@ const AuctionDetailPage = () => {
 				{/* Right: Seller + Bidding Form */}
 				<div className="col-lg-5">
 					<h2 className="fw-bold mb-3">{auction.title}</h2>
+
+					{auction.status === 'CANCELLED' && (
+						<div className="alert alert-danger my-3">
+							This auction has been <strong>cancelled</strong>. You cannot place bids.
+						</div>
+					)}
 
 					{/* Seller Info */}
 					{seller && (

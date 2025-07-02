@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { getCurrentUser, submitEkycRequest } from '../../../services/user-api';
 
@@ -31,7 +30,6 @@ const EKYCVerification = () => {
 		});
 	}, []);
 
-	// 🔥 Hàm kiểm tra file
 	const isValidFile = (file) => {
 		const validTypes = ['image/jpeg', 'image/png'];
 		const maxSize = 5 * 1024 * 1024; // 5MB
@@ -71,8 +69,12 @@ const EKYCVerification = () => {
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		if (!citizenId || !frontImage || !backImage) {
-			setMessage('Please fill all required fields');
+		if (!citizenId || citizenId.length !== 12) {
+			setMessage('Citizen ID must be exactly 12 digits.');
+			return;
+		}
+		if (!frontImage || !backImage) {
+			setMessage('Please upload both front and back images of your ID card.');
 			return;
 		}
 
@@ -107,8 +109,16 @@ const EKYCVerification = () => {
 						type="text"
 						className="form-control"
 						value={citizenId}
-						onChange={(e) => setCitizenId(e.target.value)}
+						onChange={(e) => {
+							const value = e.target.value;
+							// Chỉ cho phép nhập số
+							if (/^\d*$/.test(value)) {
+								setCitizenId(value);
+							}
+						}}
 						disabled={!isEditable}
+						placeholder="Enter 12-digit Citizen ID"
+						maxLength={12}
 						required
 					/>
 				</div>
