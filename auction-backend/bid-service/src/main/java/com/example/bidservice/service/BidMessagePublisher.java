@@ -47,6 +47,18 @@ public class BidMessagePublisher {
         publishBidNotification(BidNotification.winner(auctionId, winningBid));
     }
 
+    // 👉 Thêm method này để khớp với cách bạn gọi
+    public void publishBidNotification(Long auctionId, BidResponse bidResponse, String notificationType) {
+        BidNotification notification = new BidNotification(
+                auctionId,
+                notificationType,
+                bidResponse,
+                bidResponse != null ? bidResponse.getBidAmount() : null,
+                "Notification: " + notificationType
+        );
+        publishBidNotification(notification);
+    }
+
     private void publishBidNotification(BidNotification notification) {
         try {
             logger.info("📤 Publishing bid notification: {}", notification);
