@@ -312,8 +312,8 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
             _bidHistoryKey.currentState?.addNewBid(bidInfo);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Bid sent successfully'),
-                backgroundColor: Colors.green,
+                content: Text('New Bid!'),
+                backgroundColor: Colors.black,
               ),
             );
           } else if (data.containsKey('highestBid')) {
