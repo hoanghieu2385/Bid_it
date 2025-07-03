@@ -636,7 +636,13 @@ const AuctionDetailPage = () => {
 							</h6>
 							<ul className="list-group list-group-flush small">
 								{bidHistory.map((bid, index) => {
-									const bidderName = bid.bidderName || bid.userName || bid.user?.name || 'Anonymous';
+									const bidderName =
+										bid.username ||
+										bid.userName ||
+										bid.bidderName ||
+										bid.user?.name ||
+										'Unknown Bidder';
+
 									const bidAmount = bid.amount || bid.bidAmount || 0;
 									const bidTime = bid.bidTime || bid.createdAt || bid.timestamp;
 
@@ -647,14 +653,14 @@ const AuctionDetailPage = () => {
 										>
 											<div>
 												<strong>{bidderName}</strong>
-												<br/>
+												<br />
 												<small className="text-muted">
 													{bidTime ? new Date(bidTime).toLocaleString('vi-VN') : 'Unknown time'}
 												</small>
 											</div>
 											<span className="fw-bold text-success">
-												{bidAmount && !isNaN(bidAmount) ? Number(bidAmount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
-											</span>
+                {bidAmount && !isNaN(bidAmount) ? Number(bidAmount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
+            </span>
 										</li>
 									);
 								})}
