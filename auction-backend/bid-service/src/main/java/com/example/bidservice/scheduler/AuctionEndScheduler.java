@@ -60,9 +60,15 @@ public class AuctionEndScheduler {
                                 ", status: " + auction.getStatus() + ")");
 
                         if (auction.getWinnerId() == null) {
-                            System.out.println("Publishing auction end event for auction " + auctionId);
+                            System.out.println("Auction " + auctionId + " has no winner yet, found winnerId from bid-service...");
 
-                            bidMessagePublisher.publishAuctionEnd(auctionId, "TIME_EXPIRED");
+                            Long winnerId = bidRepository.findHighestBidByAuctionId(auctionId)
+                                    .map(bid -> bid.getUserId())
+                                    .orElse(null);
+
+                            System.out.println("Found winnerId: " + winnerId);
+
+                            bidMessagePublisher.publishAuctionEnd(auctionId, winnerId, "TIME_EXPIRED");
 
                             processedAuctions.add(auctionId);
                         } else {

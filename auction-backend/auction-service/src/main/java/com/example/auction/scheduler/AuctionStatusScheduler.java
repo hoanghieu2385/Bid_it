@@ -11,6 +11,7 @@ import com.example.auction.model.Media;
 import com.example.auction.publisher.BidMessagePublisher;
 import com.example.auction.repository.AuctionRepository;
 import com.example.auction.repository.MediaRepository;
+import com.example.auction.service.AuctionService;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,19 +36,21 @@ public class AuctionStatusScheduler {
     private final EmailClient emailClient;
     private final MediaRepository mediaRepository;
     private final BidMessagePublisher bidMessagePublisher;
+    private final AuctionService auctionService;
 
     @Autowired
     public AuctionStatusScheduler(AuctionRepository auctionRepository,
                                   BidServiceClient bidServiceClient,
                                   UserClient userClient,
                                   EmailClient emailClient,
-                                  MediaRepository mediaRepository, BidMessagePublisher bidMessagePublisher) {
+                                  MediaRepository mediaRepository, BidMessagePublisher bidMessagePublisher, AuctionService auctionService) {
         this.auctionRepository = auctionRepository;
         this.bidServiceClient = bidServiceClient;
         this.userClient = userClient;
         this.emailClient = emailClient;
         this.mediaRepository = mediaRepository;
         this.bidMessagePublisher = bidMessagePublisher;
+        this.auctionService = auctionService;
     }
 
     // Tăng tần suất từ 30s thành 10s
@@ -94,21 +97,28 @@ public class AuctionStatusScheduler {
 
         for (Auction auction : toClose) {
             try {
-                // Cập nhật status và deadline
+                // 1) Cập nhật status & thời hạn thanh toán
                 auction.setStatus(AuctionStatus.CLOSED);
                 auction.setUpdatedAt(now);
-                auction.setWinnerPaymentDeadline(now.plusDays(1)); // 1 ngày để thanh toán
+                auction.setWinnerPaymentDeadline(now.plusDays(1));
 
                 logger.info("Auction {}: OPENED → CLOSED", auction.getId());
 
-                // Xử lý kết thúc đấu giá trong bid-service
-                bidMessagePublisher.publishAuctionEnd(auction.getId(), "TIME_EXPIRED");
+                // 2) Tìm winner
+                BidServiceClient.WinnerResponse winner = bidServiceClient.getWinnerByAuctionId(auction.getId());
+                if (winner != null && winner.getUserId() != null) {
+                    logger.info("🏆 Winner found for auction {}: userId={} bidAmount={}",
+                            auction.getId(), winner.getUserId(), winner.getBidAmount());
 
-                // Gửi email cho winner nếu có
-//                sendWinnerEmailIfExists(auction);
+                    // 3) GỌI updateWinner: tự lưu winnerId + gửi email
+                    auctionService.updateWinner(auction.getId(), winner.getUserId());
+
+                } else {
+                    logger.info("❌ No winner found for auction {}", auction.getId());
+                }
 
             } catch (Exception e) {
-                logger.error("Error processing auction end for auction {}: {}", auction.getId(), e.getMessage());
+                logger.error("❌ Error processing auction {}: {}", auction.getId(), e.getMessage());
             }
         }
 
@@ -157,61 +167,5 @@ public class AuctionStatusScheduler {
         }
 
         return hasChanges;
-    }
-
-    /**
-     * Gửi email thông báo thắng đấu giá cho winner
-     */
-    private void sendWinnerEmailIfExists(Auction auction) {
-        try {
-            // Kiểm tra có winner không
-            if (auction.getWinnerId() == null) {
-                logger.info("Auction {} has no winner, skipping email", auction.getId());
-                return;
-            }
-
-            // Lấy thông tin user
-            UserDTO winner = userClient.getUserById(auction.getWinnerId());
-            if (winner == null || winner.getEmail() == null) {
-                logger.warn("Cannot get winner email for auction {} and user {}",
-                        auction.getId(), auction.getWinnerId());
-                return;
-            }
-
-            // Lấy thông tin bid từ bid-service
-            BidServiceClient.WinnerResponse winnerInfo = bidServiceClient.getWinnerByAuctionId(auction.getId());
-            if (winnerInfo == null || winnerInfo.getBidAmount() == null) {
-                logger.warn("Cannot get winner bid info for auction {}", auction.getId());
-                return;
-            }
-
-            // Tạo request gửi email cho winner
-            Media thumbnail = mediaRepository.findThumbnailByAuctionId(auction.getId());
-
-            if (thumbnail == null) {
-                thumbnail = mediaRepository.findFirstByAuctionIdOrderByIdAsc(auction.getId());
-            }
-
-            String imageUrl = (thumbnail != null) ? thumbnail.getUrl() : null;
-
-            AuctionWinEmailRequest emailRequest = new AuctionWinEmailRequest(
-                    winner.getEmail(),
-                    auction.getTitle(),
-                    auction.getSlug() != null ? auction.getSlug() : auction.getId().toString(),
-                    imageUrl,
-                    Double.parseDouble(winnerInfo.getBidAmount())
-            );
-
-            // Gửi email
-            emailClient.sendAuctionWinnerEmail(emailRequest);
-
-            logger.info("✅ Sent winner email for auction {} to user {} ({})",
-                    auction.getId(), auction.getWinnerId(), winner.getEmail());
-
-        } catch (Exception e) {
-            logger.error("❌ Failed to send winner email for auction {}: {}",
-                    auction.getId(), e.getMessage());
-            // Không throw exception để không làm fail toàn bộ quá trình
-        }
     }
 }

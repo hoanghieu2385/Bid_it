@@ -4,6 +4,8 @@ import com.example.payment.config.PayPalAuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -24,6 +26,7 @@ public class PayPalService implements IPayPalService {
     @Value("${paypal.currency:USD}")
     private String defaultCurrency;
 
+    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     @Override
     public String createPayPalOrder(BigDecimal amount, String currency, String returnUrl, String cancelUrl, String description) {
         try {
@@ -77,6 +80,7 @@ public class PayPalService implements IPayPalService {
         }
     }
 
+    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     @Override
     public String executePayPalPayment(String orderId, String payerId) {
         try {
@@ -116,6 +120,7 @@ public class PayPalService implements IPayPalService {
         }
     }
 
+    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     @Override
     public String getApprovalUrl(String orderId) {
         try {
@@ -151,6 +156,7 @@ public class PayPalService implements IPayPalService {
         }
     }
 
+    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     @Override
     public boolean verifyPayPalPayment(String transactionId) {
         try {
@@ -188,6 +194,7 @@ public class PayPalService implements IPayPalService {
         throw new UnsupportedOperationException("Refund functionality not implemented yet");
     }
 
+    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     @Override
     public Map<String, Object> getOrderDetails(String orderId) {
         try {
@@ -211,6 +218,7 @@ public class PayPalService implements IPayPalService {
         }
     }
 
+    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     @Override
     public boolean isOrderValid(String orderId) {
         try {

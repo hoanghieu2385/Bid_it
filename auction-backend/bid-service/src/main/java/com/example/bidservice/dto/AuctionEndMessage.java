@@ -4,12 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 
-/**
- * Message DTO khi auction kết thúc
- */
 public class AuctionEndMessage {
     @JsonProperty("auctionId")
     private Long auctionId;
+
+    @JsonProperty("winnerId")
+    private Long winnerId;
 
     @JsonProperty("endTime")
     private LocalDateTime endTime;
@@ -24,20 +24,29 @@ public class AuctionEndMessage {
     public AuctionEndMessage() {
     }
 
-    public AuctionEndMessage(Long auctionId, String reason) {
+    public AuctionEndMessage(Long auctionId, Long winnerId, String reason) {
         this.auctionId = auctionId;
+        this.winnerId = winnerId;
         this.reason = reason;
         this.endTime = LocalDateTime.now();
         this.timestamp = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // Getters & Setters
     public Long getAuctionId() {
         return auctionId;
     }
 
     public void setAuctionId(Long auctionId) {
         this.auctionId = auctionId;
+    }
+
+    public Long getWinnerId() {
+        return winnerId;
+    }
+
+    public void setWinnerId(Long winnerId) {
+        this.winnerId = winnerId;
     }
 
     public LocalDateTime getEndTime() {
@@ -68,6 +77,7 @@ public class AuctionEndMessage {
     public String toString() {
         return "AuctionEndMessage{" +
                 "auctionId=" + auctionId +
+                ", winnerId=" + winnerId +
                 ", endTime=" + endTime +
                 ", reason='" + reason + '\'' +
                 ", timestamp=" + timestamp +
