@@ -47,7 +47,6 @@ const loadWebSocketLibraries = async () => {
 		throw new Error('Crypto polyfill not properly loaded');
 	}
 };
-
 // Connection Status Component
 const ConnectionStatusBadge = ({ status }) => {
 	const statusConfig = {
@@ -360,7 +359,7 @@ const AuctionDetailPage = () => {
 		try {
 			const data = await getAuctionDetailById(id);
 			setAuction(data);
-			startCountdown(data.endTime);
+			startCountdown(data.startTime, data.endTime);
 			fetchSeller(data.sellerId);
 			fetchRelatedAuctions(data);
 		} catch {
@@ -431,30 +430,42 @@ const AuctionDetailPage = () => {
 		}
 	};
 
-// Countdown logic fix
-	const startCountdown = (endTime) => {
+	const [countdownLabel, setCountdownLabel] = useState('');
+	const startCountdown = (startTimeRaw, endTimeRaw) => {
 		const interval = setInterval(() => {
 			if (auction?.status === 'CANCELLED') {
 				setRemainingTime('Auction has been cancelled');
+				setCountdownLabel('');
 				clearInterval(interval);
 				return;
 			}
 
 			const now = new Date();
-			const end = new Date(endTime);
-			const diff = end - now;
+			const startTime = new Date(startTimeRaw);
+			const endTime = new Date(endTimeRaw);
 
-			if (diff <= 0) {
-				setRemainingTime('Auction started or ended');
-				clearInterval(interval);
+			if (now < startTime) {
+				const diff = startTime - now;
+				setCountdownLabel('Auction starting in');
+				setRemainingTime(formatTime(diff));
+			} else if (now >= startTime && now < endTime) {
+				const diff = endTime - now;
+				setCountdownLabel('Auction ending in');
+				setRemainingTime(formatTime(diff));
 			} else {
-				const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-				const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-				const minutes = Math.floor((diff / (1000 * 60)) % 60);
-				const seconds = Math.floor((diff / 1000) % 60);
-				setRemainingTime(`${days} Days ${hours} Hours ${minutes} Mins ${seconds} Secs`);
+				setRemainingTime('Auction has ended');
+				setCountdownLabel('');
+				clearInterval(interval);
 			}
 		}, 1000);
+	};
+
+	const formatTime = (diff) => {
+		const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+		const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+		const minutes = Math.floor((diff / (1000 * 60)) % 60);
+		const seconds = Math.floor((diff / 1000) % 60);
+		return `${days} Days ${hours} Hours ${minutes} Mins ${seconds} Secs`;
 	};
 
 
@@ -623,7 +634,7 @@ const AuctionDetailPage = () => {
 
 					{/* Countdown */}
 					<div className="bg-light text-center mt-4 p-3 rounded">
-						<strong className="text-muted">Time remaining:</strong>
+						<small className="text-muted fw-semibold">{countdownLabel}</small>
 						<div className="fs-4 fw-bold">
 							{auction.status === 'CANCELLED' ? 'Auction Cancelled' : remainingTime}
 						</div>
