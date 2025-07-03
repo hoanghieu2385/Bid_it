@@ -212,7 +212,7 @@ class _EkycVerificationPageState extends State<EkycVerificationPage> {
             : FileImage(File(previewPath)) as ImageProvider,
         width: double.infinity,
         height: 180,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
