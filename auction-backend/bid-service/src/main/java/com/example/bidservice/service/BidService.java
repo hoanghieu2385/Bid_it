@@ -17,22 +17,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * BidService - xử lý toàn bộ nghiệp vụ đặt giá.
- * Gồm:
- * - Validate bid
- * - Cập nhật trạng thái các bid
- * - Lưu DB
- * - Gọi auction-service & user-service
- * - Gửi WebSocket notification
+ * Tối ưu hóa với user caching để giảm số lần gọi API
  */
 @Service
 @Transactional
 public class BidService implements IBidService {
-    private static final Logger logger = LoggerFactory.getLogger(WebSocketService.class);
+    private static final Logger logger = LoggerFactory.getLogger(BidService.class);
 
     @Autowired
     private BidRepository bidRepository;
@@ -48,6 +44,11 @@ public class BidService implements IBidService {
 
     @Autowired
     private BidMessagePublisher bidMessagePublisher;
+
+    // Cache để tránh gọi getUserById nhiều lần
+    private final Map<Long, UserServiceClient.UserResponse> userCache = new ConcurrentHashMap<>();
+    private final Map<Long, Long> userCacheTimestamp = new ConcurrentHashMap<>();
+    private static final long CACHE_DURATION = 5 * 60 * 1000; // 5 phút
 
     // Tạo bid mới (dùng trong WebSocket)
     @Override
@@ -98,6 +99,71 @@ public class BidService implements IBidService {
         return savedBid;
     }
 
+    /**
+     * Lấy thông tin user với cache để tránh gọi API nhiều lần
+     */
+    private UserServiceClient.UserResponse getCachedUserInfo(Long userId) {
+        if (userId == null) return null;
+
+        // Check cache
+        Long timestamp = userCacheTimestamp.get(userId);
+        if (timestamp != null && (System.currentTimeMillis() - timestamp) < CACHE_DURATION) {
+            UserServiceClient.UserResponse cachedUser = userCache.get(userId);
+            if (cachedUser != null) {
+                logger.debug("👤 Using cached user info for userId: {}", userId);
+                return cachedUser;
+            }
+        }
+
+        // Fetch from API
+        try {
+            logger.debug("🔄 Fetching user info from API for userId: {}", userId);
+            UserServiceClient.UserResponse user = userServiceClient.getUserById(userId);
+            if (user != null) {
+                userCache.put(userId, user);
+                userCacheTimestamp.put(userId, System.currentTimeMillis());
+            }
+            return user;
+        } catch (Exception e) {
+            logger.warn("Failed to fetch user info for userId {}: {}", userId, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Batch load user info cho nhiều userIds cùng lúc
+     */
+    private Map<Long, UserServiceClient.UserResponse> batchLoadUserInfo(Set<Long> userIds) {
+        Map<Long, UserServiceClient.UserResponse> result = new HashMap<>();
+
+        // Lấy từ cache trước
+        Set<Long> needToFetch = new HashSet<>();
+        for (Long userId : userIds) {
+            UserServiceClient.UserResponse cached = getCachedUserInfo(userId);
+            if (cached != null) {
+                result.put(userId, cached);
+            } else {
+                needToFetch.add(userId);
+            }
+        }
+
+        // Fetch những user chưa có trong cache
+        for (Long userId : needToFetch) {
+            try {
+                UserServiceClient.UserResponse user = userServiceClient.getUserById(userId);
+                if (user != null) {
+                    result.put(userId, user);
+                    userCache.put(userId, user);
+                    userCacheTimestamp.put(userId, System.currentTimeMillis());
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to fetch user info for userId {}: {}", userId, e.getMessage());
+            }
+        }
+
+        return result;
+    }
+
     // Validate user không phải là người bid cao nhất hiện tại
     private void validateUserNotAlreadyHighestBidder(Long auctionId, Long userId) {
         logger.info("🔍 Checking if user {} is already highest bidder for auction {}", userId, auctionId);
@@ -120,9 +186,14 @@ public class BidService implements IBidService {
             logger.info("ℹ️ No previous bids found for auction {}", auctionId);
         }
     }
-    // Validate các điều kiện trước khi bid
 
+    // Validate các điều kiện trước khi bid
     @Override
+    @Retryable(
+            value = {Exception.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 200)
+    )
     public void validateBid(Long auctionId, Long userId, BigDecimal bidAmount) {
         logger.info("🔍 ===== STARTING BID VALIDATION =====");
         logger.info("🏛️ Auction ID: {}", auctionId);
@@ -157,119 +228,62 @@ public class BidService implements IBidService {
 
             logger.info("✅ Auction found: {}", auction.getTitle());
             logger.info("📊 Auction status: {}", auction.getStatus());
-            logger.info("⏰ Start time: {}", auction.getStartTime());
-            logger.info("⏰ End time: {}", auction.getEndTime());
-            logger.info("💰 Starting price: {}", auction.getStartingPrice());
-            logger.info("📈 Increment amount: {}", auction.getIncrementAmount());
 
             // Check auction status
             if (!"OPENED".equals(auction.getStatus())) {
                 logger.error("❌ AUCTION STATUS INVALID: Status is '{}', required 'OPENED'", auction.getStatus());
-
-                if ("UPCOMING".equals(auction.getStatus())) {
-                    logger.error("📅 Auction {} has not started yet", auctionId);
-                    throw new RuntimeException("Auction has not started yet");
-                } else if ("ENDED".equals(auction.getStatus()) || "CLOSED".equals(auction.getStatus())) {
-                    logger.error("🔚 Auction {} has ended", auctionId);
-                    throw new RuntimeException("Auction has ended");
-                } else if ("CANCELLED".equals(auction.getStatus())) {
-                    logger.error("🚫 Auction {} has been cancelled", auctionId);
-                    throw new RuntimeException("Auction has been cancelled");
-                } else {
-                    logger.error("❓ Auction {} has unknown status: {}", auctionId, auction.getStatus());
-                    throw new RuntimeException("Auction is not available for bidding");
-                }
+                throw new RuntimeException("Auction is not available for bidding");
             }
-
-            logger.info("✅ Auction status is valid: {}", auction.getStatus());
 
             // Time validation
             LocalDateTime now = LocalDateTime.now();
-            logger.info("⏰ Current time: {}", now);
-
             if (auction.getStartTime() != null && auction.getStartTime().isAfter(now)) {
-                logger.error("❌ AUCTION NOT STARTED: Current time {} is before start time {}",
-                        now, auction.getStartTime());
-                throw new RuntimeException("Auction has not started yet. Start time: " + auction.getStartTime());
+                throw new RuntimeException("Auction has not started yet");
             }
-
             if (auction.getEndTime() != null && auction.getEndTime().isBefore(now)) {
-                logger.error("❌ AUCTION ENDED: Current time {} is after end time {}",
-                        now, auction.getEndTime());
-                throw new RuntimeException("Auction has ended. End time: " + auction.getEndTime());
+                throw new RuntimeException("Auction has ended");
             }
-
-            logger.info("✅ Auction time validation passed");
 
             // Current highest bid validation
             BigDecimal currentHighest = getCurrentHighestBid(auctionId);
-            logger.info("💰 Current highest bid: {}", currentHighest);
-
             if (currentHighest != null && bidAmount.compareTo(currentHighest) <= 0) {
-                logger.error("❌ BID TOO LOW: Bid amount {} is not higher than current highest {}",
-                        bidAmount, currentHighest);
                 throw new RuntimeException("Bid amount must be higher than current highest bid: " + currentHighest);
             }
 
-            logger.info("✅ Bid amount is higher than current highest");
-
             // Increment validation
             BigDecimal incrementAmount = auction.getIncrementAmount();
-            if (incrementAmount != null && incrementAmount.compareTo(BigDecimal.ZERO) > 0) {
-                logger.info("📈 Validating increment amount: {}", incrementAmount);
-
-                if (currentHighest != null) {
-                    BigDecimal requiredMinimum = currentHighest.add(incrementAmount);
-                    logger.info("💰 Required minimum bid: {} (current: {} + increment: {})",
-                            requiredMinimum, currentHighest, incrementAmount);
-
-                    if (bidAmount.compareTo(requiredMinimum) < 0) {
-                        logger.error("❌ INSUFFICIENT INCREMENT: Bid {} is less than required minimum {}",
-                                bidAmount, requiredMinimum);
-                        throw new RuntimeException("Bid amount must be at least " + requiredMinimum +
-                                " (current highest: " + currentHighest + " + minimum increment: " + incrementAmount + ")");
-                    }
+            if (incrementAmount != null && incrementAmount.compareTo(BigDecimal.ZERO) > 0 && currentHighest != null) {
+                BigDecimal requiredMinimum = currentHighest.add(incrementAmount);
+                if (bidAmount.compareTo(requiredMinimum) < 0) {
+                    throw new RuntimeException("Bid amount must be at least " + requiredMinimum);
                 }
             }
 
-            logger.info("✅ Increment validation passed");
-
             // Check if user already has highest bid
-            logger.info("🔍 Checking if user already has highest bid...");
             validateUserNotAlreadyHighestBidder(auctionId, userId);
-            logger.info("✅ User is not the current highest bidder");
 
             // Starting price validation
             BigDecimal startingPrice = auction.getStartingPrice();
             if (startingPrice != null && bidAmount.compareTo(startingPrice) < 0) {
-                logger.error("❌ BELOW STARTING PRICE: Bid {} is below starting price {}",
-                        bidAmount, startingPrice);
                 throw new RuntimeException("Bid amount must be at least: " + startingPrice);
             }
 
-            logger.info("✅ Starting price validation passed");
-
             // Self-bid validation
             if (userId.equals(auction.getSellerId())) {
-                logger.error("❌ SELF BID ATTEMPT: User {} tried to bid on own auction {}",
-                        userId, auctionId);
                 throw new RuntimeException("You cannot bid on your own auction");
             }
-
-            logger.info("✅ Self-bid validation passed");
 
         } catch (Exception e) {
             if (e instanceof RuntimeException) {
                 throw e;
             }
-            logger.error("❌ AUCTION VALIDATION ERROR: {}", e.getMessage());
             throw new RuntimeException("Failed to validate auction: " + e.getMessage());
         }
 
-        // User validation
+        // User validation - SỬ DỤNG CACHE
         try {
             logger.info("🔍 Validating user...");
-            UserServiceClient.UserResponse user = userServiceClient.getUserById(userId);
+            UserServiceClient.UserResponse user = getCachedUserInfo(userId);
 
             if (user == null) {
                 logger.error("❌ USER NOT FOUND: User {} does not exist", userId);
@@ -287,11 +301,8 @@ public class BidService implements IBidService {
                 throw new RuntimeException("Can't get user points. Please try again later.");
             }
 
-            logger.info("🎯 User points: {}", score);
-
             if (score < 50) {
-                logger.error("❌ INSUFFICIENT POINTS: User {} has {} points, needs at least 50",
-                        userId, score);
+                logger.error("❌ INSUFFICIENT POINTS: User {} has {} points, needs at least 50", userId, score);
                 throw new IllegalArgumentException("You need at least 50 points to place a bid.");
             }
 
@@ -301,7 +312,6 @@ public class BidService implements IBidService {
             if (e instanceof RuntimeException) {
                 throw e;
             }
-            logger.error("❌ USER VALIDATION ERROR: {}", e.getMessage());
             throw new RuntimeException("Failed to validate user: " + e.getMessage());
         }
 
@@ -313,7 +323,7 @@ public class BidService implements IBidService {
         List<Bid> otherBids = bidRepository.findByAuctionIdAndIdNot(auctionId, winningBidId);
 
         for (Bid bid : otherBids) {
-            if (bid.getStatus() == BidStatus.ACTIVE) { // Chỉ update những bid ACTIVE
+            if (bid.getStatus() == BidStatus.ACTIVE) {
                 bid.setStatus(BidStatus.OUTBID);
                 bid.setIsWinning(false);
             }
@@ -324,80 +334,22 @@ public class BidService implements IBidService {
         }
     }
 
-    // Xử lý khi phiên đấu giá kết thúc
-    @Override
-    @Transactional
-    public void processAuctionEnd(Long auctionId) {
-        try {
-            // Kiểm tra auction đã thực sự kết thúc chưa
-            AuctionServiceClient.AuctionResponse auction = auctionServiceClient.getAuctionById(auctionId);
-            if (auction == null) throw new RuntimeException("Auction not found: " + auctionId);
-
-            boolean endedByTime = auction.getEndTime() != null && auction.getEndTime().isBefore(LocalDateTime.now());
-            boolean endedByStatus = "CLOSED".equals(auction.getStatus()) || "ENDED".equals(auction.getStatus());
-
-            if (!endedByTime && !endedByStatus) {
-                logger.info("Auction {} not ended yet. Skipping.", auctionId);
-                return;
-            }
-
-            Optional<Bid> highestBidOpt = bidRepository.findHighestBidByAuctionId(auctionId);
-            if (highestBidOpt.isPresent()) {
-                Bid winningBid = highestBidOpt.get();
-
-                winningBid.setStatus(BidStatus.WINNING);
-                winningBid.setIsWinning(true);
-                bidRepository.save(winningBid);
-                updateAllOtherBidsToOutbid(auctionId, winningBid.getId());
-
-                try {
-                    auctionServiceClient.updateWinner(auctionId, new WinnerUpdateDTO(winningBid.getUserId()));
-                    logger.info("Updated winner for auction {}", auctionId);
-                } catch (Exception e) {
-                    logger.warn("Failed to update winner in auction-service: {}", e.getMessage());
-                }
-
-                sendWinnerNotification(winningBid);
-            } else {
-                logger.info("No bids found for auction {}", auctionId);
-            }
-        } catch (Exception e) {
-            logger.error("Error while processing auction end: {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
-
-    // Method gửi notification về winner
-    private void sendWinnerNotification(Bid winningBid) {
-        try {
-            BidResponse bidResponse = mapToBidResponse(winningBid);
-
-            webSocketService.sendAuctionEndNotification(bidResponse);
-
-            IBidService.BidStatistics finalStats = getBidStatistics(winningBid.getAuctionId());
-            webSocketService.sendBidStatistics(winningBid.getAuctionId(), finalStats);
-
-        } catch (Exception e) {
-            System.err.println("Failed to send winner notification: " + e.getMessage());
-        }
-    }
-
-    // Lấy giá cao nhất hiện tại (không phân biệt trạng thái)
+    // Lấy giá cao nhất hiện tại
     @Override
     public BigDecimal getCurrentHighestBid(Long auctionId) {
-        if (auctionId == null) {
-            return null;
-        }
-        // Lấy bid cao nhất dựa trên amount, không phụ thuộc vào status WINNING
+        if (auctionId == null) return null;
         return bidRepository.findMaxBidAmountByAuctionId(auctionId).orElse(null);
     }
 
+    /**
+     * Tối ưu hóa mapToBidResponse bằng cách sử dụng cached user info
+     */
     private BidResponse mapToBidResponse(Bid bid) {
         String firstName = "";
         String lastName = "";
 
         try {
-            UserServiceClient.UserResponse user = userServiceClient.getUserById(bid.getUserId());
+            UserServiceClient.UserResponse user = getCachedUserInfo(bid.getUserId());
             if (user != null) {
                 firstName = user.getFirstName() != null ? user.getFirstName() : "";
                 lastName = user.getLastName() != null ? user.getLastName() : "";
@@ -408,7 +360,7 @@ public class BidService implements IBidService {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Failed to enrich bid with user info: " + e.getMessage());
+            logger.warn("Failed to get user info for bid mapping: {}", e.getMessage());
         }
 
         return new BidResponse(
@@ -424,44 +376,35 @@ public class BidService implements IBidService {
         );
     }
 
-
     // Enrich dữ liệu bid bằng thông tin user & auction
     @Override
     public Bid enrichBidWithExternalData(Bid bid) {
-        if (bid == null) {
-            return null;
-        }
+        if (bid == null) return null;
 
         try {
-            // Lấy thông tin user
-            UserServiceClient.UserResponse user = userServiceClient.getUserById(bid.getUserId());
+            UserServiceClient.UserResponse user = getCachedUserInfo(bid.getUserId());
             if (user != null) {
-                // Ưu tiên dùng fullName
                 String fullName = user.getFullName();
                 if (fullName == null || fullName.trim().isEmpty()) {
-                    // Nếu fullName null thì fallback dùng firstName + lastName
                     fullName = ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
                             (user.getLastName() != null ? user.getLastName() : "")).trim();
                 }
                 bid.setUsername(fullName.isEmpty() ? "Unknown Bidder" : fullName);
             }
         } catch (Exception e) {
-            System.err.println("Failed to get user info for userId " + bid.getUserId() + ": " + e.getMessage());
+            logger.warn("Failed to get user info for bid enrichment: {}", e.getMessage());
         }
 
         try {
-            // Lấy thông tin auction
             AuctionServiceClient.AuctionResponse auction = auctionServiceClient.getAuctionById(bid.getAuctionId());
             if (auction != null) {
                 bid.setAuctionTitle(auction.getTitle());
             }
         } catch (Exception e) {
-            System.err.println("Failed to get auction info for auctionId " + bid.getAuctionId() + ": " + e.getMessage());
+            logger.warn("Failed to get auction info for bid enrichment: {}", e.getMessage());
         }
 
-        // Set current highest bid
         bid.setCurrentHighestBid(getCurrentHighestBid(bid.getAuctionId()));
-
         return bid;
     }
 
@@ -469,33 +412,51 @@ public class BidService implements IBidService {
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 100))
     public void sendRealtimeBidUpdate(Bid bid) {
         try {
-            Bid enrichedBid = enrichBidWithExternalData(bid); // ✅ đảm bảo có userName
-            BidResponse bidResponse = mapToBidResponse(enrichedBid); // ⚡ chắc chắn đầy đủ
+            Bid enrichedBid = enrichBidWithExternalData(bid);
+            BidResponse bidResponse = mapToBidResponse(enrichedBid);
 
-            // 1. Gửi bid mới
             webSocketService.sendNewBidNotification(bidResponse);
-
-            // 2. Gửi bid history update
             webSocketService.sendBidHistoryUpdate(bid.getAuctionId(), bidResponse);
 
-            // 3. Gửi thống kê
             IBidService.BidStatistics stats = getBidStatistics(bid.getAuctionId());
             webSocketService.sendBidStatistics(bid.getAuctionId(), stats);
 
         } catch (Exception e) {
-            System.err.println("Failed to send realtime update: " + e.getMessage());
+            logger.error("Failed to send realtime update: {}", e.getMessage());
             throw e;
         }
     }
-    // Lấy các bid theo lịch sử
+
+    // Lấy bid history với batch loading user info
     @Override
     public List<Bid> getBidHistory(Long auctionId) {
         List<Bid> bids = bidRepository.findBidHistoryByAuctionId(auctionId);
-        bids.forEach(this::enrichBidWithExternalData);
+
+        // Batch load user info cho tất cả bids
+        Set<Long> userIds = bids.stream()
+                .map(Bid::getUserId)
+                .collect(Collectors.toSet());
+
+        Map<Long, UserServiceClient.UserResponse> userInfoMap = batchLoadUserInfo(userIds);
+
+        // Enrich bids với user info đã load
+        for (Bid bid : bids) {
+            UserServiceClient.UserResponse user = userInfoMap.get(bid.getUserId());
+            if (user != null) {
+                String fullName = user.getFullName();
+                if (fullName == null || fullName.trim().isEmpty()) {
+                    fullName = ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                            (user.getLastName() != null ? user.getLastName() : "")).trim();
+                }
+                bid.setUsername(fullName.isEmpty() ? "Unknown Bidder" : fullName);
+            }
+            bid.setCurrentHighestBid(getCurrentHighestBid(bid.getAuctionId()));
+        }
+
         return bids;
     }
 
-    // Lấy các bid theo userId
+    // Lấy bids by user với cache
     @Override
     public List<Bid> getBidsByUser(Long userId) {
         List<Bid> bids = bidRepository.findByUserIdOrderByCreatedAtDesc(userId);
@@ -503,7 +464,7 @@ public class BidService implements IBidService {
         return bids;
     }
 
-    // Trả về thống kê bid
+    // Trả về thống kê bid với cached user info
     @Override
     public IBidService.BidStatistics getBidStatistics(Long auctionId) {
         long totalBids = bidRepository.countByAuctionId(auctionId);
@@ -518,7 +479,7 @@ public class BidService implements IBidService {
         if (highestBidDetails.isPresent()) {
             Bid bid = highestBidDetails.get();
             try {
-                UserServiceClient.UserResponse user = userServiceClient.getUserById(bid.getUserId());
+                UserServiceClient.UserResponse user = getCachedUserInfo(bid.getUserId());
                 if (user != null) {
                     String firstName = user.getFirstName() != null ? user.getFirstName() : "";
                     String lastName = user.getLastName() != null ? user.getLastName() : "";
@@ -526,7 +487,7 @@ public class BidService implements IBidService {
                     stats.setHighestBidder(fullName.isEmpty() ? "Unknown" : fullName);
                 }
             } catch (Exception e) {
-                System.err.println("Failed to get user info: " + e.getMessage());
+                logger.warn("Failed to get user info for statistics: {}", e.getMessage());
                 stats.setHighestBidder("Unknown");
             }
             stats.setHighestBidTime(bid.getCreatedAt());

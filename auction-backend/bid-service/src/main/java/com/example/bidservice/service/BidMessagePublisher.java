@@ -47,7 +47,6 @@ public class BidMessagePublisher {
         publishBidNotification(BidNotification.winner(auctionId, winningBid));
     }
 
-    // 👉 Thêm method này để khớp với cách bạn gọi
     public void publishBidNotification(Long auctionId, BidResponse bidResponse, String notificationType) {
         BidNotification notification = new BidNotification(
                 auctionId,
@@ -72,9 +71,9 @@ public class BidMessagePublisher {
         }
     }
 
-    public void publishAuctionEnd(Long auctionId, String reason) {
+    public void publishAuctionEnd(Long auctionId, Long winnerId, String reason) {
         try {
-            AuctionEndMessage message = new AuctionEndMessage(auctionId, reason);
+            AuctionEndMessage message = new AuctionEndMessage(auctionId, winnerId, reason);
             logger.info("📤 Publishing auction end: {}", message);
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.AUCTION_EXCHANGE,
@@ -85,4 +84,5 @@ public class BidMessagePublisher {
             logger.error("❌ Failed to publish auction end: {}", e.getMessage(), e);
         }
     }
+
 }

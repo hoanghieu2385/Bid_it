@@ -1,5 +1,4 @@
-/* BidHistoryModal.css */
-.modal-overlay {
+.bid-history-modal .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -13,7 +12,7 @@
   padding: 20px;
 }
 
-.modal-content {
+.bid-history-modal .modal-content {
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -40,7 +39,7 @@
   max-width: 800px;
 }
 
-.modal-header {
+.bid-history-modal .modal-header {
   padding: 20px;
   border-bottom: 1px solid #dee2e6;
   display: flex;
@@ -51,14 +50,14 @@
   border-radius: 8px 8px 0 0;
 }
 
-.modal-title {
+.bid-history-modal .modal-title {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
   flex: 1;
 }
 
-.btn-close {
+.bid-history-modal .btn-close {
   background: none;
   border: none;
   color: white;
@@ -69,44 +68,44 @@
   transition: background-color 0.2s;
 }
 
-.btn-close:hover {
+.bid-history-modal .btn-close:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-.modal-body {
+.bid-history-modal .modal-body {
   padding: 20px;
   overflow-y: auto;
   flex: 1;
   max-height: 60vh;
 }
 
-.loading-container {
+.bid-history-modal .loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 40px 20px;
 }
 
-.spinner-border {
+.bid-history-modal .spinner-border {
   width: 3rem;
   height: 3rem;
 }
 
-.empty-state {
+.bid-history-modal .empty-state {
   text-align: center;
   padding: 40px 20px;
 }
 
-.empty-state i {
+.bid-history-modal .empty-state i {
   color: #6c757d;
   margin-bottom: 1rem;
 }
 
-.bid-history-list {
+.bid-history-modal .bid-history-list {
   margin-top: 10px;
 }
 
-.bid-summary {
+.bid-history-modal .bid-summary {
   background: #f8f9fa;
   border-radius: 8px;
   padding: 20px;
@@ -114,34 +113,34 @@
   border: 1px solid #e9ecef;
 }
 
-.summary-item {
+.bid-history-modal .summary-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 10px 0;
 }
 
-.summary-label {
+.bid-history-modal .summary-label {
   font-weight: 500;
   color: #6c757d;
 }
 
-.summary-value {
+.bid-history-modal .summary-value {
   font-weight: 600;
   font-size: 1.1rem;
 }
 
-.table-responsive {
+.bid-history-modal .table-responsive {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.table {
+.bid-history-modal .table {
   margin-bottom: 0;
 }
 
-.table th {
+.bid-history-modal .table th {
   background-color: #f8f9fa;
   border-top: none;
   font-weight: 600;
@@ -152,54 +151,54 @@
   letter-spacing: 0.5px;
 }
 
-.table td {
+.bid-history-modal .table td {
   padding: 15px 12px;
   vertical-align: middle;
   border-color: #f1f3f4;
 }
 
-.table-hover tbody tr:hover {
+.bid-history-modal .table-hover tbody tr:hover {
   background-color: #f8f9fa;
 }
 
-.table-success {
+.bid-history-modal .table-success {
   background-color: rgba(25, 135, 84, 0.1) !important;
 }
 
-.table-success:hover {
+.bid-history-modal .table-success:hover {
   background-color: rgba(25, 135, 84, 0.15) !important;
 }
 
-.bidder-info,
-.email-info,
-.bid-time {
+.bid-history-modal .bidder-info,
+.bid-history-modal .email-info,
+.bid-history-modal .bid-time {
   display: flex;
   align-items: center;
   font-size: 0.9rem;
 }
 
-.bidder-info i,
-.email-info i,
-.bid-time i {
+.bid-history-modal .bidder-info i,
+.bid-history-modal .email-info i,
+.bid-history-modal .bid-time i {
   color: #6c757d;
   width: 16px;
 }
 
-.bid-amount {
+.bid-history-modal .bid-amount {
   font-weight: 600;
   font-size: 1rem;
 }
 
-.bid-amount.text-success {
+.bid-history-modal .bid-amount.text-success {
   color: #198754 !important;
   font-size: 1.1rem;
 }
 
-.fa-crown {
+.bid-history-modal .fa-crown {
   color: #ffc107 !important;
 }
 
-.modal-footer {
+.bid-history-modal .modal-footer {
   padding: 20px;
   border-top: 1px solid #dee2e6;
   display: flex;
@@ -208,7 +207,7 @@
   border-radius: 0 0 8px 8px;
 }
 
-.btn {
+.bid-history-modal .btn {
   padding: 10px 20px;
   border-radius: 6px;
   font-weight: 500;
@@ -220,85 +219,85 @@
   cursor: pointer;
 }
 
-.btn-secondary {
+.bid-history-modal .btn-secondary {
   background-color: #6c757d;
   color: white;
 }
 
-.btn-secondary:hover {
+.bid-history-modal .btn-secondary:hover {
   background-color: #5a6268;
   transform: translateY(-1px);
 }
 
-.alert {
+.bid-history-modal .alert {
   border-radius: 8px;
   border: none;
   padding: 15px;
   margin-bottom: 20px;
 }
 
-.alert-danger {
+.bid-history-modal .alert-danger {
   background-color: #f8d7da;
   color: #721c24;
 }
 
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 768px) {
-  .modal-overlay {
+  .bid-history-modal .modal-overlay {
     padding: 10px;
   }
-  
+
   .bid-history-modal {
     max-width: 100%;
   }
-  
-  .modal-header,
-  .modal-body,
-  .modal-footer {
+
+  .bid-history-modal .modal-header,
+  .bid-history-modal .modal-body,
+  .bid-history-modal .modal-footer {
     padding: 15px;
   }
-  
-  .modal-title {
+
+  .bid-history-modal .modal-title {
     font-size: 1.1rem;
   }
-  
-  .table th,
-  .table td {
+
+  .bid-history-modal .table th,
+  .bid-history-modal .table td {
     padding: 10px 8px;
     font-size: 0.85rem;
   }
-  
-  .bid-summary {
+
+  .bid-history-modal .bid-summary {
     padding: 15px;
   }
-  
-  .summary-item {
+
+  .bid-history-modal .summary-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 5px;
   }
-  
-  .summary-value {
+
+  .bid-history-modal .summary-value {
     font-size: 1rem;
   }
 }
 
 @media (max-width: 576px) {
-  .table-responsive {
+  .bid-history-modal .table-responsive {
     font-size: 0.8rem;
   }
-  
-  .bidder-info,
-  .email-info,
-  .bid-time {
+
+  .bid-history-modal .bidder-info,
+  .bid-history-modal .email-info,
+  .bid-history-modal .bid-time {
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
   }
-  
-  .bidder-info i,
-  .email-info i,
-  .bid-time i {
+
+  .bid-history-modal .bidder-info i,
+  .bid-history-modal .email-info i,
+  .bid-history-modal .bid-time i {
     display: none;
   }
 }

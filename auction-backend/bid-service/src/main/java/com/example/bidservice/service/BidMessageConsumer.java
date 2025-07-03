@@ -74,13 +74,6 @@ public class BidMessageConsumer {
         }
     }
 
-    @RabbitListener(queues = RabbitMQConfig.AUCTION_WINNER_QUEUE)
-    @Transactional
-    public void processAuctionEnd(AuctionEndMessage message) {
-        logger.info("📥 Auction end: {}", message);
-        bidService.processAuctionEnd(message.getAuctionId());
-    }
-
     private void updateBidAnalytics(Bid bid) {
         logger.debug("📊 Analytics: {}", bid.getId());
     }

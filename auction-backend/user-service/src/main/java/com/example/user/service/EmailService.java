@@ -17,7 +17,7 @@ public class EmailService {
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
-    // Constructor manually created to replace @RequiredArgsConstructor
+    // Manually created constructor
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
@@ -40,41 +40,41 @@ public class EmailService {
     public void sendAccountVerificationEmail(String email, String verificationToken) {
         String verificationUrl = baseUrl + "/auth/verify-account?token=" + verificationToken + "&email=" + email;
 
-        String subject = "Xác thực tài khoản của bạn";
+        String subject = "Verify Your Account";
         String content = String.format(
                 """
                 <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 5px;">
-                    <h2 style="color: #333;">Xác thực tài khoản</h2>
-                    <p>Xin chào,</p>
-                    <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng click vào nút bên dưới để xác thực tài khoản:</p>
+                    <h2 style="color: #333;">Account Verification</h2>
+                    <p>Hello,</p>
+                    <p>Thank you for registering. Please click the button below to verify your account:</p>
                     <div style="text-align: center; margin: 30px 0;">
                         <a href="%s" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-                            Xác thực tài khoản
+                            Verify Account
                         </a>
                     </div>
-                    <p>Mail này sẽ hết hạn sau 24 giờ.</p>
-                    <p>Xin vui lòng không chia sẻ đường link này với bất kỳ ai.</p>
-                    <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
+                    <p>This link will expire in 24 hours.</p>
+                    <p>Please do not share this link with anyone.</p>
+                    <p>Best regards,<br>Your Support Team</p>
                 </div>
-                """, verificationUrl, verificationUrl);
+                """, verificationUrl);
 
         sendEmail(email, subject, content);
     }
 
     public void sendLoginOtp(String email, String otp) {
-        String subject = "Mã OTP đăng nhập của bạn";
-        String content =     String.format(
+        String subject = "Your Login OTP Code";
+        String content = String.format(
                 """
                 <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 5px;">
-                    <h2 style="color: #333;">Mã OTP đăng nhập</h2>
-                    <p>Xin chào,</p>
-                    <p>Dưới đây là mã OTP để đăng nhập vào tài khoản của bạn:</p>
+                    <h2 style="color: #333;">Login OTP Code</h2>
+                    <p>Hello,</p>
+                    <p>Below is your OTP code for logging into your account:</p>
                     <div style="background-color: #f5f5f5; padding: 10px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; margin: 20px 0;">
                         %s
                     </div>
-                    <p>Mã này sẽ hết hạn sau 5 phút.</p>
-                    <p>Xin vui lòng không chia sẻ mã này với bất kỳ ai.</p>
-                    <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
+                    <p>This code will expire in 5 minutes.</p>
+                    <p>Please do not share this code with anyone.</p>
+                    <p>Best regards,<br>Your Support Team</p>
                 </div>
                 """, otp);
 
@@ -84,59 +84,59 @@ public class EmailService {
     public void sendPasswordResetEmail(String email, String resetToken) {
         String resetUrl = baseUrl + "/auth/reset-password?token=" + resetToken + "&email=" + email;
 
-        String subject = "Yêu cầu đặt lại mật khẩu";
+        String subject = "Password Reset Request";
         String content = String.format(
                 """
                 <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 5px;">
-                    <h2 style="color: #333;">Đặt lại mật khẩu</h2>
-                    <p>Xin chào,</p>
-                    <p>Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng click vào nút bên dưới để tiến hành đặt lại mật khẩu:</p>
+                    <h2 style="color: #333;">Reset Your Password</h2>
+                    <p>Hello,</p>
+                    <p>We received a request to reset the password for your account. Please click the button below to reset your password:</p>
                     <div style="text-align: center; margin: 30px 0;">
                         <a href="%s" style="background-color: #4285F4; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-                            Đặt lại mật khẩu
+                            Reset Password
                         </a>
                     </div>
-                    <p>Mail này sẽ hết hạn sau 24 giờ.</p>
-                    <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này hoặc liên hệ với chúng tôi nếu bạn có bất kỳ thắc mắc nào.</p>
-                    <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
+                    <p>This link will expire in 24 hours.</p>
+                    <p>If you did not request a password reset, please ignore this email or contact us if you have any questions.</p>
+                    <p>Best regards,<br>Your Support Team</p>
                 </div>
-                """, resetUrl, resetUrl);
+                """, resetUrl);
 
         sendEmail(email, subject, content);
     }
 
     public void sendAuctionWinEmail(String email, String auctionTitle, String auctionSlug, String imageUrl, double finalPrice) {
-        System.out.println("📬 EmailService.sendAuctionWinEmail được gọi");
+        System.out.println("📬 EmailService.sendAuctionWinEmail called");
         System.out.println("📧 Email: " + email);
         System.out.println("🏆 Title: " + auctionTitle);
         System.out.println("💰 Price: " + finalPrice);
 
         String auctionUrl = frontendUrl + "/auctions/" + auctionSlug;
-        String subject = "🎉 Chúc mừng! Bạn đã thắng phiên đấu giá";
+        String subject = "🎉 Congratulations! You Won the Auction";
 
         String content = String.format("""
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 5px;">
-            <h2 style="color: #2E7D32;">Chúc mừng bạn đã chiến thắng!</h2>
-            <p>Xin chào,</p>
-            <p>Bạn đã thắng phiên đấu giá với sản phẩm:</p>
+            <h2 style="color: #2E7D32;">Congratulations on Your Win!</h2>
+            <p>Hello,</p>
+            <p>You have won the auction for the following item:</p>
             <div style="text-align: center; margin: 20px 0;">
                 <img src="%s" alt="Auction Image" style="max-width: 100%%; border-radius: 5px; border: 1px solid #ccc;" />
                 <h3 style="margin-top: 15px; color: #333;">%s</h3>
-                <p style="font-size: 18px;">Giá thắng: <strong>%.2f VNĐ</strong></p>
+                <p style="font-size: 18px;">Winning Bid: <strong>%.2f VND</strong></p>
                 <a href="%s" style="background-color: #4CAF50; color: white; padding: 10px 18px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px;">
-                    Xem chi tiết phiên đấu giá
+                    View Auction Details
                 </a>
             </div>
-            <p>Hãy hoàn tất thanh toán trong thời gian quy định để đảm bảo bạn nhận được sản phẩm.</p>
-            <p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>
+            <p>Please complete the payment within the specified time to secure your item.</p>
+            <p>Best regards,<br>Your Support Team</p>
         </div>
         """, imageUrl, auctionTitle, finalPrice, auctionUrl);
 
         try {
             sendEmail(email, subject, content);
-            System.out.println("✅ Email đã được gửi thành công!");
+            System.out.println("✅ Email sent successfully!");
         } catch (Exception e) {
-            System.err.println("❌ Lỗi khi gửi email: " + e.getMessage());
+            System.err.println("❌ Failed to send email: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }

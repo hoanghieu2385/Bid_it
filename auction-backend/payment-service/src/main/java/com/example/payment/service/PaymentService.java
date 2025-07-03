@@ -12,6 +12,8 @@ import com.example.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -85,9 +87,6 @@ public class PaymentService implements IPaymentService {
         return createNewPayment(request, idempotencyKey);
     }
 
-    /**
-     * Handle existing PayPal payment - recreate order if needed
-     */
     private PaymentResponseDto handleExistingPayPalPayment(Payment payment, PaymentRequestDto request) {
         String approvalUrl = null;
         boolean needNewOrder = false;
@@ -142,9 +141,6 @@ public class PaymentService implements IPaymentService {
         return convertToResponseDto(payment, approvalUrl);
     }
 
-    /**
-     * Create completely new payment
-     */
     private PaymentResponseDto createNewPayment(PaymentRequestDto request, String idempotencyKey) {
         // Create payment entity
         Payment payment = Payment.builder()
@@ -264,6 +260,7 @@ public class PaymentService implements IPaymentService {
         return createPayment(paymentRequest);
     }
 
+    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     @Override
     @Transactional
     public PaymentStatusDto executePayPalPayment(PayPalExecuteRequestDto request) {
@@ -316,6 +313,7 @@ public class PaymentService implements IPaymentService {
     }
 
     // Validation methods
+    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     private void validatePaymentRequest(PaymentRequestDto request) {
         // Validate user exists
         try {
@@ -340,6 +338,7 @@ public class PaymentService implements IPaymentService {
         }
     }
 
+    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     private void validateAuctionPayment(AuctionPaymentRequestDto request) {
         // Get auction details
         AuctionDto auction;

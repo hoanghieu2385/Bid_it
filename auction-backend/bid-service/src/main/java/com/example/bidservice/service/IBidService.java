@@ -18,13 +18,6 @@ public interface IBidService {
     Bid createBid(Long auctionId, Long userId, BigDecimal bidAmount);
 
     /**
-     * Xử lý khi auction kết thúc - XÁC ĐỊNH VÀ CẬP NHẬT WINNER
-     * @param auctionId ID của auction đã kết thúc
-     * @throws RuntimeException nếu có lỗi xử lý
-     */
-    void processAuctionEnd(Long auctionId);
-
-    /**
      * Lấy bid cao nhất hiện tại của auction (dựa trên amount, không phụ thuộc status)
      * @param auctionId ID của auction
      * @return Số tiền bid cao nhất, null nếu chưa có bid nào
