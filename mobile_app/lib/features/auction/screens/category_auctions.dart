@@ -141,14 +141,14 @@ class _CategoryAuctionsPageState extends State<CategoryAuctionsPage> {
                   Row(
                     children: [
                       const Text('Starting Price: '),
-                      Text('$startingPrice đ',
+                      Text('\$$startingPrice',
                           style: const TextStyle(color: Colors.green)),
                     ],
                   ),
                   Row(
                     children: [
                       const Text('Current Bid: '),
-                      Text('$currentBid đ',
+                      Text('\$$currentBid',
                           style: const TextStyle(color: Colors.green)),
                     ],
                   ),

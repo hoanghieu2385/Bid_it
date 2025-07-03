@@ -603,7 +603,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                         FittedBox(
                                           fit: BoxFit.scaleDown,
                                           child: Text(
-                                            '${numberFormat.format(auction.currentBid ?? 0)} đ',
+                                            '\$${numberFormat.format(auction.currentBid ?? 0)}',
                                             style: const TextStyle(
                                               fontSize: 20,
                                               color: Color(0xFFF97316),
@@ -735,7 +735,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                                                 : [],
                                                           ),
                                                           child: Text(
-                                                            '${NumberFormat("#,##0", "vi_VN").format(price)} đ',
+                                                            '\$${NumberFormat("#,##0", "vi_VN").format(price)}',
                                                             style: TextStyle(
                                                               fontSize: 16,
                                                               fontWeight: FontWeight.w600,
@@ -885,7 +885,7 @@ class _AuctionDetailPageState extends State<AuctionDetailPage> with SingleTicker
                                               if (selectedBidAmount! < minValidBid) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   SnackBar(
-                                                    content: Text('Bid must be at least ${NumberFormat("#,##0", "vi_VN").format(minValidBid)} đ'),
+                                                    content: Text('Bid must be at least \$${NumberFormat("#,##0", "vi_VN").format(minValidBid)}'),
                                                     backgroundColor: Colors.red,
                                                   ),
                                                 );
@@ -1399,7 +1399,7 @@ class _BidHistoryCardState extends State<BidHistoryCard> {
                         children: [
                           Row(
                             children: [
-                              Text('$amount đ', style: const TextStyle(fontWeight: FontWeight.w600)),
+                              Text('\$$amount', style: const TextStyle(fontWeight: FontWeight.w600)),
                               if (isCurrentUser)
                                 Container(
                                   margin: const EdgeInsets.only(left: 8),

@@ -309,7 +309,7 @@ const Auctions = () => {
 									<p className="card-text">
 										{auction.status === 'OPENED' ? (
 											<span className="badge bg-success mb-2">Auction is live</span>
-										) : auction.status === 'ENDED' ? (
+										) : auction.status === 'CLOSED' || 'CANCELLED' || 'SOLD' || 'FAILED' ? (
 											<span className="badge bg-secondary mb-2">Auction ended</span>
 										) : (
 											<span className="badge bg-warning text-dark mb-2">Auction upcoming</span>
