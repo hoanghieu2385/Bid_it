@@ -47,7 +47,6 @@ const loadWebSocketLibraries = async () => {
 		throw new Error('Crypto polyfill not properly loaded');
 	}
 };
-
 // Connection Status Component
 const ConnectionStatusBadge = ({ status }) => {
 	const statusConfig = {
@@ -180,7 +179,7 @@ const AuctionDetailPage = () => {
 										(bid) =>
 											bid.id === newBid.id ||
 											(bid.userId === newBid.userId &&
-												Math.abs((bid.bidAmount || bid.amount) - (newBid.bidAmount || newBid.amount)) < 0.01),
+												Math.abs((bid.bidAmount || bid.amount) - (newBid.bidAmount || newBid.amount)) < 0.01)
 									);
 
 									if (existingBid) return prev;
@@ -193,8 +192,14 @@ const AuctionDetailPage = () => {
 									currentBid: notification.currentHighestBid || newBid.bidAmount || newBid.amount || prev.currentBid,
 								}));
 
-								// Show notification
-								showSuccess(`New bid: ${(newBid.bidAmount || newBid.amount || 0).toLocaleString('vi-VN')} ₫`);
+								// Show notification if not already latest in bidHistory
+								setBidHistory((prev) => {
+									const isDuplicate = prev.length > 0 && prev[0].id === newBid.id;
+									if (!isDuplicate && newBid.userId !== user?.id) {
+										showSuccess(`New bid: ${(newBid.bidAmount || newBid.amount || 0).toLocaleString('vi-VN')} ₫`);
+									}
+									return prev;
+								});
 							}
 						} catch (err) {
 							console.error('❌ Failed to parse bid from WebSocket:', err);
@@ -354,7 +359,7 @@ const AuctionDetailPage = () => {
 		try {
 			const data = await getAuctionDetailById(id);
 			setAuction(data);
-			startCountdown(data.endTime);
+			startCountdown(data.startTime, data.endTime);
 			fetchSeller(data.sellerId);
 			fetchRelatedAuctions(data);
 		} catch {
@@ -425,30 +430,42 @@ const AuctionDetailPage = () => {
 		}
 	};
 
-// Countdown logic fix
-	const startCountdown = (endTime) => {
+	const [countdownLabel, setCountdownLabel] = useState('');
+	const startCountdown = (startTimeRaw, endTimeRaw) => {
 		const interval = setInterval(() => {
 			if (auction?.status === 'CANCELLED') {
 				setRemainingTime('Auction has been cancelled');
+				setCountdownLabel('');
 				clearInterval(interval);
 				return;
 			}
 
 			const now = new Date();
-			const end = new Date(endTime);
-			const diff = end - now;
+			const startTime = new Date(startTimeRaw);
+			const endTime = new Date(endTimeRaw);
 
-			if (diff <= 0) {
-				setRemainingTime('Auction started or ended');
-				clearInterval(interval);
+			if (now < startTime) {
+				const diff = startTime - now;
+				setCountdownLabel('Auction starting in');
+				setRemainingTime(formatTime(diff));
+			} else if (now >= startTime && now < endTime) {
+				const diff = endTime - now;
+				setCountdownLabel('Auction ending in');
+				setRemainingTime(formatTime(diff));
 			} else {
-				const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-				const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-				const minutes = Math.floor((diff / (1000 * 60)) % 60);
-				const seconds = Math.floor((diff / 1000) % 60);
-				setRemainingTime(`${days} Days ${hours} Hours ${minutes} Mins ${seconds} Secs`);
+				setRemainingTime('Auction has ended');
+				setCountdownLabel('');
+				clearInterval(interval);
 			}
 		}, 1000);
+	};
+
+	const formatTime = (diff) => {
+		const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+		const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+		const minutes = Math.floor((diff / (1000 * 60)) % 60);
+		const seconds = Math.floor((diff / 1000) % 60);
+		return `${days} Days ${hours} Hours ${minutes} Mins ${seconds} Secs`;
 	};
 
 
@@ -506,7 +523,18 @@ const AuctionDetailPage = () => {
 
 		try {
 			// Option 1: Use WebSocket for real-time bidding (if connected)
-			if (stompClientRef.current && stompClientRef.current.connected && connectionStatus === 'connected') {
+			if (
+				stompClientRef.current &&
+				stompClientRef.current.connected &&
+				connectionStatus === 'connected'
+			) {
+				// ✅ Check if user is already the highest bidder
+				const latestBid = bidHistory[0];
+				if (latestBid?.userId === user.id) {
+					showWarning('You are already the highest bidder.');
+					return;
+				}
+
 				stompClientRef.current.publish({
 					destination: `/app/auction/${auction.id}/bid`,
 					body: JSON.stringify({
@@ -520,7 +548,6 @@ const AuctionDetailPage = () => {
 				showSuccess('Bid submitted! Waiting for confirmation...');
 				console.log('📤 Bid sent via WebSocket');
 			} else {
-				// Option 2: Fallback to REST API
 				console.log('📤 Using REST API fallback for bidding');
 				const result = await createBid(payload);
 
@@ -607,7 +634,7 @@ const AuctionDetailPage = () => {
 
 					{/* Countdown */}
 					<div className="bg-light text-center mt-4 p-3 rounded">
-						<strong className="text-muted">Time remaining:</strong>
+						<small className="text-muted fw-semibold">{countdownLabel}</small>
 						<div className="fs-4 fw-bold">
 							{auction.status === 'CANCELLED' ? 'Auction Cancelled' : remainingTime}
 						</div>
@@ -631,10 +658,12 @@ const AuctionDetailPage = () => {
 						<div className="bg-white mt-3 p-2 rounded shadow-sm border">
 							<h6 className="fw-bold mb-2 d-flex align-items-center">
 								Bid History ({bidHistory.length} bids)
-								{connectionStatus === 'connected' &&
-									<span className="badge bg-success ms-2">Live</span>}
+								{connectionStatus === 'connected' && <span className="badge bg-success ms-2">Live</span>}
 							</h6>
-							<ul className="list-group list-group-flush small">
+							<ul
+								className="list-group list-group-flush small"
+								style={{ maxHeight: '300px', overflowY: 'auto' }}
+							>
 								{bidHistory.map((bid, index) => {
 									const bidderName =
 										bid.username ||
@@ -645,6 +674,7 @@ const AuctionDetailPage = () => {
 
 									const bidAmount = bid.amount || bid.bidAmount || 0;
 									const bidTime = bid.bidTime || bid.createdAt || bid.timestamp;
+									const isCurrentUser = user?.id && bid.userId === user.id;
 
 									return (
 										<li
@@ -652,15 +682,20 @@ const AuctionDetailPage = () => {
 											className="list-group-item px-2 py-1 d-flex justify-content-between align-items-center"
 										>
 											<div>
-												<strong>{bidderName}</strong>
+												<strong>
+													{bidderName}{' '}
+													{isCurrentUser && <span className="badge bg-primary ms-1">You</span>}
+												</strong>
 												<br />
 												<small className="text-muted">
 													{bidTime ? new Date(bidTime).toLocaleString('vi-VN') : 'Unknown time'}
 												</small>
 											</div>
 											<span className="fw-bold text-success">
-                {bidAmount && !isNaN(bidAmount) ? Number(bidAmount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
-            </span>
+							{bidAmount && !isNaN(bidAmount)
+								? Number(bidAmount).toLocaleString('vi-VN') + ' ₫'
+								: '0 ₫'}
+						</span>
 										</li>
 									);
 								})}
@@ -806,43 +841,45 @@ const AuctionDetailPage = () => {
 				<div className="mt-5">
 					<h4 className="mb-3">Other auctions you may like</h4>
 					<div className="row g-4">
-						{relatedAuctions.map((item) => (
-							<div className="col-md-3" key={item.id}>
-								<Link to={`/auctions/${item.id}`} className="text-decoration-none">
-									<div className="card h-100 shadow-sm">
-										<div
-											style={{
-												height: '160px',
-												backgroundColor: '#fff',
-												display: 'flex',
-												alignItems: 'center',
-												justifyContent: 'center',
-												overflow: 'hidden',
-											}}
-										>
-											<img
-												src={item.media?.[0]?.url || '/default-image.jpg'}
-												onError={(e) => (e.target.src = '/default-image.jpg')}
-												alt={item.title}
+						{relatedAuctions
+							.filter(item => ['ONGOING', 'UPCOMING'].includes(item.status?.toUpperCase()))
+							.map((item) => (
+								<div className="col-md-3" key={item.id}>
+									<Link to={`/auctions/${item.id}`} className="text-decoration-none">
+										<div className="card h-100 shadow-sm">
+											<div
 												style={{
-													maxHeight: '100%',
-													maxWidth: '100%',
-													objectFit: 'contain',
+													height: '160px',
+													backgroundColor: '#fff',
+													display: 'flex',
+													alignItems: 'center',
+													justifyContent: 'center',
+													overflow: 'hidden',
 												}}
-											/>
+											>
+												<img
+													src={item.media?.[0]?.url || '/default-image.jpg'}
+													onError={(e) => (e.target.src = '/default-image.jpg')}
+													alt={item.title}
+													style={{
+														maxHeight: '100%',
+														maxWidth: '100%',
+														objectFit: 'contain',
+													}}
+												/>
+											</div>
+											<div className="card-body">
+												<h6 className="card-title mb-1 text-dark">{item.title}</h6>
+												<small className="text-muted">Starting: {new Date(item.startTime).toLocaleString('vi-VN')}</small>
+												<small className="text-muted">
+													<br />
+													End: {new Date(item.endTime).toLocaleString('vi-VN')}
+												</small>
+											</div>
 										</div>
-										<div className="card-body">
-											<h6 className="card-title mb-1 text-dark">{item.title}</h6>
-											<small className="text-muted">Starting: {new Date(item.startTime).toLocaleString('vi-VN')}</small>
-											<small className="text-muted">
-												<br />
-												End: {new Date(item.endTime).toLocaleString('vi-VN')}
-											</small>
-										</div>
-									</div>
-								</Link>
-							</div>
-						))}
+									</Link>
+								</div>
+							))}
 					</div>
 				</div>
 			)}
