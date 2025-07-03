@@ -1,9 +1,17 @@
-// src/components/client/profile/components/AuctionImage.jsx
-import React, { useState, memo } from 'react';
+// AuctionImage using background-image to avoid Bootstrap conflicts
+import React, { useState, useEffect, memo } from 'react';
 
 const AuctionImage = ({ auction }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const [imageKey, setImageKey] = useState(0);
+
+  // Force image reload when auction changes
+  useEffect(() => {
+    setImageError(false);
+    setImageLoading(true);
+    setImageKey(prev => prev + 1);
+  }, [auction?.id]);
 
   const getImageUrl = (url) => {
     if (!url) return null;
@@ -47,11 +55,23 @@ const AuctionImage = ({ auction }) => {
     setImageError(false);
   };
 
-  const handleImageError = (e) => {
-    console.warn('Image failed to load:', e.target.src);
+  const handleImageError = () => {
     setImageLoading(false);
     setImageError(true);
   };
+
+  // Test if image loads by creating a hidden img element
+  useEffect(() => {
+    if (imageUrl) {
+      const img = new Image();
+      img.onload = handleImageLoad;
+      img.onerror = handleImageError;
+      img.src = `${imageUrl}?v=${imageKey}`;
+    } else {
+      setImageError(true);
+      setImageLoading(false);
+    }
+  }, [imageUrl, imageKey]);
 
   if (!imageUrl || imageError) {
     return (
@@ -69,14 +89,12 @@ const AuctionImage = ({ auction }) => {
           <div className="spinner-border spinner-border-sm text-primary"></div>
         </div>
       )}
-      <img
-        src={imageUrl}
-        alt={auction.title || 'Auction item'}
-        className="auction-image"
-        onLoad={handleImageLoad}
-        onError={handleImageError}
-        style={{ display: imageLoading ? 'none' : 'block' }}
-        loading="lazy"
+      <div
+        className="auction-image-background"
+        style={{
+          backgroundImage: imageLoading ? 'none' : `url("${imageUrl}?v=${imageKey}")`,
+          opacity: imageLoading ? 0 : 1
+        }}
       />
     </div>
   );
