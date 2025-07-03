@@ -8,6 +8,7 @@ import com.example.auction.dto.UserDTO;
 import com.example.auction.model.Auction;
 import com.example.auction.model.AuctionStatus;
 import com.example.auction.model.Media;
+import com.example.auction.publisher.BidMessagePublisher;
 import com.example.auction.repository.AuctionRepository;
 import com.example.auction.repository.MediaRepository;
 import jakarta.transaction.Transactional;
@@ -33,18 +34,20 @@ public class AuctionStatusScheduler {
     private final UserClient userClient;
     private final EmailClient emailClient;
     private final MediaRepository mediaRepository;
+    private final BidMessagePublisher bidMessagePublisher;
 
     @Autowired
     public AuctionStatusScheduler(AuctionRepository auctionRepository,
                                   BidServiceClient bidServiceClient,
                                   UserClient userClient,
                                   EmailClient emailClient,
-                                  MediaRepository mediaRepository) {
+                                  MediaRepository mediaRepository, BidMessagePublisher bidMessagePublisher) {
         this.auctionRepository = auctionRepository;
         this.bidServiceClient = bidServiceClient;
         this.userClient = userClient;
         this.emailClient = emailClient;
         this.mediaRepository = mediaRepository;
+        this.bidMessagePublisher = bidMessagePublisher;
     }
 
     // Tăng tần suất từ 30s thành 10s
@@ -99,10 +102,10 @@ public class AuctionStatusScheduler {
                 logger.info("Auction {}: OPENED → CLOSED", auction.getId());
 
                 // Xử lý kết thúc đấu giá trong bid-service
-                bidServiceClient.processAuctionEnd(auction.getId());
+                bidMessagePublisher.publishAuctionEnd(auction.getId(), "TIME_EXPIRED");
 
                 // Gửi email cho winner nếu có
-                sendWinnerEmailIfExists(auction);
+//                sendWinnerEmailIfExists(auction);
 
             } catch (Exception e) {
                 logger.error("Error processing auction end for auction {}: {}", auction.getId(), e.getMessage());
