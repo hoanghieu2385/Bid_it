@@ -357,9 +357,6 @@ public class BidService implements IBidService {
                     logger.warn("Failed to update winner in auction-service: {}", e.getMessage());
                 }
 
-                // Publish Auction End message để các service khác biết
-                bidMessagePublisher.publishAuctionEnd(auctionId, "TIME_EXPIRED");
-
                 sendWinnerNotification(winningBid);
             } else {
                 logger.info("No bids found for auction {}", auctionId);
