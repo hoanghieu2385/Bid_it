@@ -1,6 +1,7 @@
 package com.example.bidservice.scheduler;
 
 import com.example.bidservice.client.AuctionServiceClient;
+import com.example.bidservice.service.BidMessagePublisher;
 import com.example.bidservice.service.IBidService;
 import com.example.bidservice.repository.BidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public class AuctionEndScheduler {
 
     @Autowired
     private AuctionServiceClient auctionServiceClient;
+
+    @Autowired
+    private BidMessagePublisher bidMessagePublisher;
 
     // Set để track những auction đã được xử lý
     private final Set<Long> processedAuctions = new HashSet<>();
@@ -55,25 +59,13 @@ public class AuctionEndScheduler {
                                 " (time ended: " + isEndedByTime +
                                 ", status: " + auction.getStatus() + ")");
 
-                        // Chỉ xử lý winner nếu auction có bid và chưa có winner
                         if (auction.getWinnerId() == null) {
-                            System.out.println("Processing winner for auction " + auctionId);
+                            System.out.println("Publishing auction end event for auction " + auctionId);
 
-                            // Gọi processAuctionEnd để cập nhật winner
-                            bidService.processAuctionEnd(auctionId);
+                            bidMessagePublisher.publishAuctionEnd(auctionId, "TIME_EXPIRED");
 
-                            // Kiểm tra lại sau khi cập nhật
-                            AuctionServiceClient.AuctionResponse updatedAuction = auctionServiceClient.getAuctionById(auctionId);
-
-                            if (updatedAuction != null && updatedAuction.getWinnerId() != null) {
-                                processedAuctions.add(auctionId);
-                                System.out.println("Successfully updated winner for auction " + auctionId +
-                                        " -> winner: " + updatedAuction.getWinnerId());
-                            } else {
-                                System.out.println("Failed to update winner for auction " + auctionId + ", will retry");
-                            }
+                            processedAuctions.add(auctionId);
                         } else {
-                            // Đã có winner rồi, đánh dấu đã xử lý
                             processedAuctions.add(auctionId);
                             System.out.println("Auction " + auctionId + " already has winner: " + auction.getWinnerId());
                         }
