@@ -1,4 +1,4 @@
-/* Container to center content and prevent scrolling */
+Container to center content and prevent scrolling
 .order-page-wrapper {
   height: 100vh;
   display: flex;

@@ -58,7 +58,7 @@ const UserProfile = () => {
 									<FaUser className="me-2"/> Profile Info
 								</button>
 								<button
-									className={`sidebar-tab list-group-item d-flex justify-content-between align-items-center ${currentTab === 'ekyc' ? 'active' : ''}`}
+									className={`sidebar-tab list-group-item ${currentTab === 'ekyc' ? 'active' : ''}`}
 									onClick={() => changeTab('ekyc')}
 								>
 									<div>
