@@ -23,32 +23,25 @@ const Home = () => {
 				const data = await getAllAuctions();
 				const now = new Date();
 
-				// 👉 Filter out CANCELLED auctions
 				const validAuctions = data.filter((auction) => auction.status !== 'CANCELLED');
 
-				// 👉 Upcoming: startTime > now && not CANCELLED
 				const upcoming = validAuctions
-					.filter((a) => {
-						const start = new Date(a.startTime);
-						return start > now;
-					})
+					.filter((a) => new Date(a.startTime) > now)
 					.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
-				// 👉 Ongoing: start <= now && end >= now && status === OPENED
 				const ongoing = validAuctions.filter((a) => {
 					const start = new Date(a.startTime);
 					const end = new Date(a.endTime);
 					return start <= now && end >= now && a.status === 'OPENED';
 				});
 
-				// 👉 Latest: Show all except CANCELLED
 				const latest = validAuctions
 					.sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
 					.slice(0, 6);
 
 				setLatestAuctions(latest);
-				setUpcomingAuctions(upcoming.slice(0, 6));
-				setOngoingAuctions(ongoing.slice(0, 6));
+				setUpcomingAuctions(upcoming);
+				setOngoingAuctions(ongoing);
 			} catch (error) {
 				console.error('Failed to fetch auctions:', error);
 			}
@@ -56,7 +49,6 @@ const Home = () => {
 		fetchAuctions();
 	}, []);
 
-	// Timer for countdown
 	useEffect(() => {
 		const timer = setInterval(() => {
 			calculateTimeLeft();
@@ -97,7 +89,6 @@ const Home = () => {
 		return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 	};
 
-	// Badge logic
 	const renderStatusBadge = (auction) => {
 		const now = new Date();
 		const start = new Date(auction.startTime);
@@ -185,18 +176,16 @@ const Home = () => {
 					<h2 className="text-center mb-4">Ongoing Auctions</h2>
 					<div className="row">
 						{ongoingAuctions.length > 0 ? (
-							ongoingAuctions.map(renderAuctionCard)
+							ongoingAuctions.slice(0, 8).map(renderAuctionCard)
 						) : (
 							<p className="text-center">No ongoing auctions right now.</p>
 						)}
 					</div>
-					{ongoingAuctions.length > 0 && (
-						<div className="text-center mt-4">
-							<Link to="/auctions?status=OPENED" className="btn btn-primary">
-								View All Ongoing Auctions
-							</Link>
-						</div>
-					)}
+					<div className="text-center mt-4">
+						<Link to="/auctions?status=OPENED" className="btn btn-primary">
+							View All Ongoing Auctions
+						</Link>
+					</div>
 				</div>
 			</section>
 
@@ -206,18 +195,16 @@ const Home = () => {
 					<h2 className="text-center mb-4">Upcoming Auctions</h2>
 					<div className="row">
 						{upcomingAuctions.length > 0 ? (
-							upcomingAuctions.map(renderAuctionCard)
+							upcomingAuctions.slice(0, 8).map(renderAuctionCard)
 						) : (
 							<p className="text-center">No upcoming auctions.</p>
 						)}
 					</div>
-					{upcomingAuctions.length > 0 && (
-						<div className="text-center mt-4">
-							<Link to="/auctions?status=UPCOMING" className="btn btn-primary">
-								View All Upcoming Auctions
-							</Link>
-						</div>
-					)}
+					<div className="text-center mt-4">
+						<Link to="/auctions?status=UPCOMING" className="btn btn-primary">
+							View All Upcoming Auctions
+						</Link>
+					</div>
 				</div>
 			</section>
 
@@ -227,7 +214,7 @@ const Home = () => {
 					<h2 className="text-center mb-4">Latest Auctions</h2>
 					<div className="row">
 						{latestAuctions.length > 0 ? (
-							latestAuctions.map(renderAuctionCard)
+							latestAuctions.slice(0, 8).map(renderAuctionCard)
 						) : (
 							<p className="text-center">No recent auctions found.</p>
 						)}
