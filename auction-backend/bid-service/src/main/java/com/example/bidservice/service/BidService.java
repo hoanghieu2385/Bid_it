@@ -436,7 +436,14 @@ public class BidService implements IBidService {
             // Lấy thông tin user
             UserServiceClient.UserResponse user = userServiceClient.getUserById(bid.getUserId());
             if (user != null) {
-                bid.setUsername(user.getUsername());
+                // Ưu tiên dùng fullName
+                String fullName = user.getFullName();
+                if (fullName == null || fullName.trim().isEmpty()) {
+                    // Nếu fullName null thì fallback dùng firstName + lastName
+                    fullName = ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                            (user.getLastName() != null ? user.getLastName() : "")).trim();
+                }
+                bid.setUsername(fullName.isEmpty() ? "Unknown Bidder" : fullName);
             }
         } catch (Exception e) {
             System.err.println("Failed to get user info for userId " + bid.getUserId() + ": " + e.getMessage());
