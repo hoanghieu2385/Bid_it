@@ -421,13 +421,13 @@ class HomeContentState extends State<HomeContent> {
                   Row(
                     children: [
                       const Text('Starting Price: '),
-                      Text('$startingPrice đ', style: const TextStyle(color: Colors.green)),
+                      Text('\$$startingPrice', style: const TextStyle(color: Colors.green)),
                     ],
                   ),
                   Row(
                     children: [
                       const Text('Current Bid: '),
-                      Text('$currentBid đ', style: const TextStyle(color: Colors.green)),
+                      Text('\$$currentBid', style: const TextStyle(color: Colors.green)),
                     ],
                   ),
                   Row(

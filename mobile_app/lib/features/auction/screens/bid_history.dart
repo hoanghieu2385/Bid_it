@@ -139,7 +139,7 @@ class _BidHistoryPageState extends State<BidHistoryPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Total: $totalBids bids', style: const TextStyle(fontWeight: FontWeight.w500)),
-                Text('Amount: ${numberFormat.format(totalAmount)} đ',
+                Text('Amount: \$${numberFormat.format(totalAmount)}',
                     style: const TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -238,7 +238,7 @@ class _BidHistoryPageState extends State<BidHistoryPage> {
                   Text(bid['auctionTitle'] ?? 'No title',
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
-                  Text('$amount đ',
+                  Text('$amount \$',
                       style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 4),
                   Text(time, style: const TextStyle(fontSize: 12, color: Colors.grey)),

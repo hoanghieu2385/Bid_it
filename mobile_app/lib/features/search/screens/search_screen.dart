@@ -125,7 +125,7 @@ class SearchResults extends StatefulWidget {
 
 class _SearchResultsState extends State<SearchResults> {
   int showCount = 6;
-  final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: '$');
+  final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: '\$');
 
   String? getAuctionImage(Auction auction) {
     if (auction.mediaUrls.isNotEmpty) {

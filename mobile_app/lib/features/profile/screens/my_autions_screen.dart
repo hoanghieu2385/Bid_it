@@ -345,8 +345,8 @@ class _MyAuctionsPageState extends State<MyAuctionsPage> {
                               'Status: ${auction.status}',
                               style: TextStyle(color: statusColor),
                             ),
-                            Text('Ends: ${formatDate(auction.endTime)}'),
-                            Text('Start Price: $ ${auction.startingPrice.toStringAsFixed(0)}'),
+                            Text("Ends: ${formatDate(auction.endTime)}"),
+                            Text("Start Price: \$${auction.startingPrice.toStringAsFixed(0)}"),
                           ],
                         ),
                         trailing: PopupMenuButton<String>(
