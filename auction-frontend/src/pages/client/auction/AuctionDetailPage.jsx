@@ -196,7 +196,7 @@ const AuctionDetailPage = () => {
 								setBidHistory((prev) => {
 									const isDuplicate = prev.length > 0 && prev[0].id === newBid.id;
 									if (!isDuplicate && newBid.userId !== user?.id) {
-										showSuccess(`New bid: ${(newBid.bidAmount || newBid.amount || 0).toLocaleString('vi-VN')} ₫`);
+										showSuccess(`New bid: ${(newBid.bidAmount || newBid.amount || 0).toLocaleString('vi-VN')} `);
 									}
 									return prev;
 								});
@@ -241,7 +241,7 @@ const AuctionDetailPage = () => {
 								const notification = JSON.parse(message.body);
 								console.log('📢 Received outbid notification:', notification);
 								showWarning(
-									`You have been outbid! New highest bid: ${notification.currentHighestBid?.toLocaleString('vi-VN')} ₫`,
+									`You have been outbid! New highest bid: $ ${notification.currentHighestBid?.toLocaleString('vi-VN')} `,
 								);
 							} catch (err) {
 								console.error('❌ Failed to parse outbid notification:', err);
@@ -495,7 +495,7 @@ const AuctionDetailPage = () => {
 		const minimumBid = getMinimumBid();
 
 		if (isNaN(bidValue) || bidValue < minimumBid) {
-			showError(`Minimum bid is ${minimumBid.toLocaleString('vi-VN')} ₫`);
+			showError(`Minimum bid is $ ${minimumBid.toLocaleString('vi-VN')} `);
 			return;
 		}
 
@@ -693,8 +693,8 @@ const AuctionDetailPage = () => {
 											</div>
 											<span className="fw-bold text-success">
 							{bidAmount && !isNaN(bidAmount)
-								? Number(bidAmount).toLocaleString('vi-VN') + ' ₫'
-								: '0 ₫'}
+								? Number(bidAmount).toLocaleString('vi-VN') + ' $'
+								: '0 $'}
 						</span>
 										</li>
 									);

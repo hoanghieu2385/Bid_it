@@ -438,7 +438,7 @@ const Auctions = () => {
 
   // Format currency
   const formatCurrency = (amount) => {
-    if (!amount) return "₫0";
+    if (!amount) return "$0";
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",

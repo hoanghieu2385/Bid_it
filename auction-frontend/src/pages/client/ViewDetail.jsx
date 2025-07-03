@@ -146,19 +146,19 @@ const ViewDetail = () => {
           <div className="bid-section">
             <div className="bid-row">
               <div className="bid-label">Current Bid:</div>
-              <div className="bid-value green">{auctionData.auction.currentBid.toLocaleString()} ₫</div>
+              <div className="bid-value green">${auctionData.auction.currentBid.toLocaleString()}</div>
             </div>
             <div className="bid-row">
               <div className="bid-label">Starting Price:</div>
-              <div className="bid-value">{auctionData.auction.startingPrice.toLocaleString()} ₫</div>
+              <div className="bid-value">${auctionData.auction.startingPrice.toLocaleString()}</div>
             </div>
             <div className="bid-row">
               <div className="bid-label">Increment Amount:</div>
-              <div className="bid-value">{auctionData.auction.incrementAmount.toLocaleString()} ₫</div>
+              <div className="bid-value">${auctionData.auction.incrementAmount.toLocaleString()}</div>
             </div>
             <div className="bid-row">
               <div className="bid-label">Security Deposit:</div>
-              <div className="bid-value">{auctionData.auction.securityDeposit.toLocaleString()} ₫</div>
+              <div className="bid-value">${auctionData.auction.securityDeposit.toLocaleString()}</div>
             </div>
             <div className="deposit-notice">
               This auction requires deposit
@@ -239,15 +239,15 @@ const ViewDetail = () => {
                 <div className="related-price">
                   <div className="price-row">
                     <span>Starting Price:</span>
-                    <span className="price-value">{item.startingPrice.toLocaleString()} ₫</span>
+                    <span className="price-value">${item.startingPrice.toLocaleString()}</span>
                   </div>
                   <div className="price-row">
                     <span>Current Bid:</span>
-                    <span className="price-value">{item.currentBid} ₫</span>
+                    <span className="price-value">${item.currentBid}</span>
                   </div>
                   <div className="price-row">
                     <span>Bid Count:</span>
-                    <span className="price-value">{item.bidCount} bids</span>
+                    <span className="price-value">${item.bidCount} bids</span>
                   </div>
                 </div>
                 <button className="join-auction">Join Auction</button>

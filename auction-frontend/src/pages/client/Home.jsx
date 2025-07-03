@@ -37,7 +37,7 @@ const Home = () => {
 
 				const latest = validAuctions
 					.sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
-					.slice(0, 6);
+					.slice(0, 8);
 
 				setLatestAuctions(latest);
 				setUpcomingAuctions(upcoming);
@@ -140,8 +140,8 @@ const Home = () => {
 							<br />
 							Ends at: {formatDateToDisplay(auction.endTime)}
 							<br />
-							Starting Price: {auction.startingPrice.toLocaleString('vi-VN')} ₫<br />
-							Current Bid: {(auction.currentBid || auction.startingPrice).toLocaleString('vi-VN')} ₫<br />
+							Starting Price: $ {auction.startingPrice.toLocaleString('vi-VN')}<br />
+							Current Bid: $ {(auction.currentBid || auction.startingPrice).toLocaleString('vi-VN')}<br />
 							Bids: {auction.bidCount || 0}
 							<br />
 							{timeLeft[auction.id] && (
