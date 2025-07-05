@@ -3,16 +3,20 @@ package com.example.user.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 
 @Service
 public class CloudinaryService {
+    private static final Logger logger = LoggerFactory.getLogger(CloudinaryService.class);
 
     @Value("${cloudinary.cloud-name}")
     private String cloudName;
@@ -36,23 +40,35 @@ public class CloudinaryService {
 
     public String uploadImage(MultipartFile file) {
         try {
-            // Upload file to Cloudinary
-            Map<String, Object> uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap(
-                    "folder", "ekyc_documents",
-                    "resource_type", "image",
-                        "allowed_formats", new String[] {"jpg", "jpeg", "png"},
-                        "max_file_size", 5000000 // 5MB limit
-                )
+            logger.info("Uploading file: name={}, size={} bytes, contentType={}",
+                    file.getOriginalFilename(),
+                    file.getSize(),
+                    file.getContentType()
             );
 
-            // Return the secure URL
+            Map<String, Object> uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "ekyc_documents",
+                            "resource_type", "image",
+                            "allowed_formats", Arrays.asList(
+                                    "jpg", "jpeg", "png", "bmp",
+                                    "webp", "svg", "heic", "heif"
+                            ),
+                            "max_file_size", 5000000
+                    )
+            );
+
+            logger.info("Upload success: {}", uploadResult);
+
             return uploadResult.get("secure_url").toString();
 
         } catch (IOException e) {
+            logger.error("IOException during Cloudinary upload: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to upload image to Cloudinary: " + e.getMessage(), e);
+
         } catch (Exception e) {
+            logger.error("Unexpected error during Cloudinary upload: {}", e.getMessage(), e);
             throw new RuntimeException("Unexpected error during image upload: " + e.getMessage(), e);
         }
     }
