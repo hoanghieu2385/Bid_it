@@ -41,16 +41,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         System.out.println("Request path: " + requestPath);
         System.out.println("Request method: " + method);
 
-        // ✅ Bỏ qua JWT cho API nội bộ
+        // Bỏ qua JWT cho API nội bộ
         if (requestPath.startsWith("/api/internal/") || requestPath.startsWith("/internal/")) {
             System.out.println("Bypassing JWT for internal API");
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // ✅ THÊM: Bỏ qua JWT cho GET /api/users/{id}
-        if ("GET".equals(method) && requestPath.matches("/api/users/\\d+")) {
-            System.out.println("Bypassing JWT for GET /api/users/{id}");
             filterChain.doFilter(request, response);
             return;
         }

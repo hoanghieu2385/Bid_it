@@ -143,6 +143,18 @@ const AuctionDetail = () => {
         setAuction(formattedAuction);
 
         await fetchBidData(id);
+
+        // ✅ Bổ sung fetch Winner info nếu chưa có
+        if (auctionData.winnerId) {
+          const winnerInfo = await fetchUserInfo(auctionData.winnerId);
+          setBidStatistics((prev) => ({
+            ...(prev || {}),
+            highestBidderId: auctionData.winnerId,
+            highestBidderName: winnerInfo.name,
+            highestBidderEmail: winnerInfo.email,
+          }));
+        }
+
       } catch (error) {
         console.error("Error fetching auction detail:", error);
         setError("Unable to load auction information. Please try again later.");
@@ -629,27 +641,28 @@ const AuctionDetail = () => {
                     <Crown size={24} />
                   </div>
                   <div className="winner-details">
-                    <div className="detail-row">
-                      <div className="detail-label">Winner ID:</div>
-                      <div className="detail-value">
-                        #{auction.rawData.winnerId}
+
+                    {bidStatistics && bidStatistics.highestBidderEmail ? (
+                      <div className="detail-row">
+                        <div className="detail-label">Winner Email:</div>
+                        <div className="detail-value">
+                          {bidStatistics.highestBidderEmail}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="detail-row">
+                        <div className="detail-label">Winner Email:</div>
+                        <div className="detail-value">
+                          {auction.seller?.email || "N/A"}
+                        </div>
+                      </div>
+                    )}
 
                     {bidStatistics && bidStatistics.highestBidderName && (
                       <div className="detail-row">
                         <div className="detail-label">Winner Name:</div>
                         <div className="detail-value">
                           {bidStatistics.highestBidderName}
-                        </div>
-                      </div>
-                    )}
-
-                    {bidStatistics && bidStatistics.highestBidderEmail && (
-                      <div className="detail-row">
-                        <div className="detail-label">Winner Email:</div>
-                        <div className="detail-value">
-                          {bidStatistics.highestBidderEmail}
                         </div>
                       </div>
                     )}
@@ -667,9 +680,7 @@ const AuctionDetail = () => {
                       <div className="detail-row">
                         <div className="detail-label">Payment Deadline:</div>
                         <div className="detail-value">
-                          {formatDateTime(
-                            auction.rawData.winnerPaymentDeadline
-                          )}
+                          {formatDateTime(auction.rawData.winnerPaymentDeadline)}
                         </div>
                       </div>
                     )}
@@ -688,6 +699,7 @@ const AuctionDetail = () => {
                 </div>
               </div>
             )}
+
 
             {/* Always show payment calculation if there's bid data */}
             {renderPaymentCalculationSection()}

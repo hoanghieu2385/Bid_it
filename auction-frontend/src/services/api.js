@@ -6,6 +6,7 @@ const api = axios.create({
 	headers: {
 		'Content-Type': 'application/json',
 	},
+	withCredentials: true,
 });
 
 // Tự động gắn Authorization header nếu có token

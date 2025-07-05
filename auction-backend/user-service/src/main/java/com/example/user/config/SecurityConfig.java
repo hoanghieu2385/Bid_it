@@ -67,7 +67,7 @@ public class SecurityConfig {
 
                         // ✅ QUAN TRỌNG: Đặt rule cụ thể TRƯỚC rule chung
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN") // GET all users (phải có trước /api/users/**)
-                        .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll() // GET user by ID - không cần authentication
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")// GET user by ID - không cần authentication
 
                         // Admin-only endpoints khác
                         .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN") // Create user
