@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import '../../../assets/styles/client/home/banner.css';
 
 const Banner = () => {
@@ -24,9 +25,12 @@ const Banner = () => {
                         Bid it: Discover a world of treasures waiting to be yours! Browse through our extensive collection and
                         find your dream items at the best prices.
                     </p>
-                    <button className="banner-btn btn btn-primary btn-lg fw-semibold px-4 py-2">
+                    <Link 
+                        to="/auctions"
+                        className="banner-btn btn btn-primary btn-lg fw-semibold px-4 py-2 text-decoration-none"
+                    >
                         Start Exploring
-                    </button>
+                    </Link>
                 </div>
             </div>
         </section>
