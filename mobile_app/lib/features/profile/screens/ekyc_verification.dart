@@ -29,7 +29,6 @@ class _EkycVerificationPageState extends State<EkycVerificationPage> {
 
   Timer? _statusCheckTimer;
 
-
   @override
   void initState() {
     super.initState();
@@ -59,7 +58,6 @@ class _EkycVerificationPageState extends State<EkycVerificationPage> {
     });
   }
 
-
   Future<void> _loadStatus() async {
     try {
       final data = await UserService().getCurrentUserVerificationStatus();
@@ -69,7 +67,7 @@ class _EkycVerificationPageState extends State<EkycVerificationPage> {
         _isVerified = data['cccdStatus']?.toUpperCase() == 'APPROVED';
       });
     } catch (e) {
-      setState(() => _message = 'Failed to load status');
+      setState(() => _message = 'Failed to load status: ${e.toString()}');
     }
   }
 
@@ -81,7 +79,7 @@ class _EkycVerificationPageState extends State<EkycVerificationPage> {
         _backImagePreview = user?['citizenIdBackImage'];
       });
     } catch (e) {
-      setState(() => _message = 'Failed to load image data');
+      setState(() => _message = 'Failed to load image data: ${e.toString()}');
     }
   }
 
@@ -122,10 +120,11 @@ class _EkycVerificationPageState extends State<EkycVerificationPage> {
     if (!_formKey.currentState!.validate() || _frontImage == null || _backImage == null) {
       setState(() {
         _isSubmitting = false;
+        _message = 'Please fill all required fields and upload both images';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill all required fields and upload both images'),
+        SnackBar(
+          content: Text(_message!),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 3),
         ),
@@ -137,10 +136,13 @@ class _EkycVerificationPageState extends State<EkycVerificationPage> {
       String rawCccd = _citizenIdController.text.trim();
 
       if (!RegExp(r'^\d{12}$').hasMatch(rawCccd)) {
-        setState(() => _isSubmitting = false);
+        setState(() {
+          _isSubmitting = false;
+          _message = 'Invalid Citizen ID: must be exactly 12 digits';
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid Citizen ID: must be exactly 12 digits'),
+          SnackBar(
+            content: Text(_message!),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 3),
           ),
@@ -151,10 +153,13 @@ class _EkycVerificationPageState extends State<EkycVerificationPage> {
       int frontLength = await _frontImage!.length();
       int backLength = await _backImage!.length();
       if (frontLength <= 0 || backLength <= 0) {
-        setState(() => _isSubmitting = false);
+        setState(() {
+          _isSubmitting = false;
+          _message = 'Invalid image file';
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid image file'),
+          SnackBar(
+            content: Text(_message!),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 3),
           ),
@@ -181,15 +186,27 @@ class _EkycVerificationPageState extends State<EkycVerificationPage> {
           ),
         );
       } else {
-        throw Exception('Unknown error occurred during submission.');
+        String errorMessage = result['message'] ?? 'Unknown error occurred during submission';
+        if (errorMessage.contains('Duplicate entry') && errorMessage.contains('citizen_id')) {
+          errorMessage = 'Citizen ID already exists. Please use a different ID.';
+        } else if (errorMessage.contains('Failed to upload CCCD')) {
+          errorMessage = 'Failed to upload CCCD. Please try again or contact support.';
+        }
+        setState(() {
+          _message = errorMessage;
+        });
+        throw Exception(errorMessage);
       }
     } catch (e) {
       print('Error during submission: $e');
+      setState(() {
+        _message ??= 'Submission failed: ${e.toString()}';
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Submission failed: ${e.toString()}'),
+          content: Text(_message!),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 5),
         ),
       );
     } finally {
@@ -198,7 +215,6 @@ class _EkycVerificationPageState extends State<EkycVerificationPage> {
       });
     }
   }
-
 
   bool get _isEditable => _status == 'Not Submitted' || _status == 'Rejected';
 
