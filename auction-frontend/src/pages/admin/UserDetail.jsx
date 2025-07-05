@@ -68,34 +68,39 @@ const UserDetail = () => {
   }, [userId]);
 
   const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      console.log("Fetching user with ID:", userId);
+  try {
+    setLoading(true);
+    console.log("Fetching user with ID:", userId);
 
-      if (!userId) {
-        setError("User ID does not exist, unable to load user information");
-        setLoading(false);
-        return;
-      }
-
-      const userData = await getUserById(userId);
-      setUser(userData);
-      
-      // Update form data to match Spring Boot User model
-      setEditedUser({
-        firstName: userData.firstName || "",
-        lastName: userData.lastName || "",
-        email: userData.email || "",
-        phoneNumber: userData.phoneNumber || "",
-        address: userData.address || ""
-      });
-    } catch (err) {
-      console.error("Error fetching user details:", err);
-      setError("Unable to load user information. Please try again later.");
-    } finally {
+    if (!userId) {
+      setError("User ID does not exist, unable to load user information");
       setLoading(false);
+      return;
     }
-  };
+
+    const userData = await getUserById(userId);
+
+    setUser({
+      ...userData,
+      points: userData.score || 0
+    });
+
+    // Update form data
+    setEditedUser({
+      firstName: userData.firstName || "",
+      lastName: userData.lastName || "",
+      email: userData.email || "",
+      phoneNumber: userData.phoneNumber || "",
+      address: userData.address || ""
+    });
+  } catch (err) {
+    console.error("Error fetching user details:", err);
+    setError("Unable to load user information. Please try again later.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const fetchUserStats = async () => {
     try {
@@ -708,9 +713,9 @@ const UserDetail = () => {
                       <div className="stat-title">Credit Score</div>
                       <div
                         className="stat-value"
-                        style={{ color: getScoreColor(user?.points || 0) }}
+                        style={{ color: getScoreColor(user?.score || 0) }}
                       >
-                        {user?.points || 0} / 100
+                        {user?.score || 0} / 100
                       </div>
                     </div>
                     <div className="stat-card">

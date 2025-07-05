@@ -1,22 +1,7 @@
-// src/services/admin-user-api.js - Phiên bản đơn giản hóa
+// src/services/admin-user-api.js
 import api from './api';
 import API_CONFIG from './apiConfig';
 import Cookies from "js-cookie";
-
-
-
-export const getUserByIdInternal = async (userId) => {
-  try {
-    if (!userId) {
-      throw new Error('User ID is undefined');
-    }
-    const response = await api.get(`/user-service/internal/users/${userId}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching internal user:', error);
-    throw error;
-  }
-};
 
 // Lấy danh sách tất cả người dùng (Admin only)
 export const getAllUsers = async () => {
@@ -30,7 +15,7 @@ export const getUserById = async (userId) => {
     if (!userId) {
       throw new Error('User ID is undefined');
     }
-    const response = await api.get(`${API_CONFIG.USER_API_INTERNAL}/${userId}`);
+    const response = await api.get(`${API_CONFIG.USER_API}/${userId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching user:', error);
