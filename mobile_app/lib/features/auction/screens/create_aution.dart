@@ -574,7 +574,7 @@ class _CreateAuctionPageState extends State<CreateAuctionPage> {
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: !_disabled ? _pickGalleryImages : null,
+                      onTap: _isLoggedIn ? () => _selectDate(context, false) : null,
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                         decoration: BoxDecoration(
