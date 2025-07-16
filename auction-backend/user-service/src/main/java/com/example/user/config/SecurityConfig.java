@@ -2,6 +2,7 @@ package com.example.user.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -14,7 +15,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -24,7 +24,6 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-    // Constructor thủ công thay cho @RequiredArgsConstructor
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthFilter,
             UserDetailsService userDetailsService,
@@ -39,61 +38,47 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                )
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        // Các endpoint Auth không cần token
+
+                        // Public endpoints (no auth required)
                         .requestMatchers(
-                                "/auth/ping",
-                                "/auth/register",
-                                "/auth/login",
-                                "/auth/generate-token",
-                                "/auth/verify-account",
-                                "/auth/verify-email",
-                                "/auth/request-otp",
-                                "/auth/login-with-otp",
-                                "/auth/forgot-password",
-                                "/auth/reset-password",
-                                "/auth/change-password"
+                                "/auth/**",  // login, register, verify
+                                "/api/users/seller/**",  // public seller info
+                                "/api/users/verify-phone-otp",
+                                "/api/users/send-phone-otp",
+                                "/api/internal/**", "/internal/**" // Internal APIs
                         ).permitAll()
 
-                        // Internal APIs
-                        .requestMatchers("/api/internal/**", "/internal/**").permitAll()
+                        // Authenticated (any logged-in user)
+                        .requestMatchers("/api/users/me").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/users/me/verify-status").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/users/update-cccd").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/{id}/profile").hasAnyRole("USER", "ADMIN")
 
-                        // Các endpoint user public
-                        .requestMatchers("/api/users/verify-phone-otp", "/api/users/send-phone-otp").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/users/seller/**").permitAll()
-
-                        // Cho phép user đã login truy cập info của chính mình
-                        .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
-
-                        // Cho phép GET /api/users/{id} (VD: /api/users/123) – public hoặc client cần dùng
-                        .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll()
-
-                        // Đặt rule admin sau cùng để tránh đè lên rule cụ thể
+                        // Admin-only
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/users/*/roles").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
 
+                        // Any other request requires authentication
                         .anyRequest().authenticated()
-                )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .httpBasic(httpBasic -> httpBasic.disable());
+                );
 
         return http.build();
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
     }
 
     @Bean
@@ -102,7 +87,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration configuration
+    ) throws Exception {
+        return configuration.getAuthenticationManager();
     }
 }
