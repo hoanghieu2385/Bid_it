@@ -43,7 +43,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Auth endpoints - không cần authentication
+                        // Các endpoint Auth không cần token
                         .requestMatchers(
                                 "/auth/ping",
                                 "/auth/register",
@@ -58,23 +58,26 @@ public class SecurityConfig {
                                 "/auth/change-password"
                         ).permitAll()
 
-                        // Internal APIs - không cần authentication
+                        // Internal APIs
                         .requestMatchers("/api/internal/**", "/internal/**").permitAll()
 
-                        // User endpoints cụ thể - không cần authentication
+                        // Các endpoint user public
                         .requestMatchers("/api/users/verify-phone-otp", "/api/users/send-phone-otp").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/seller/**").permitAll()
 
-                        // ✅ QUAN TRỌNG: Đặt rule cụ thể TRƯỚC rule chung
-                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN") // GET all users (phải có trước /api/users/**)
-                        .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")// GET user by ID - không cần authentication
+                        // Cho phép user đã login truy cập info của chính mình
+                        .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
 
-                        // Admin-only endpoints khác
-                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN") // Create user
-                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN") // Delete user
-                        .requestMatchers(HttpMethod.PUT, "/api/users/*/roles").hasRole("ADMIN") // Update roles
+                        // Cho phép GET /api/users/{id} (VD: /api/users/123) – public hoặc client cần dùng
+                        .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll()
 
-                        // Tất cả request khác cần authentication
+                        // Đặt rule admin sau cùng để tránh đè lên rule cụ thể
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/*/roles").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
