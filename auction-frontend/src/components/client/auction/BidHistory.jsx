@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getAuctionBidHistory } from "../../../services/auction-api";
-import { getUserByIdInternal } from "../../../services/admin-user-api";
+import { getUserById } from "../../../services/admin-user-api";
 import "../../../assets/styles/client/BidHistory.css";
 
 const BidHistoryModal = ({ auctionId, auctionTitle, isOpen, onClose }) => {
@@ -45,7 +45,7 @@ const BidHistoryModal = ({ auctionId, auctionTitle, isOpen, onClose }) => {
           const userId = bid.userId || bid.bidderId;
           if (userId && !userCache[userId]) {
             try {
-              const userInfo = await getUserByIdInternal(userId);
+              const userInfo = await getUserById(userId);
               setUserCache((prev) => ({
                 ...prev,
                 [userId]: userInfo,
